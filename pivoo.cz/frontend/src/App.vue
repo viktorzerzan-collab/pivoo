@@ -15,20 +15,30 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
+
 const route = useRoute()
 const isAuthPage = computed(() => route.name === 'login' || route.name === 'register')
 </script>
 
 <style>
-/* --- RESET A ZÁKLAD --- */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+/* --- 1. GLOBÁLNÍ RESET --- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 :root {
   --primary: #facc15;
   --primary-hover: #eab308;
   --blue: #3b82f6;
-  --orange: #f97316;
+  --blue-hover: #2563eb;
+  --orange: #f97316; /* ORANŽOVÁ PRO EDITACI */
+  --orange-hover: #ea580c;
   --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --bg-app: #f1f5f9;
+  --bg-panel: #ffffff;
   --text-main: #1e293b;
   --text-muted: #64748b;
   --border: #e2e8f0;
@@ -36,43 +46,95 @@ const isAuthPage = computed(() => route.name === 'login' || route.name === 'regi
 }
 
 html, body, #app {
-  height: 100%; width: 100%;
-  background-color: #f1f5f9;
-  font-family: 'Inter', system-ui, sans-serif;
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-app);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
 }
 
-.layout-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
-.main-content { flex: 1 0 auto; display: flex; flex-direction: column; }
-.container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
+/* --- 2. LAYOUT (STICKY FOOTER) --- */
+.layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 
-/* --- UNIVERZÁLNÍ TLAČÍTKA --- */
-button {
+.main-content {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+.auth-layout {
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+/* --- 3. UNIVERZÁLNÍ TLAČÍTKA --- */
+button, .base-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
   font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 0.95rem;
   box-shadow: var(--shadow);
+  line-height: 1.2;
 }
 
-/* Barevné varianty */
-button.btn-primary { background: var(--primary); color: #1e293b; }
-button.btn-add { background: var(--blue); color: white; }
-button.btn-edit { background: var(--orange); color: white; }
-button.btn-danger { background: var(--danger); color: white; }
+button:active { transform: scale(0.98); }
 
-/* --- OPRAVA PRO ZAVÍRACÍ KŘÍŽKY --- */
+/* Barevné varianty tlačítek */
+button.btn-primary { background-color: var(--primary); color: #1e293b; }
+button.btn-primary:hover { background-color: var(--primary-hover); }
+
+button.btn-add { background-color: var(--blue); color: white; }
+button.btn-add:hover { background-color: var(--blue-hover); }
+
+button.btn-edit { background-color: var(--orange); color: white; }
+button.btn-edit:hover { background-color: var(--orange-hover); }
+
+button.btn-danger { background-color: var(--danger); color: white; }
+button.btn-danger:hover { background-color: var(--danger-hover); }
+
+/* Ikony v tlačítkách */
+button svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.5;
+}
+
+button:not(.is-icon-only):not(.btn-close) svg {
+  margin-right: 0.5rem;
+}
+
+/* Tlačítka pouze s ikonou */
+button.is-icon-only {
+  padding: 0.6rem;
+  width: 38px;
+  height: 38px;
+}
+
+/* --- 4. SPECIÁLNÍ OPRAVA PRO ZAVÍRACÍ KŘÍŽKY --- */
 button.btn-close {
   background: none !important;
   box-shadow: none !important;
   padding: 0.25rem !important;
-  border-radius: 4px !important;
   color: var(--text-muted) !important;
   width: auto !important;
   height: auto !important;
@@ -80,16 +142,34 @@ button.btn-close {
 button.btn-close:hover {
   color: var(--text-main) !important;
   background: rgba(0,0,0,0.05) !important;
-  transform: scale(1.1);
 }
 
-/* Ikony v tlačítkách */
-button svg { width: 1.2em; height: 1.2em; stroke-width: 2.5; }
-button:not(.is-icon-only):not(.btn-close) svg { margin-right: 0.5rem; }
-button.is-icon-only { padding: 0.6rem; width: 38px; height: 38px; }
-
-/* Ostatní */
-.badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+/* --- 5. OSTATNÍ KOMPONENTY --- */
+.badge {
+  padding: 0.3rem 0.7rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
 .badge.admin { background: #fee2e2; color: #ef4444; }
 .badge.user { background: #e0f2fe; color: #0284c7; }
+
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  color: white;
+  z-index: 9999;
+  box-shadow: var(--shadow);
+}
+.toast-success { background-color: #10b981; }
+.toast-error { background-color: #ef4444; }
+
+@media (max-width: 600px) {
+  .container { padding: 1rem; }
+}
 </style>
