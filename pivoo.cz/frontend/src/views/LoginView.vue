@@ -2,7 +2,7 @@
   <div class="auth-wrapper">
     <div class="auth-card">
       <div class="logo-container">
-        <BeerIcon :size="56" color="var(--primary)" stroke-width="1.5" />
+        <BeerIcon :size="64" color="var(--primary)" stroke-width="1.5" />
         <h1 class="logo-text">Pivoo.cz</h1>
       </div>
       <p class="auth-subtitle">Tvůj osobní pivní deníček</p>
@@ -14,11 +14,11 @@
       <form @submit.prevent="handleLogin" class="auth-form">
         <BaseInput 
           v-model="username" 
-          label="Přihlašovací jméno nebo E-mail" 
-          placeholder="Např. Karel" 
+          label="Uživatelské jméno / Email" 
+          placeholder="Tvůj login" 
           required 
         />
-
+        
         <BaseInput 
           v-model="password" 
           type="password" 
@@ -27,15 +27,18 @@
           required 
         />
 
-        <BaseButton type="submit" variant="primary" style="margin-top: 1rem; width: 100%;" :disabled="isLoading">
-          <template #icon>
-            <LogInIcon :size="18" />
-          </template>
-          {{ isLoading ? 'Ověřuji...' : 'Vstoupit do hospody' }}
+        <BaseButton 
+          type="submit" 
+          variant="primary" 
+          style="margin-top: 1rem; width: 100%;" 
+          :disabled="isLoading"
+        >
+          <template #icon><LogInIcon :size="18" /></template>
+          {{ isLoading ? 'Přihlašuji...' : 'Vstoupit' }}
         </BaseButton>
 
         <div class="auth-footer-link">
-          Ještě nemáš účet? <router-link to="/register">Zaregistruj se</router-link>
+          Nemáš účet? <router-link to="/register">Registruj se zde</router-link>
         </div>
       </form>
     </div>
@@ -45,8 +48,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { BeerIcon, LogInIcon } from 'lucide-vue-next'
-
+import { LogInIcon, BeerIcon } from 'lucide-vue-next'
+import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
@@ -62,22 +65,24 @@ const errorMessage = ref('')
 const handleLogin = async () => {
   isLoading.value = true
   errorMessage.value = ''
+  
   try {
-    const response = await fetch('https://www.pivoo.cz/backend/api/login.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, password: password.value })
+    const result = await apiFetch('/login.php', { 
+      method: 'POST', 
+      body: JSON.stringify({ 
+        username: username.value, 
+        password: password.value 
+      }) 
     })
-    const result = await response.json()
+    
     if (result.status === 'success') {
-      // ZMĚNA ZDE: Posíláme i token
       authStore.login(result.user, result.token)
       router.push('/dashboard')
     } else {
-      errorMessage.value = result.message || 'Přihlášení se nezdařilo.'
+      errorMessage.value = result.message || 'Chyba přihlášení.'
     }
   } catch (error) {
-    errorMessage.value = 'Chyba při komunikaci se serverem.'
+    errorMessage.value = 'Server není dostupný. Zkuste to později.'
   } finally {
     isLoading.value = false
   }
@@ -95,12 +100,12 @@ const handleLogin = async () => {
 }
 
 .auth-card {
-  background: var(--bg-panel);
-  padding: 3rem 2.5rem;
+  background: white;
+  padding: 3.5rem 2.5rem;
   border-radius: 16px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 420px;
+  max-width: 450px;
   text-align: center;
   border: 1px solid var(--border);
 }
@@ -113,24 +118,24 @@ const handleLogin = async () => {
 }
 
 .logo-text {
-  font-size: 2.25rem;
+  font-size: 2.5rem;
   font-weight: 800;
-  color: var(--text-main);
-  letter-spacing: -0.025em;
+  color: #1e293b;
+  letter-spacing: -0.05em;
   margin: 0;
 }
 
 .auth-subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 2rem;
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-bottom: 2.5rem;
   margin-top: 0.25rem;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   text-align: left;
 }
 
@@ -146,9 +151,9 @@ const handleLogin = async () => {
 }
 
 .auth-footer-link {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   text-align: center;
-  color: var(--text-muted);
+  color: #64748b;
   font-size: 0.95rem;
 }
 
@@ -156,11 +161,9 @@ const handleLogin = async () => {
   color: var(--primary-hover);
   text-decoration: none;
   font-weight: 700;
-  transition: color 0.2s;
 }
 
 .auth-footer-link a:hover {
-  color: var(--primary);
   text-decoration: underline;
 }
 </style>

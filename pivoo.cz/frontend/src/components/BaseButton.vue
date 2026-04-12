@@ -1,19 +1,19 @@
 <template>
   <button 
-    :class="['base-button', variant, { 'icon-only': isIconOnly }]" 
-    :type="type"
-    :disabled="disabled"
+    class="base-button" 
+    :class="[variant, { 'is-icon-only': isIconOnly }]"
+    v-bind="$attrs"
   >
-    <slot name="icon"></slot>
-    <span v-if="$slots.default && !isIconOnly"><slot></slot></span>
+    <span v-if="$slots.icon" class="button-icon">
+      <slot name="icon"></slot>
+    </span>
+    <slot></slot>
   </button>
 </template>
 
 <script setup>
 defineProps({
-  type: { type: String, default: 'button' },
-  variant: { type: String, default: 'primary' }, // primary, secondary, add, edit, danger, logout
-  disabled: { type: Boolean, default: false },
+  variant: { type: String, default: 'primary' }, // primary, add, danger, edit
   isIconOnly: { type: Boolean, default: false }
 })
 </script>
@@ -23,51 +23,43 @@ defineProps({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
-  font-size: 0.9rem;
-  line-height: 1.25rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
-/* Dokonalý čtverec pro samostatné ikonky */
-.icon-only {
-  padding: 0.5rem;
-  width: 36px;
-  height: 36px;
+.base-button:active { transform: scale(0.98); }
+
+/* VARIANTY */
+.primary { background-color: var(--primary); color: #1e293b; }
+.primary:hover { background-color: var(--primary-hover); }
+
+.add { background-color: #3b82f6; color: white; }
+.add:hover { background-color: #2563eb; }
+
+.danger { background-color: #ef4444; color: white; }
+.danger:hover { background-color: #dc2626; }
+
+.edit { background-color: #64748b; color: white; }
+.edit:hover { background-color: #475569; }
+
+/* IKONKY */
+.button-icon {
+  display: flex;
+  align-items: center;
+}
+.base-button:not(.is-icon-only) .button-icon {
+  margin-right: 0.5rem;
+}
+
+.is-icon-only {
+  padding: 0.7rem;
   border-radius: 8px;
-}
-
-/* Barevné varianty */
-.primary { background: var(--primary); color: white; }
-.primary:hover { background: var(--primary-hover); }
-
-.secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-.secondary:hover { background: #e2e8f0; color: #0f172a; }
-
-.add { background: var(--color-add); color: white; }
-.add:hover { filter: brightness(1.1); }
-
-.edit { background: var(--color-edit); color: white; }
-.edit:hover { filter: brightness(1.1); }
-
-.danger { background: var(--color-delete); color: white; }
-.danger:hover { filter: brightness(1.1); }
-
-.logout { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
-.logout:hover { background: rgba(255,255,255,0.1); }
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Pokud je uvnitř svg ikona, ať se nekrčí */
-:deep(svg) {
-  flex-shrink: 0;
 }
 </style>

@@ -39,6 +39,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/profile', 
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('../views/AdminView.vue'),
@@ -47,25 +53,42 @@ const router = createRouter({
   ]
 })
 
-// Moderní ochrana rout (Vue Router 4) - bez použití zastaralého next()
+// Globální háček před každou změnou stránky
 router.beforeEach((to, from) => {
+  // 1. DYNAMICKÁ ZMĚNA TITULKU STRÁNKY
+  const titleMap = {
+    'dashboard': 'Nástěnka',
+    'beers': 'Katalog piv',
+    'breweries': 'Pivovary',
+    'locations': 'Podniky',
+    'profile': 'Můj profil',
+    'admin': 'Administrace',
+    'login': 'Přihlášení',
+    'register': 'Registrace'
+  }
+
+  // Nastavení titulku: buď z mapy výše, nebo základní název
+  const pageTitle = titleMap[to.name] || 'Tvůj pivní deníček'
+  document.title = `Pivoo.cz | ${pageTitle}`
+
+
+  // 2. BEZPEČNOSTNÍ LOGIKA (AUTH A ROLE)
   const authStore = useAuthStore()
-  const isAuthenticated = !!authStore.user
+  const isAuthenticated = !!authStore.token // Kontrolujeme přítomnost tokenu
   const isAdmin = authStore.user?.role === 'admin'
 
-  // Pokud stránka vyžaduje přihlášení a uživatel není přihlášen, vrať ho na login
+  // Pokud stránka vyžaduje přihlášení a uživatel není přihlášen, šup na login
   if (to.meta.requiresAuth && !isAuthenticated) {
     return { path: '/' }
   } 
-  // Pokud stránka vyžaduje admina a uživatel není admin, vrať ho na dashboard
+  // Pokud stránka vyžaduje admina a uživatel jím není, šup na dashboard
   else if (to.meta.requiresAdmin && !isAdmin) {
     return { path: '/dashboard' }
   } 
-  // Pokud je uživatel přihlášený a snaží se jít na login/registraci, pošli ho na nástěnku
+  // Pokud uživatel je přihlášen a leze na login/registraci, hodíme ho na dashboard
   else if ((to.name === 'login' || to.name === 'register') && isAuthenticated) {
     return { path: '/dashboard' }
   } 
-  // Ve všech ostatních případech nech uživatele projít
   
   return true
 })

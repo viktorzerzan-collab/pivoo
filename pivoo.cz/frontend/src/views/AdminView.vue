@@ -1,182 +1,92 @@
 <template>
   <div class="admin-page">
     <div class="admin-header">
-      <h2 class="section-title">Centrální administrace</h2>
-      <p class="auth-subtitle">Správa uživatelů, piv, pivovarů, podniků a stylů.</p>
+      <h2 class="section-title">Administrace</h2>
+      <nav class="admin-tabs">
+        <button v-for="t in tabs" :key="t.id" @click="activeTab = t.id" :class="{ active: activeTab === t.id }">
+          {{ t.label }}
+        </button>
+      </nav>
     </div>
 
-    <div class="admin-tabs">
-      <button @click="activeTab = 'users'" :class="{ active: activeTab === 'users' }">
-        <UsersIcon :size="18" /> Uživatelé
-      </button>
-      <button @click="activeTab = 'beers'" :class="{ active: activeTab === 'beers' }">
-        <BeerIcon :size="18" /> Piva
-      </button>
-      <button @click="activeTab = 'breweries'" :class="{ active: activeTab === 'breweries' }">
-        <FactoryIcon :size="18" /> Pivovary
-      </button>
-      <button @click="activeTab = 'locations'" :class="{ active: activeTab === 'locations' }">
-        <MapIcon :size="18" /> Podniky
-      </button>
-      <button @click="activeTab = 'styles'" :class="{ active: activeTab === 'styles' }">
-        <PaletteIcon :size="18" /> Styly
-      </button>
-    </div>
+    <div class="admin-layout">
+      <BaseLoader :show="isLoading || isUsersLoading" message="Načítám správu..." />
 
-    <div v-if="isLoading || isUsersLoading" class="loading-state">Načítám data... ⏳</div>
-
-    <div v-else class="admin-content">
-      
-      <section v-if="activeTab === 'users'" class="admin-section">
-        <div class="section-header"><h3>Registrovaní pivaři</h3></div>
-        <div class="admin-table-wrapper">
-          <table class="admin-table">
-            <thead><tr><th>Uživatel</th><th>Role</th><th style="width: 80px;">Akce</th></tr></thead>
-            <tbody>
-              <tr v-for="u in allUsers" :key="u.id">
-                <td><strong>{{ u.username }}</strong><br><small>{{ u.email }}</small></td>
-                <td><span class="badge" :class="u.role">{{ u.role }}</span></td>
-                <td>
-                  <div class="action-buttons" v-if="u.id !== user.id">
-                    <BaseButton variant="danger" isIconOnly @click="confirmDelete(u.id, 'user')">
-                      <template #icon><UserMinusIcon :size="18" /></template>
-                    </BaseButton>
-                  </div>
-                  <span v-else style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">To jsi ty</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section v-if="activeTab === 'beers'" class="admin-section">
+      <div class="admin-section">
         <div class="section-header">
-          <h3>Katalog piv</h3>
-          <BaseButton variant="add" @click="openAddModal('beer')"><template #icon><PlusIcon :size="18" /></template>Přidat pivo</BaseButton>
+          <h3>{{ tabs.find(t => t.id === activeTab).label }}</h3>
+          <button v-if="activeTab !== 'users'" class="btn-add" @click="openAddModal(activeTab)">
+            <PlusIcon /> Přidat {{ currentLabelSingle }}
+          </button>
         </div>
-        <div class="admin-table-wrapper">
-          <table class="admin-table">
-            <thead><tr><th>Název</th><th>Pivovar</th><th>Styl</th><th style="width: 100px;">Akce</th></tr></thead>
-            <tbody>
-              <tr v-for="beer in beers" :key="beer.id">
-                <td><strong>{{ beer.name }}</strong></td>
-                <td>{{ beer.brewery_name }}</td>
-                <td>{{ beer.style }}</td>
-                <td>
-                  <div class="action-buttons">
-                    <BaseButton variant="edit" isIconOnly @click="openEditModal(beer, 'beer')"><template #icon><PencilIcon :size="18" /></template></BaseButton>
-                    <BaseButton variant="danger" isIconOnly @click="confirmDelete(beer.id, 'beer')"><template #icon><Trash2Icon :size="18" /></template></BaseButton>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
 
-      <section v-if="activeTab === 'breweries'" class="admin-section">
-        <div class="section-header">
-          <h3>Pivovary</h3>
-          <BaseButton variant="add" @click="openAddModal('brewery')"><template #icon><PlusIcon :size="18" /></template> Přidat pivovar</BaseButton>
-        </div>
         <div class="admin-table-wrapper">
           <table class="admin-table">
-            <thead><tr><th>Název</th><th>Město</th><th style="width: 100px;">Akce</th></tr></thead>
+            <thead>
+              <tr v-if="activeTab === 'users'"><th>Uživatel</th><th>Role</th><th class="w-100">Akce</th></tr>
+              <tr v-else><th>Název</th><th v-if="activeTab !== 'styles'">Info</th><th class="w-100">Akce</th></tr>
+            </thead>
             <tbody>
-              <tr v-for="brew in breweries" :key="brew.id">
-                <td><strong>{{ brew.name }}</strong></td>
-                <td>{{ brew.city || '-' }}</td>
-                <td>
-                  <div class="action-buttons">
-                    <BaseButton variant="edit" isIconOnly @click="openEditModal(brew, 'brewery')"><template #icon><PencilIcon :size="18" /></template></BaseButton>
-                    <BaseButton variant="danger" isIconOnly @click="confirmDelete(brew.id, 'brewery')"><template #icon><Trash2Icon :size="18" /></template></BaseButton>
-                  </div>
-                </td>
-              </tr>
+              <template v-if="activeTab === 'users'">
+                <tr v-for="u in allUsers" :key="u.id">
+                  <td><strong>{{ u.username }}</strong><br><small>{{ u.email }}</small></td>
+                  <td><span class="badge" :class="u.role">{{ u.role }}</span></td>
+                  <td>
+                    <button v-if="u.id !== user.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, 'user')">
+                      <UserMinusIcon />
+                    </button>
+                  </td>
+                </tr>
+              </template>
+              <template v-else>
+                <tr v-for="item in currentItems" :key="item.id">
+                  <td><strong>{{ item.name }}</strong></td>
+                  <td v-if="activeTab === 'beers'"><small>{{ item.brewery_name }}</small></td>
+                  <td v-if="['breweries', 'locations'].includes(activeTab)">{{ item.city || '-' }}</td>
+                  <td>
+                    <div class="action-buttons">
+                      <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
+                        <PencilIcon />
+                      </button>
+                      <button class="btn-danger is-icon-only" @click="confirmDelete(item.id, activeTab)">
+                        <Trash2Icon />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section v-if="activeTab === 'locations'" class="admin-section">
-        <div class="section-header">
-          <h3>Hospody a místa</h3>
-          <BaseButton variant="add" @click="openAddModal('location')"><template #icon><PlusIcon :size="18" /></template>Nové místo</BaseButton>
-        </div>
-        <div class="admin-table-wrapper">
-          <table class="admin-table">
-            <thead><tr><th>Název</th><th>Typ</th><th>Město</th><th style="width: 100px;">Akce</th></tr></thead>
-            <tbody>
-              <tr v-for="loc in locations" :key="loc.id">
-                <td><strong>{{ loc.name }}</strong></td>
-                <td><span class="badge" :class="loc.type === 'hospoda' ? 'user' : 'admin'">{{ loc.type === 'hospoda' ? 'Veřejné' : 'Soukromé' }}</span></td>
-                <td>{{ loc.city || '-' }}</td>
-                <td>
-                  <div class="action-buttons">
-                    <BaseButton variant="edit" isIconOnly @click="openEditModal(loc, 'location')"><template #icon><PencilIcon :size="18" /></template></BaseButton>
-                    <BaseButton variant="danger" isIconOnly @click="confirmDelete(loc.id, 'location')"><template #icon><Trash2Icon :size="18" /></template></BaseButton>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section v-if="activeTab === 'styles'" class="admin-section">
-        <div class="section-header">
-          <h3>Pivní styly</h3>
-          <BaseButton variant="add" @click="openAddModal('style')"><template #icon><PlusIcon :size="18" /></template> Nový styl</BaseButton>
-        </div>
-        <div class="admin-table-wrapper">
-          <table class="admin-table">
-            <thead><tr><th>Název stylu</th><th style="width: 100px;">Akce</th></tr></thead>
-            <tbody>
-              <tr v-for="style in styles" :key="style.id">
-                <td><strong>{{ style.name }}</strong></td>
-                <td>
-                  <div class="action-buttons">
-                    <BaseButton variant="edit" isIconOnly @click="openEditModal(style, 'style')"><template #icon><PencilIcon :size="18" /></template></BaseButton>
-                    <BaseButton variant="danger" isIconOnly @click="confirmDelete(style.id, 'style')"><template #icon><Trash2Icon :size="18" /></template></BaseButton>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      </div>
     </div>
 
     <DeleteConfirmModal :show="deleteModal.show" @close="deleteModal.show = false" @confirm="handleDelete" />
-    
     <AddBeerModal :show="modals.beer" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
     <AddBreweryModal :show="modals.brewery" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
     <AddLocationModal :show="modals.location" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
-    
     <BaseModal :show="modals.style" @close="modals.style = false">
-      <template #header><h2>{{ isEditing ? 'Upravit' : 'Nový' }} styl</h2></template>
+      <template #header><h2>{{ isEditing ? 'Upravit' : 'Přidat' }} styl</h2></template>
       <template #body>
-        <form @submit.prevent="submitForm('style')" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <form @submit.prevent="submitForm('style')" style="display:flex; flex-direction:column; gap:1.5rem">
           <BaseInput v-model="formData.style.name" label="Název stylu *" required />
-          <BaseButton type="submit" variant="add"><template #icon><SaveIcon :size="18" /></template>Uložit</BaseButton>
+          <button type="submit" class="btn-add"><SaveIcon /> Uložit styl</button>
         </form>
       </template>
     </BaseModal>
-
-    <transition name="toast-fade"><div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div></transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { UsersIcon, BeerIcon, FactoryIcon, MapIcon, PaletteIcon, PlusIcon, PencilIcon, Trash2Icon, UserMinusIcon, SaveIcon } from 'lucide-vue-next'
+import { PlusIcon, PencilIcon, Trash2Icon, UserMinusIcon, SaveIcon } from 'lucide-vue-next'
+import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
-import BaseButton from '../components/BaseButton.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
+import BaseLoader from '../components/BaseLoader.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -185,9 +95,13 @@ import AddLocationModal from '../components/modals/AddLocationModal.vue'
 const authStore = useAuthStore(); const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore); const { beers, breweries, locations, styles, isLoading } = storeToRefs(catalogStore)
 
-const activeTab = ref('locations'); const allUsers = ref([]); const isUsersLoading = ref(false)
-const toast = ref({ show: false, message: '', type: 'toast-success' }); const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false }); const isEditing = ref(false)
+const activeTab = ref('users'); const allUsers = ref([]); const isUsersLoading = ref(false)
+const deleteModal = ref({ show: false, id: null, type: '' }); const isEditing = ref(false)
+const modals = ref({ beer: false, brewery: false, location: false, style: false })
+const tabs = [{id:'users', label:'Uživatelé'}, {id:'beers', label:'Piva'}, {id:'breweries', label:'Pivovary'}, {id:'locations', label:'Podniky'}, {id:'styles', label:'Styly'}]
+
+const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl' }[activeTab.value]))
+const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value }[activeTab.value] || []))
 
 const formData = ref({
   beer: { id: null, name: '', brewery_id: '', style: '', epm: '', abv: '' },
@@ -196,57 +110,51 @@ const formData = ref({
   style: { id: null, name: '' }
 })
 
-const showToast = (message, type = 'toast-success') => { toast.value = { show: true, message, type }; setTimeout(() => { toast.value.show = false }, 3000) }
-
 const fetchUsers = async () => {
-    isUsersLoading.value = true; try {
-        const res = await fetch('https://www.pivoo.cz/backend/api/users.php', { headers: { 'Authorization': `Bearer ${authStore.token}` } })
-        const result = await res.json(); if (result.status === 'success') allUsers.value = result.data
-    } catch (e) { showToast('Chyba uživatelů.', 'toast-error') } finally { isUsersLoading.value = false }
+  isUsersLoading.value = true
+  try { const res = await apiFetch('/users.php'); if(res.status==='success') allUsers.value = res.data } finally { isUsersLoading.value = false }
 }
 
-onMounted(() => { if (user.value) { catalogStore.fetchAllData(user.value.id); fetchUsers() } })
+onMounted(() => { catalogStore.fetchAllData(); fetchUsers() })
 
-const openAddModal = (type) => {
-  isEditing.value = false
-  Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  modals.value[type] = true
+const openAddModal = (t) => { 
+  isEditing.value = false; Object.keys(modals.value).forEach(m => modals.value[m] = false)
+  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'style'))
+  modals.value[key] = true 
 }
 
-const openEditModal = (item, type) => {
-  isEditing.value = true
-  formData.value[type] = { ...item }
-  modals.value[type] = true
+const openEditModal = (item, t) => { 
+  isEditing.value = true; 
+  const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'brewery'))
+  formData.value[key] = {...item}; modals.value[key] = true 
 }
 
-const submitForm = async (type) => {
-  const data = formData.value[type]
-  let endpoint = `add_${type}.php`
-  if (isEditing.value) endpoint = `update_${type}.php`
-
-  try {
-    const res = await fetch(`https://www.pivoo.cz/backend/api/${endpoint}`, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authStore.token}` }, 
-      body: JSON.stringify(data) 
-    })
-    const result = await res.json()
-    if (result.status === 'success') { showToast(result.message); modals.value[type] = false; await catalogStore.fetchAllData(user.value.id) }
-    else { showToast(result.message, 'toast-error') }
-  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
+const submitForm = async (t) => {
+  try { 
+    const res = await apiFetch(`/${isEditing.value?'update':'add'}_${t}.php`, { method:'POST', body: formData.value[t] })
+    if(res.status==='success') { modals.value[t] = false; catalogStore.fetchAllData() }
+  } catch(e) { console.error(e) }
 }
 
-const confirmDelete = (id, type) => { deleteModal.value = { show: true, id, type } }
+const confirmDelete = (id, t) => { deleteModal.value = { show: true, id, type: t === 'user' ? 'user' : t.slice(0,-1) } }
 const handleDelete = async () => {
-  const { id, type } = deleteModal.value; let endpoint = `delete_${type}.php`
-  try {
-    const res = await fetch(`https://www.pivoo.cz/backend/api/${endpoint}`, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authStore.token}` }, 
-      body: JSON.stringify({ id }) 
-    })
-    const result = await res.json()
-    if (result.status === 'success') { showToast(result.message); if (type === 'user') await fetchUsers(); else await catalogStore.fetchAllData(user.value.id) }
+  try { await apiFetch(`/delete_${deleteModal.value.type}.php`, { method:'POST', body: { id: deleteModal.value.id } })
+    deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
   } finally { deleteModal.value.show = false }
 }
 </script>
+
+<style scoped>
+.admin-page { flex: 1; display: flex; flex-direction: column; }
+.admin-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem; overflow-x: auto; }
+.admin-tabs button { padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); cursor: pointer; font-weight: 600; border-radius: 8px; box-shadow: none; }
+.admin-tabs button.active { background: var(--primary); color: #1e293b; }
+.admin-layout { position: relative; min-height: 400px; }
+.admin-section { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
+.admin-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.action-buttons { display: flex; gap: 0.5rem; }
+.w-100 { width: 100px; }
+</style>

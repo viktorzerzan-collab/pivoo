@@ -2,7 +2,9 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
-import './assets/styles.css' // <--- TATO ŘÁDKA PŘIBYLA
+
+// OSTRANĚNO: import './assets/styles.css' 
+// Veškeré globální styly a resety teď máme pod kontrolou v App.vue
 
 const app = createApp(App)
 const pinia = createPinia()

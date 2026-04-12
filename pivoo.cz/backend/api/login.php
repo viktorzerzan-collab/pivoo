@@ -1,10 +1,10 @@
 <?php
+// backend/api/login.php
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-// Změna: Povolujeme přijímat a odesílat Authorization hlavičku
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../Database.php';
-require_once '../JwtHandler.php'; // Načteme naši novou třídu
+require_once '../JwtHandler.php';
 
 try {
     $database = new Database();
@@ -30,7 +30,8 @@ try {
     $username = trim($data->username);
     $password = $data->password;
 
-    $query = "SELECT id, username, first_name, last_name, password_hash, role FROM users WHERE username = ? OR email = ? LIMIT 1";
+    // PŘIDÁNO: Načítáme i sloupec `avatar`
+    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $db->prepare($query);
     $stmt->execute([$username, $username]);
     $user = $stmt->fetch();
@@ -41,10 +42,10 @@ try {
             "username" => $user['username'],
             "first_name" => $user['first_name'],
             "last_name" => $user['last_name'],
-            "role" => $user['role']
+            "role" => $user['role'],
+            "avatar" => $user['avatar'] // Odesíláme avatar do Vue
         ];
 
-        // Vygenerujeme token s údaji o uživateli
         $token = JwtHandler::encode([
             "user_id" => $user['id'],
             "role" => $user['role']
@@ -54,16 +55,12 @@ try {
             "status" => "success",
             "message" => "Přihlášení úspěšné.",
             "user" => $userData,
-            "token" => $token // Odesíláme token na frontend!
+            "token" => $token
         ]);
     } else {
         echo json_encode(["status" => "error", "message" => "Neplatné přihlašovací údaje."]);
     }
-
 } catch (Throwable $e) {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Chyba serveru: " . $e->getMessage()
-    ]);
+    echo json_encode(["status" => "error", "message" => "Chyba serveru: " . $e->getMessage()]);
 }
 ?>

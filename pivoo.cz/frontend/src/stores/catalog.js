@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { apiFetch } from '../api' // Importujeme naši novou funkci
 
 export const useCatalogStore = defineStore('catalog', () => {
   const beers = ref([])
@@ -10,34 +11,20 @@ export const useCatalogStore = defineStore('catalog', () => {
   const history = ref([])
   const isLoading = ref(true)
 
-  // ZMĚNA: Funkce už nepotřebuje přijímat userId jako parametr
   const fetchAllData = async () => {
     isLoading.value = true
     try {
       const ts = new Date().getTime()
       
-      // Získáme uložený token z prohlížeče
-      const token = localStorage.getItem('pivoo_token')
-      
-      // Připravíme si hlavičku pro všechny GET požadavky
-      const headers = { 'Authorization': `Bearer ${token}` }
-
-      const [resBeers, resLocs, resBrews, resStyles, resStats, resHist] = await Promise.all([
-        fetch(`https://www.pivoo.cz/backend/api/beers.php?t=${ts}`, { headers }),
-        fetch(`https://www.pivoo.cz/backend/api/locations.php?t=${ts}`, { headers }),
-        fetch(`https://www.pivoo.cz/backend/api/breweries.php?t=${ts}`, { headers }),
-        fetch(`https://www.pivoo.cz/backend/api/styles.php?t=${ts}`, { headers }),
-        // ZMĚNA: Z URL úplně mizí user_id! Backend si ho pozná z hlavičky (tokenu)
-        fetch(`https://www.pivoo.cz/backend/api/stats.php?t=${ts}`, { headers }),
-        fetch(`https://www.pivoo.cz/backend/api/history.php?t=${ts}`, { headers })
+      // Voláme API elegantně a krátce
+      const [dataBeers, dataLocs, dataBrews, dataStyles, dataStats, dataHist] = await Promise.all([
+        apiFetch(`/beers.php?t=${ts}`),
+        apiFetch(`/locations.php?t=${ts}`),
+        apiFetch(`/breweries.php?t=${ts}`),
+        apiFetch(`/styles.php?t=${ts}`),
+        apiFetch(`/stats.php?t=${ts}`),
+        apiFetch(`/history.php?t=${ts}`)
       ])
-
-      const dataBeers = await resBeers.json()
-      const dataLocs = await resLocs.json()
-      const dataBrews = await resBrews.json()
-      const dataStyles = await resStyles.json()
-      const dataStats = await resStats.json()
-      const dataHist = await resHist.json()
 
       if (dataBeers.status === 'success') beers.value = dataBeers.data
       if (dataLocs.status === 'success') locations.value = dataLocs.data
@@ -47,7 +34,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       if (dataHist.status === 'success') history.value = dataHist.data
 
     } catch (error) {
-      console.error("Chyba při stahování dat ze serveru:", error)
+      console.error("Chyba při stahování dat:", error)
     } finally {
       isLoading.value = false
     }

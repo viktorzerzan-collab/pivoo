@@ -3,7 +3,11 @@
 # ========================
 backend/config.php
 
-# (Zde si časem můžete přidat další věci z backendu, např. složku vendor, pokud začnete používat Composer)
+# Ignorování složky pro nahrávání souborů (uživatelská data nepatří do Gitu)
+backend/uploads/
+
+# Ignorování závislostí Composeru
+backend/vendor/
 
 # ========================
 # FRONTEND A OBECNÉ

@@ -12,6 +12,11 @@
       </div>
 
       <form @submit.prevent="handleRegister" class="auth-form">
+        
+        <div class="avatar-upload-row">
+          <BaseFileUpload v-model:file="avatarFile" label="Profilová fotka (Volitelné)" />
+        </div>
+
         <div class="form-row">
           <BaseInput v-model="form.first_name" label="Křestní jméno" placeholder="Jan" required />
           <BaseInput v-model="form.last_name" label="Příjmení" placeholder="Novák" required />
@@ -27,9 +32,7 @@
         </div>
 
         <BaseButton type="submit" variant="primary" style="margin-top: 1rem; width: 100%;" :disabled="isLoading">
-          <template #icon>
-            <UserPlusIcon :size="18" />
-          </template>
+          <template #icon><UserPlusIcon :size="18" /></template>
           {{ isLoading ? 'Zpracovávám...' : 'Vytvořit účet' }}
         </BaseButton>
 
@@ -48,19 +51,16 @@ import { UserPlusIcon } from 'lucide-vue-next'
 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
+import BaseFileUpload from '../components/BaseFileUpload.vue'
 
 const router = useRouter()
 const isLoading = ref(false)
 const errorMessage = ref('')
 
+const avatarFile = ref(null)
 const form = ref({
-  first_name: '', 
-  last_name: '', 
-  username: '', 
-  email: '',
-  birthdate: '', 
-  password: '', 
-  password_confirm: ''
+  first_name: '', last_name: '', username: '', 
+  email: '', birthdate: '', password: '', password_confirm: ''
 })
 
 const handleRegister = async () => {
@@ -69,18 +69,21 @@ const handleRegister = async () => {
     return
   }
   
-  isLoading.value = true
-  errorMessage.value = ''
+  isLoading.value = true; errorMessage.value = ''
   
+  // ZMĚNA: Odesíláme jako FormData kvůli souboru
+  const formData = new FormData()
+  Object.keys(form.value).forEach(key => formData.append(key, form.value[key]))
+  if (avatarFile.value) {
+    formData.append('avatar', avatarFile.value)
+  }
+
   try {
     const response = await fetch('https://www.pivoo.cz/backend/api/register.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
+      body: formData // Zde chybí hlavičky záměrně! Prohlížeč si nastaví multipart/form-data sám.
     })
-    
     const result = await response.json()
-    
     if (result.status === 'success') {
       router.push('/')
     } else {
@@ -95,102 +98,22 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.auth-wrapper {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--bg-app);
-  padding: 1rem;
-}
+.auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: var(--bg-app); padding: 1rem; }
+.auth-card { background: var(--bg-panel); padding: 3rem 2.5rem; border-radius: 16px; box-shadow: var(--shadow-md); width: 100%; max-width: 550px; text-align: center; border: 1px solid var(--border); }
+.logo-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.logo-text { font-size: 2.25rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.025em; margin: 0; }
+.auth-subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; margin-top: 0.25rem; }
+.auth-form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
+.form-row { display: flex; gap: 1rem; }
+.form-row > * { flex: 1; }
+.avatar-upload-row { margin-bottom: 0.5rem; }
+.auth-error-banner { background-color: #fee2e2; color: #ef4444; padding: 0.75rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; border: 1px solid #fca5a5; font-weight: 600; }
+.auth-footer-link { margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; }
+.auth-footer-link a { color: var(--primary-hover); text-decoration: none; font-weight: 700; transition: color 0.2s; }
+.auth-footer-link a:hover { color: var(--primary); text-decoration: underline; }
 
-.auth-card {
-  background: var(--bg-panel);
-  padding: 3rem 2.5rem;
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-  width: 100%;
-  max-width: 550px; /* Širší než login, aby se vešly 2 sloupce vedle sebe */
-  text-align: center;
-  border: 1px solid var(--border);
-}
-
-.logo-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.logo-text {
-  font-size: 2.25rem;
-  font-weight: 800;
-  color: var(--text-main);
-  letter-spacing: -0.025em;
-  margin: 0;
-}
-
-.auth-subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 2rem;
-  margin-top: 0.25rem;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  text-align: left;
-}
-
-.form-row {
-  display: flex;
-  gap: 1rem;
-}
-
-.form-row > * {
-  flex: 1;
-}
-
-.auth-error-banner {
-  background-color: #fee2e2;
-  color: #ef4444;
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-  border: 1px solid #fca5a5;
-  font-weight: 600;
-}
-
-.auth-footer-link {
-  margin-top: 1.5rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-}
-
-.auth-footer-link a {
-  color: var(--primary-hover);
-  text-decoration: none;
-  font-weight: 700;
-  transition: color 0.2s;
-}
-
-.auth-footer-link a:hover {
-  color: var(--primary);
-  text-decoration: underline;
-}
-
-/* Na mobilech se dva sloupce zalomí pod sebe */
 @media (max-width: 600px) {
-  .form-row {
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-  .auth-card {
-    padding: 2rem 1.5rem;
-  }
+  .form-row { flex-direction: column; gap: 1.25rem; }
+  .auth-card { padding: 2rem 1.5rem; }
 }
 </style>

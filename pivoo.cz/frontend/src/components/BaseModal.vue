@@ -1,88 +1,72 @@
 <template>
-  <div v-if="show" class="modal-backdrop" @click.self="closeModal">
-    <div class="modal-card">
-      <button class="close-btn" @click="closeModal" title="Zavřít">×</button>
-      <div class="modal-header">
-        <slot name="header"></slot> 
-      </div>
-      <div class="modal-body">
-        <slot name="body"></slot>
+  <transition name="modal-fade">
+    <div v-if="show" class="modal-overlay" @click.self="$emit('close')">
+      <div class="modal-container">
+        <header class="modal-header">
+          <slot name="header"></slot>
+          <button class="btn-close" @click="$emit('close')" aria-label="Zavřít">
+            <XIcon :size="24" />
+          </button>
+        </header>
+        
+        <div class="modal-body">
+          <slot name="body"></slot>
+        </div>
       </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script setup>
-defineProps({
-  show: Boolean
-})
-
-const emit = defineEmits(['close'])
-
-const closeModal = () => {
-  emit('close')
-}
+import { XIcon } from 'lucide-vue-next'
+defineProps({ show: Boolean })
+defineEmits(['close'])
 </script>
 
 <style scoped>
-.modal-backdrop {
+.modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
-  padding: 1rem; /* Aby modál na mobilu nebyl nalepený úplně na kraj displeje */
-  box-sizing: border-box;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1.5rem;
 }
 
-.modal-card {
+.modal-container {
   background: white;
   width: 100%;
   max-width: 500px;
-  border-radius: 12px;
-  padding: 2.5rem 2rem;
-  position: relative;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  max-height: 95vh; /* Aby nepřetekl z obrazovky, když je dlouhý */
-  overflow-y: auto; /* Pokud se nevejde, půjde scrollovat uvnitř okna */
-}
-
-.close-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1.5rem;
-  background: transparent;
-  border: none;
-  font-size: 2.5rem;
-  color: #9ca3af;
-  cursor: pointer;
-  transition: color 0.2s;
-  line-height: 1;
-}
-
-.close-btn:hover {
-  color: #ef4444;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-header {
-  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-/* RESPONZIVNÍ DESIGN PRO MOBILY (Max šířka 600px) */
-@media (max-width: 600px) {
-  .modal-card {
-    padding: 1.5rem 1rem; /* Zmenšíme vnitřní okraje na mobilu */
-  }
-  
-  .close-btn {
-    top: 0.5rem;
-    right: 1rem;
-  }
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1e293b;
 }
+
+.modal-body {
+  padding: 1.5rem;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.3s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; transform: scale(0.95); }
 </style>
