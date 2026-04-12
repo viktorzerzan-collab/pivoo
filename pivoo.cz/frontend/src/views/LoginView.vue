@@ -70,7 +70,8 @@ const handleLogin = async () => {
     })
     const result = await response.json()
     if (result.status === 'success') {
-      authStore.login(result.user)
+      // ZMĚNA ZDE: Posíláme i token
+      authStore.login(result.user, result.token)
       router.push('/dashboard')
     } else {
       errorMessage.value = result.message || 'Přihlášení se nezdařilo.'
@@ -96,7 +97,7 @@ const handleLogin = async () => {
 .auth-card {
   background: var(--bg-panel);
   padding: 3rem 2.5rem;
-  border-radius: 16px; /* Modernější zaoblení */
+  border-radius: 16px;
   box-shadow: var(--shadow-md);
   width: 100%;
   max-width: 420px;

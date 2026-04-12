@@ -148,8 +148,20 @@ const openBeerDetail = async (beer) => {
 const submitNewBeer = async () => {
   if (!isAdmin.value) return
   try {
-    const res = await fetch('https://www.pivoo.cz/backend/api/add_beer.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newBeerForm.value) })
-    if (res.ok) { isAddBeerModalOpen.value = false; newBeerForm.value = { name: '', brewery_id: '', style: '', epm: '', abv: '' }; await catalogStore.fetchAllData(user.value.id); showToast("Pivo přidáno do katalogu") }
+    const res = await fetch('https://www.pivoo.cz/backend/api/add_beer.php', { 
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}` // OPRAVA: Přidán autorizační token
+      }, 
+      body: JSON.stringify(newBeerForm.value) 
+    })
+    if (res.ok) { 
+      isAddBeerModalOpen.value = false; 
+      newBeerForm.value = { name: '', brewery_id: '', style: '', epm: '', abv: '' }; 
+      await catalogStore.fetchAllData(user.value.id); 
+      showToast("Pivo přidáno do katalogu") 
+    }
   } catch (error) { showToast('Chyba připojení.', "toast-error") }
 }
 

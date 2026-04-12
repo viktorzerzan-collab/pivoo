@@ -2,7 +2,7 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -10,20 +10,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// UZAMČENÍ ENDPOINTU!
+JwtHandler::checkAdmin();
 
 $database = new Database();
 $db = $database->getConnection();
 $data = json_decode(file_get_contents("php://input"));
 
-// U piva potřebujeme název, pivovar a styl
 if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style)) {
     try {
-        // Přidán sloupec is_approved s hodnotou 1
         $query = "INSERT INTO beers (name, brewery_id, style, epm, abv, is_approved) 
                   VALUES (?, ?, ?, ?, ?, 1)";
         $stmt = $db->prepare($query);
         
-        // EPM a ABV mohou být prázdné
         $epm = ($data->epm !== '') ? $data->epm : null;
         $abv = ($data->abv !== '') ? $data->abv : null;
 

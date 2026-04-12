@@ -2,20 +2,21 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit(); }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// UZAMČENÍ: Provede kontrolu, jestli je uživatel alespoň přihlášený
+$user = JwtHandler::checkUser();
 
 $database = new Database();
 $db = $database->getConnection();
 $data = json_decode(file_get_contents("php://input"));
 
-if (!empty($data->user_id) && !empty($data->beer_id) && !empty($data->location_id)) {
+if (!empty($data->beer_id) && !empty($data->location_id)) {
     try {
         $query = "INSERT INTO consumptions (user_id, beer_id, location_id, volume, quantity, price, rating_beer, rating_care, note, packaging) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -31,7 +32,7 @@ if (!empty($data->user_id) && !empty($data->beer_id) && !empty($data->location_i
         $packaging = !empty($data->packaging) ? $data->packaging : 'točené';
 
         if ($stmt->execute([
-            $data->user_id, 
+            $user['user_id'], // TADY: Bezpečnostní pojistka! Vkládáme ID přímo z JWT Tokenu
             $data->beer_id, 
             $data->location_id, 
             $volume, 
@@ -53,6 +54,6 @@ if (!empty($data->user_id) && !empty($data->beer_id) && !empty($data->location_i
     }
 } else {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Chybí data."]);
+    echo json_encode(["status" => "error", "message" => "Chybí data (Pivo nebo Místo)."]);
 }
 ?>

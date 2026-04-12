@@ -44,33 +44,28 @@
 
     <DetailModal :show="isDetailOpen" :item="selectedItem" type="location" @close="isDetailOpen = false" />
 
-    <BaseModal :show="isAddModalOpen" @close="isAddModalOpen = false" customStyle="max-width: 600px;">
-      <template #header><h2>Nový podnik</h2></template>
-      <template #body>
-        <form @submit.prevent="submitLocation" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <BaseInput v-model="form.name" label="Název *" required />
-          <div style="display: flex; gap: 1rem;"><BaseInput v-model="form.address" label="Ulice" style="flex: 2;" /><BaseInput v-model="form.city" label="Město" style="flex: 2;" /></div>
-          <BaseButton type="submit" variant="add" style="width: 100%;"><template #icon><SaveIcon :size="18" /></template>Uložit</BaseButton>
-        </form>
-      </template>
-    </BaseModal>
+    <AddLocationModal 
+      :show="isAddModalOpen" 
+      :form="form" 
+      @close="isAddModalOpen = false" 
+      @submit="submitLocation" 
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, SaveIcon, MapIcon, ArrowDownUpIcon } from 'lucide-vue-next'
+import { PlusIcon, MapIcon, ArrowDownUpIcon } from 'lucide-vue-next'
 
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import BaseButton from '../components/BaseButton.vue'
-import BaseModal from '../components/BaseModal.vue'
-import BaseInput from '../components/BaseInput.vue'
 import FilterInput from '../components/FilterInput.vue'
 import FilterSelect from '../components/FilterSelect.vue'
 import LocationCard from '../components/LocationCard.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
+import AddLocationModal from '../components/modals/AddLocationModal.vue'
 
 const authStore = useAuthStore(); const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore); const { locations, isLoading } = storeToRefs(catalogStore)
@@ -78,7 +73,7 @@ const isAdmin = computed(() => user.value?.role === 'admin')
 
 const toast = ref({ show: false, message: '', type: 'toast-success' }); const searchQuery = ref(''); const sortBy = ref('name')
 const isAddModalOpen = ref(false); const isDetailOpen = ref(false); const selectedItem = ref(null)
-const form = ref({ name: '', type: 'hospoda', city: '', country: 'Česká republika', address: '' })
+const form = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' })
 
 const showToast = (message, type = 'toast-success') => { toast.value = { show: true, message, type }; setTimeout(() => { toast.value.show = false }, 3000) }
 const openDetail = (loc) => { selectedItem.value = loc; isDetailOpen.value = true }
@@ -93,8 +88,17 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData(user.value.id) })
 
 const submitLocation = async () => {
   try {
-    const res = await fetch('https://www.pivoo.cz/backend/api/add_location.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form.value) })
-    if (res.ok) { isAddModalOpen.value = false; await catalogStore.fetchAllData(user.value.id); showToast("Podnik uložen.") }
+    const res = await fetch('https://www.pivoo.cz/backend/api/add_location.php', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authStore.token}` }, 
+      body: JSON.stringify(form.value) 
+    })
+    if (res.ok) { 
+      isAddModalOpen.value = false; 
+      form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' };
+      await catalogStore.fetchAllData(user.value.id); 
+      showToast("Podnik uložen.") 
+    }
   } catch (e) { showToast('Chyba při ukládání.', 'toast-error') }
 }
 </script>

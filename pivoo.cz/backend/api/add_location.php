@@ -10,6 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// ZABEZPEČENÍ!
+JwtHandler::checkAdmin();
 
 $database = new Database();
 $db = $database->getConnection();
@@ -17,7 +21,6 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name) && !empty($data->type)) {
     try {
-        // Vkládáme včetně is_approved = 1
         $query = "INSERT INTO locations (name, type, city, country, address, street_number, zip_code, email, phone, website, opening_hours, is_approved) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         

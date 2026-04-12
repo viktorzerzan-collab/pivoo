@@ -2,32 +2,24 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit(); }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// ZABEZPEČENÍ
+$user = JwtHandler::checkUser();
 
 $database = new Database();
 $db = $database->getConnection();
 $data = json_decode(file_get_contents("php://input"));
 
-// Bezpečnostní kontrola - upravujeme konkrétní záznam (id) konkrétního uživatele (user_id)
-if (!empty($data->id) && !empty($data->user_id)) {
+if (!empty($data->id)) {
     try {
         $query = "UPDATE consumptions 
-                  SET beer_id = ?, 
-                      location_id = ?, 
-                      volume = ?, 
-                      quantity = ?, 
-                      price = ?, 
-                      rating_beer = ?, 
-                      rating_care = ?, 
-                      note = ?, 
-                      packaging = ? 
+                  SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ? 
                   WHERE id = ? AND user_id = ?";
                   
         $stmt = $db->prepare($query);
@@ -43,17 +35,8 @@ if (!empty($data->id) && !empty($data->user_id)) {
         $packaging = !empty($data->packaging) ? $data->packaging : 'točené';
 
         if ($stmt->execute([
-            $beer_id, 
-            $location_id, 
-            $volume, 
-            $quantity, 
-            $price, 
-            $rating_beer, 
-            $rating_care,
-            $note, 
-            $packaging, 
-            $data->id, 
-            $data->user_id
+            $beer_id, $location_id, $volume, $quantity, $price, $rating_beer, $rating_care,
+            $note, $packaging, $data->id, $user['user_id'] // Povoleno upravit POUZE VLASTNÍ záznam (ID z tokenu)
         ])) {
             echo json_encode(["status" => "success", "message" => "Záznam byl úspěšně upraven."]);
         } else {
@@ -66,6 +49,6 @@ if (!empty($data->id) && !empty($data->user_id)) {
     }
 } else {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Chybí ID záznamu nebo ověření uživatele."]);
+    echo json_encode(["status" => "error", "message" => "Chybí ID záznamu."]);
 }
 ?>

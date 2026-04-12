@@ -1,20 +1,26 @@
 <?php
-// backend/api/delete_beer.php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit(); }
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { 
+    http_response_code(200); 
+    exit(); 
+}
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// ZABEZPEČENÍ!
+JwtHandler::checkAdmin();
+
 $db = (new Database())->getConnection();
 $data = json_decode(file_get_contents("php://input"));
 
-// Pouze pro adminy (v ostrém provozu zde musí být kontrola tokenu/session)
 if (!empty($data->id)) {
     try {
-        // Nejprve smažeme záznamy o konzumaci tohoto piva, aby nás nepustila integrita DB (volitelné dle logiky)
+        // Nejprve smažeme záznamy o konzumaci tohoto piva
         $db->prepare("DELETE FROM consumptions WHERE beer_id = ?")->execute([$data->id]);
         
         $query = "DELETE FROM beers WHERE id = ?";

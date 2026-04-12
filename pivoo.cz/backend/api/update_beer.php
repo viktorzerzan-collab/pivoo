@@ -1,25 +1,25 @@
 <?php
-// Povolení přístupu odkudkoliv (CORS)
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// Odchycení "preflight" dotazu od prohlížeče
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// ZABEZPEČENÍ!
+JwtHandler::checkAdmin();
 
 $database = new Database();
 $db = $database->getConnection();
 
-// Načtení dat z těla požadavku
 $data = json_decode(file_get_contents("php://input"));
 
-// Kontrola, zda máme ID piva, které chceme upravit
 if (!empty($data->id) && !empty($data->name)) {
     try {
         $query = "UPDATE beers 
@@ -28,7 +28,6 @@ if (!empty($data->id) && !empty($data->name)) {
                   
         $stmt = $db->prepare($query);
         
-        // Pokud EPM nebo ABV není vyplněno, pošleme do DB raději null než prázdný string
         $epm = ($data->epm !== '') ? $data->epm : null;
         $abv = ($data->abv !== '') ? $data->abv : null;
 

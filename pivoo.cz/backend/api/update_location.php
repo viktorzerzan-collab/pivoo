@@ -10,6 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// ZABEZPEČENÍ!
+JwtHandler::checkAdmin();
 
 $database = new Database();
 $db = $database->getConnection();

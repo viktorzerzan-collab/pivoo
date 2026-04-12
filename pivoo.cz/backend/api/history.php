@@ -2,14 +2,22 @@
 // backend/api/history.php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+// ZMĚNA: Povolujeme Authorization hlavičku
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit(); }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// ZABEZPEČENÍ: Vytáhneme uživatele z tokenu.
+$user = JwtHandler::checkUser();
+$user_id = $user['user_id']; // ID bereme výhradně z tokenu!
 
 $db = (new Database())->getConnection();
-$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 
-if ($db && $user_id) {
-    // Tady je ta hlavní změna: c.* zajistí, že se stáhne úplně vše (ID piva, ID lokace, poznámky, hodnocení...)
+if ($db) {
     $query = "SELECT c.*,
                      b.name as beer_name, l.name as location_name
               FROM consumptions c
@@ -26,6 +34,7 @@ if ($db && $user_id) {
 
     echo json_encode(["status" => "success", "data" => $history]);
 } else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Chybí ID uživatele."]);
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Chyba spojení s DB."]);
 }
+?>

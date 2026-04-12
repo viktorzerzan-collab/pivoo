@@ -53,10 +53,7 @@
       <section v-if="activeTab === 'beers'" class="admin-section">
         <div class="section-header">
           <h3>Katalog piv</h3>
-          <BaseButton variant="add" @click="openAddModal('beer')">
-            <template #icon><PlusIcon :size="18" /></template>
-            Přidat pivo
-          </BaseButton>
+          <BaseButton variant="add" @click="openAddModal('beer')"><template #icon><PlusIcon :size="18" /></template>Přidat pivo</BaseButton>
         </div>
         <div class="admin-table-wrapper">
           <table class="admin-table">
@@ -105,10 +102,7 @@
       <section v-if="activeTab === 'locations'" class="admin-section">
         <div class="section-header">
           <h3>Hospody a místa</h3>
-          <BaseButton variant="add" @click="openAddModal('location')">
-            <template #icon><PlusIcon :size="18" /></template>
-            Nové místo
-          </BaseButton>
+          <BaseButton variant="add" @click="openAddModal('location')"><template #icon><PlusIcon :size="18" /></template>Nové místo</BaseButton>
         </div>
         <div class="admin-table-wrapper">
           <table class="admin-table">
@@ -116,11 +110,7 @@
             <tbody>
               <tr v-for="loc in locations" :key="loc.id">
                 <td><strong>{{ loc.name }}</strong></td>
-                <td>
-                  <span class="badge" :class="loc.type === 'hospoda' ? 'user' : 'admin'">
-                    {{ loc.type === 'hospoda' ? 'Veřejné' : 'Soukromé' }}
-                  </span>
-                </td>
+                <td><span class="badge" :class="loc.type === 'hospoda' ? 'user' : 'admin'">{{ loc.type === 'hospoda' ? 'Veřejné' : 'Soukromé' }}</span></td>
                 <td>{{ loc.city || '-' }}</td>
                 <td>
                   <div class="action-buttons">
@@ -161,45 +151,15 @@
     <DeleteConfirmModal :show="deleteModal.show" @close="deleteModal.show = false" @confirm="handleDelete" />
     
     <AddBeerModal :show="modals.beer" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
+    <AddBreweryModal :show="modals.brewery" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
+    <AddLocationModal :show="modals.location" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
     
-    <BaseModal :show="modals.generic" @close="modals.generic = false" customStyle="max-width: 600px;">
-      <template #header><h2>{{ genericModalTitle }}</h2></template>
+    <BaseModal :show="modals.style" @close="modals.style = false">
+      <template #header><h2>{{ isEditing ? 'Upravit' : 'Nový' }} styl</h2></template>
       <template #body>
-        <form @submit.prevent="submitForm(activeGenericType)" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          
-          <BaseInput v-model="formData.generic.name" label="Název *" required />
-
-          <template v-if="activeGenericType === 'location'">
-            <BaseSelect v-model="formData.generic.type" label="Typ místa *" required>
-              <option value="hospoda">Hospoda / Restaurace (Veřejné)</option>
-              <option value="jinde">Ostatní (Doma, chata, venku...)</option>
-            </BaseSelect>
-          </template>
-
-          <div v-if="activeGenericType === 'brewery' || (activeGenericType === 'location' && formData.generic.type === 'hospoda')" class="conditional-fields">
-            <div style="display: flex; gap: 1rem; margin-top: 1.25rem;">
-              <BaseInput v-model="formData.generic.address" label="Ulice" style="flex: 2;" />
-              <BaseInput v-model="formData.generic.street_number" label="Č. p." style="flex: 1;" />
-            </div>
-            
-            <div style="display: flex; gap: 1rem; margin-top: 1.25rem;">
-              <BaseInput v-model="formData.generic.city" label="Město" style="flex: 2;" />
-              <BaseInput v-model="formData.generic.zip_code" label="PSČ" style="flex: 1;" />
-            </div>
-            
-            <BaseInput v-model="formData.generic.country" label="Země" style="margin-top: 1.25rem;" />
-
-            <BaseInput v-if="activeGenericType === 'location'" v-model="formData.generic.opening_hours" label="Otevírací doba" style="margin-top: 1.25rem;" />
-
-            <div style="display: flex; gap: 1rem; margin-top: 1.25rem;">
-              <BaseInput v-model="formData.generic.email" type="email" label="E-mail" style="flex: 1;" />
-              <BaseInput v-model="formData.generic.phone" label="Telefon" style="flex: 1;" />
-            </div>
-
-            <BaseInput v-model="formData.generic.website" type="url" label="Web" style="margin-top: 1.25rem;" />
-          </div>
-
-          <BaseButton type="submit" variant="add" style="margin-top: 0.5rem;"><template #icon><SaveIcon :size="18" /></template> Uložit</BaseButton>
+        <form @submit.prevent="submitForm('style')" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <BaseInput v-model="formData.style.name" label="Název stylu *" required />
+          <BaseButton type="submit" variant="add"><template #icon><SaveIcon :size="18" /></template>Uložit</BaseButton>
         </form>
       </template>
     </BaseModal>
@@ -209,44 +169,39 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { UsersIcon, BeerIcon, FactoryIcon, MapIcon, PaletteIcon, PlusIcon, PencilIcon, Trash2Icon, UserMinusIcon, SaveIcon } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import BaseButton from '../components/BaseButton.vue'
 import BaseInput from '../components/BaseInput.vue'
-import BaseSelect from '../components/BaseSelect.vue'
 import BaseModal from '../components/BaseModal.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
+import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
+import AddLocationModal from '../components/modals/AddLocationModal.vue'
 
 const authStore = useAuthStore(); const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore); const { beers, breweries, locations, styles, isLoading } = storeToRefs(catalogStore)
 
 const activeTab = ref('locations'); const allUsers = ref([]); const isUsersLoading = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' }); const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, generic: false }); const activeGenericType = ref(''); const isEditing = ref(false)
+const modals = ref({ beer: false, brewery: false, location: false, style: false }); const isEditing = ref(false)
 
 const formData = ref({
   beer: { id: null, name: '', brewery_id: '', style: '', epm: '', abv: '' },
-  generic: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' }
-})
-
-const genericModalTitle = computed(() => {
-  const action = isEditing.value ? 'Upravit' : 'Nový'; let target = ''
-  if (activeGenericType.value === 'brewery') target = 'pivovar'
-  else if (activeGenericType.value === 'location') target = 'podnik'
-  else if (activeGenericType.value === 'style') target = 'styl'
-  return `${action} ${target}`
+  brewery: { id: null, name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '' },
+  location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' },
+  style: { id: null, name: '' }
 })
 
 const showToast = (message, type = 'toast-success') => { toast.value = { show: true, message, type }; setTimeout(() => { toast.value.show = false }, 3000) }
 
 const fetchUsers = async () => {
     isUsersLoading.value = true; try {
-        const res = await fetch('https://www.pivoo.cz/backend/api/users.php'); const result = await res.json()
-        if (result.status === 'success') allUsers.value = result.data
+        const res = await fetch('https://www.pivoo.cz/backend/api/users.php', { headers: { 'Authorization': `Bearer ${authStore.token}` } })
+        const result = await res.json(); if (result.status === 'success') allUsers.value = result.data
     } catch (e) { showToast('Chyba uživatelů.', 'toast-error') } finally { isUsersLoading.value = false }
 }
 
@@ -254,41 +209,29 @@ onMounted(() => { if (user.value) { catalogStore.fetchAllData(user.value.id); fe
 
 const openAddModal = (type) => {
   isEditing.value = false
-  if (type === 'beer') { formData.value.beer = { id: null, name: '', brewery_id: '', style: '', epm: '', abv: '' }; modals.value.beer = true }
-  else {
-    activeGenericType.value = type
-    formData.value.generic = { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' }
-    modals.value.generic = true
-  }
+  Object.keys(modals.value).forEach(m => modals.value[m] = false)
+  modals.value[type] = true
 }
 
 const openEditModal = (item, type) => {
   isEditing.value = true
-  if (type === 'beer') { formData.value.beer = { ...item }; modals.value.beer = true }
-  else {
-    activeGenericType.value = type
-    formData.value.generic = { 
-      id: item.id, name: item.name, type: item.type || 'hospoda',
-      city: item.city || '', zip_code: item.zip_code || '', country: item.country || 'Česká republika', 
-      address: item.address || '', street_number: item.street_number || '', email: item.email || '', 
-      phone: item.phone || '', website: item.website || '', opening_hours: item.opening_hours || ''
-    }
-    modals.value.generic = true
-  }
+  formData.value[type] = { ...item }
+  modals.value[type] = true
 }
 
 const submitForm = async (type) => {
-  const isGeneric = type !== 'beer'; const data = isGeneric ? formData.value.generic : formData.value.beer
-  let endpoint = ''
-  if (type === 'beer') endpoint = isEditing.value ? 'update_beer.php' : 'add_beer.php'
-  else if (type === 'brewery') endpoint = isEditing.value ? 'update_brewery.php' : 'add_brewery.php'
-  else if (type === 'location') endpoint = isEditing.value ? 'update_location.php' : 'add_location.php'
-  else if (type === 'style') endpoint = isEditing.value ? 'update_style.php' : 'add_style.php'
+  const data = formData.value[type]
+  let endpoint = `add_${type}.php`
+  if (isEditing.value) endpoint = `update_${type}.php`
 
   try {
-    const res = await fetch(`https://www.pivoo.cz/backend/api/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+    const res = await fetch(`https://www.pivoo.cz/backend/api/${endpoint}`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authStore.token}` }, 
+      body: JSON.stringify(data) 
+    })
     const result = await res.json()
-    if (result.status === 'success') { showToast(result.message); modals.value.beer = false; modals.value.generic = false; await catalogStore.fetchAllData(user.value.id) }
+    if (result.status === 'success') { showToast(result.message); modals.value[type] = false; await catalogStore.fetchAllData(user.value.id) }
     else { showToast(result.message, 'toast-error') }
   } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
@@ -297,17 +240,13 @@ const confirmDelete = (id, type) => { deleteModal.value = { show: true, id, type
 const handleDelete = async () => {
   const { id, type } = deleteModal.value; let endpoint = `delete_${type}.php`
   try {
-    const res = await fetch(`https://www.pivoo.cz/backend/api/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    const res = await fetch(`https://www.pivoo.cz/backend/api/${endpoint}`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authStore.token}` }, 
+      body: JSON.stringify({ id }) 
+    })
     const result = await res.json()
     if (result.status === 'success') { showToast(result.message); if (type === 'user') await fetchUsers(); else await catalogStore.fetchAllData(user.value.id) }
   } finally { deleteModal.value.show = false }
 }
 </script>
-
-<style scoped>
-/* Přidaná třída pro obalení políček, aby vypadala hezky i bez nadřazeného elementu */
-.conditional-fields {
-  display: flex;
-  flex-direction: column;
-}
-</style>

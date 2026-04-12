@@ -1,11 +1,11 @@
 <?php
-// Zapnutí chyb pro ladění
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+// Změna: Povolujeme přijímat a odesílat Authorization hlavičku
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php'; // Načteme naši novou třídu
 
 try {
     $database = new Database();
@@ -29,14 +30,12 @@ try {
     $username = trim($data->username);
     $password = $data->password;
 
-    // Najdeme uživatele podle jména nebo e-mailu
     $query = "SELECT id, username, first_name, last_name, password_hash, role FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $db->prepare($query);
     $stmt->execute([$username, $username]);
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['password_hash'])) {
-        // Heslo sedí - vytvoříme pole s daty pro frontend (bez hashe!)
         $userData = [
             "id" => $user['id'],
             "username" => $user['username'],
@@ -45,13 +44,19 @@ try {
             "role" => $user['role']
         ];
 
+        // Vygenerujeme token s údaji o uživateli
+        $token = JwtHandler::encode([
+            "user_id" => $user['id'],
+            "role" => $user['role']
+        ]);
+
         echo json_encode([
             "status" => "success",
             "message" => "Přihlášení úspěšné.",
-            "user" => $userData
+            "user" => $userData,
+            "token" => $token // Odesíláme token na frontend!
         ]);
     } else {
-        // Buď uživatel neexistuje, nebo nesedí heslo (pro bezpečnost neříkáme co přesně)
         echo json_encode(["status" => "error", "message" => "Neplatné přihlašovací údaje."]);
     }
 
@@ -61,3 +66,4 @@ try {
         "message" => "Chyba serveru: " . $e->getMessage()
     ]);
 }
+?>

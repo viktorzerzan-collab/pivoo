@@ -10,6 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../Database.php';
+require_once '../JwtHandler.php';
+
+// ZABEZPEČENÍ!
+JwtHandler::checkAdmin();
 
 $database = new Database();
 $db = $database->getConnection();
@@ -17,7 +21,6 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name)) {
     try {
-        // Přidán sloupec is_approved s hodnotou 1
         $query = "INSERT INTO breweries (name, city, country, address, street_number, zip_code, email, phone, website, is_approved) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $stmt = $db->prepare($query);
