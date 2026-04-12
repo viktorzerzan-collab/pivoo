@@ -1,5 +1,11 @@
 <template>
   <div class="login-wrapper">
+    <transition name="toast-fade">
+      <div v-if="toast.show" class="toast-notification" :class="toast.type">
+        {{ toast.message }}
+      </div>
+    </transition>
+
     <div class="login-card">
       <div class="logo-container">
         <span class="beer-icon">🍻</span>
@@ -23,8 +29,8 @@
           required 
         />
 
-        <BaseButton type="submit" variant="submit" class="login-btn">
-          Vstoupit do hospody
+        <BaseButton type="submit" variant="submit" class="login-btn" :disabled="isLoading">
+          {{ isLoading ? 'Přihlašuji...' : 'Vstoupit do hospody' }}
         </BaseButton>
 
         <div class="register-link">
@@ -39,7 +45,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-// Připojíme náš nový Pinia sklad a komponenty
 import { useAuthStore } from '../stores/auth'
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
@@ -49,20 +54,61 @@ const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
+const isLoading = ref(false)
 
-const handleLogin = () => {
-  // POZNÁMKA PRO VÁS: Toto je zatím "hloupé" přihlášení z naší prototypové fáze.
-  // Jakmile tohle odsouhlasíte, ve Fázi 2 sem přidáme skutečné ověření přes PHP a databázi.
-  // Nyní pouze uložíme jméno do Pinie a pustíme uživatele dál.
-  
-  if (username.value) {
-    authStore.login({ id: 1, name: username.value })
-    router.push('/dashboard')
+// Systém notifikací pro chybové hlášky
+const toast = ref({ show: false, message: '', type: 'toast-success' })
+const showToast = (message, type = 'toast-error') => { 
+  toast.value = { show: true, message, type }
+  setTimeout(() => { toast.value.show = false }, 4000) 
+}
+
+const handleLogin = async () => {
+  // Základní kontrola
+  if (!username.value || !password.value) {
+    showToast("Vyplňte jméno i heslo.");
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    // Volání reálného PHP backendu
+    const response = await fetch('https://www.pivoo.cz/backend/api/login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        username: username.value, 
+        password: password.value 
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.status === 'success') {
+      // Úspěšné přihlášení - uložíme reálná data uživatele z databáze do Pinie
+      authStore.login(result.user);
+      router.push('/dashboard');
+    } else {
+      // Špatné heslo nebo neexistující uživatel - zobrazíme hlášku z PHP
+      showToast(result.message);
+    }
+  } catch (error) {
+    showToast("Chyba při komunikaci se serverem.");
+  } finally {
+    isLoading.value = false;
   }
 }
 </script>
 
 <style scoped>
+/* Styly pro toast notifikace (převzato z RegisterView) */
+.toast-notification { position: fixed; top: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: 8px; color: white; font-weight: bold; z-index: 9999; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); }
+.toast-success { background-color: #10b981; }
+.toast-error { background-color: #ef4444; }
+.toast-fade-enter-active, .toast-fade-leave-active { transition: all 0.3s ease; }
+.toast-fade-enter-from, .toast-fade-leave-to { opacity: 0; transform: translateY(-20px); }
+
 .login-wrapper {
   min-height: 100vh;
   display: flex;
@@ -121,7 +167,12 @@ const handleLogin = () => {
   font-size: 1.2rem;
 }
 
-/* NOVÉ STYLY PRO ODKAZ NA REGISTRACI */
+/* Vzhled zablokovaného tlačítka při načítání */
+.login-btn:disabled { 
+  opacity: 0.7; 
+  cursor: not-allowed; 
+}
+
 .register-link {
   margin-top: 1rem;
   text-align: center;
@@ -137,5 +188,9 @@ const handleLogin = () => {
 
 .register-link a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .login-card { padding: 2rem 1.5rem; }
 }
 </style>
