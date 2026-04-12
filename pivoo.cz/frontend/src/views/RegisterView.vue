@@ -48,6 +48,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserPlusIcon } from 'lucide-vue-next'
+import { apiFetch } from '../api' // PŘIDÁN IMPORT
 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
@@ -71,7 +72,7 @@ const handleRegister = async () => {
   
   isLoading.value = true; errorMessage.value = ''
   
-  // ZMĚNA: Odesíláme jako FormData kvůli souboru
+  // Odesíláme jako FormData kvůli souboru
   const formData = new FormData()
   Object.keys(form.value).forEach(key => formData.append(key, form.value[key]))
   if (avatarFile.value) {
@@ -79,11 +80,12 @@ const handleRegister = async () => {
   }
 
   try {
-    const response = await fetch('https://www.pivoo.cz/backend/api/register.php', {
+    // POUŽITÍ UNIVERZÁLNÍ FUNKCE apiFetch
+    const result = await apiFetch('/register.php', {
       method: 'POST',
-      body: formData // Zde chybí hlavičky záměrně! Prohlížeč si nastaví multipart/form-data sám.
+      body: formData 
     })
-    const result = await response.json()
+    
     if (result.status === 'success') {
       router.push('/')
     } else {
