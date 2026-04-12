@@ -1,73 +1,100 @@
 <template>
-  <div class="input-wrapper">
-    <label v-if="label" class="input-label">{{ label }}</label>
-    
-    <div class="input-container">
-      <input
-        :type="computedType"
-        :value="modelValue"
+  <div class="input-group">
+    <label v-if="label">{{ label }}</label>
+    <div class="input-wrapper">
+      <input 
+        :type="inputType" 
+        :value="modelValue" 
         @input="$emit('update:modelValue', $event.target.value)"
-        :placeholder="placeholder"
-        :required="required"
-        :min="min"
-        :step="step"
+        v-bind="$attrs"
         class="base-input"
-        :class="{ 'has-icon': type === 'password' }"
-      />
-      
-      <button
-        v-if="type === 'password'"
-        type="button"
-        class="toggle-password"
-        @click="isPasswordVisible = !isPasswordVisible"
-        title="Zobrazit/skrýt heslo"
       >
-        {{ isPasswordVisible ? '🙈' : '👁️' }}
+      <button 
+        v-if="type === 'password'" 
+        type="button" 
+        class="eye-btn" 
+        @click="togglePassword"
+      >
+        <EyeIcon v-if="inputType === 'password'" :size="20" />
+        <EyeOffIcon v-else :size="20" />
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import { EyeIcon, EyeOffIcon } from 'lucide-vue-next'
 
 const props = defineProps({
-  modelValue: { type: [String, Number], default: '' },
-  label: { type: String, default: '' },
-  type: { type: String, default: 'text' },
-  placeholder: { type: String, default: '' },
-  required: { type: Boolean, default: false },
-  min: { type: [String, Number], default: null },
-  step: { type: [String, Number], default: null }
+  label: String,
+  modelValue: [String, Number],
+  type: { type: String, default: 'text' }
 })
 
-defineEmits(['update:modelValue'])
+const inputType = ref(props.type)
 
-// Stav pro zapamatování, jestli je oko kliknuté
-const isPasswordVisible = ref(false)
-
-// Chytrá logika: Pokud to má být heslo a uživatel kliknul na oko, změníme input na běžný 'text'
-const computedType = computed(() => {
-  if (props.type === 'password') {
-    return isPasswordVisible.value ? 'text' : 'password'
-  }
-  // Pro všechny ostatní typy (čísla, běžný text) to necháme, jak to je
-  return props.type
-})
+const togglePassword = () => {
+  inputType.value = inputType.value === 'password' ? 'text' : 'password'
+}
 </script>
 
 <style scoped>
-.input-wrapper { display: flex; flex-direction: column; width: 100%; }
-.input-label { font-weight: 600; margin-bottom: 0.4rem; color: #4b5563; font-size: 0.95rem; }
+.input-group { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.4rem; 
+  width: 100%; 
+}
 
-.input-container { position: relative; display: flex; align-items: center; }
+label { 
+  font-weight: 600; 
+  color: #334155; 
+  font-size: 0.9rem; 
+}
 
-.base-input { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; box-sizing: border-box; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
-.base-input:focus { border-color: #eab308; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2); }
+.input-wrapper { 
+  position: relative; 
+  display: flex; 
+  align-items: center; 
+}
 
-/* Pokud tam je ikonka, uděláme vpravo uvnitř políčka mezeru, aby text nepřetékal přes oko */
-.base-input.has-icon { padding-right: 3rem; }
+.base-input { 
+  width: 100%; 
+  padding: 0.75rem 1rem; 
+  border-radius: 8px; 
+  border: 1px solid var(--border, #cbd5e1); /* Zde byla chyba s chybějící proměnnou */
+  background-color: var(--white, #ffffff);
+  color: var(--text-main, #0f172a);
+  font-size: 1rem; 
+  outline: none; 
+  transition: all 0.2s ease; 
+  box-sizing: border-box;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0,0,0,0.05));
+}
 
-.toggle-password { position: absolute; right: 0.5rem; background: none; border: none; font-size: 1.3rem; cursor: pointer; padding: 0.2rem; transition: transform 0.2s; user-select: none; }
-.toggle-password:hover { transform: scale(1.15); }
+.base-input::placeholder {
+  color: #94a3b8;
+}
+
+.base-input:focus { 
+  border-color: var(--primary, #eab308); 
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15); 
+}
+
+.eye-btn {
+  position: absolute; 
+  right: 12px; 
+  background: none; 
+  border: none; 
+  color: #94a3b8; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center;
+  padding: 0;
+}
+
+.eye-btn:hover { 
+  color: var(--text-main, #0f172a); 
+}
 </style>

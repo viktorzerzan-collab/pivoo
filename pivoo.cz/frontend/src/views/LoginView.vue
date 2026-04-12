@@ -1,22 +1,20 @@
 <template>
-  <div class="login-wrapper">
-    <transition name="toast-fade">
-      <div v-if="toast.show" class="toast-notification" :class="toast.type">
-        {{ toast.message }}
-      </div>
-    </transition>
-
-    <div class="login-card">
+  <div class="auth-wrapper">
+    <div class="auth-card">
       <div class="logo-container">
-        <span class="beer-icon">🍻</span>
+        <BeerIcon :size="56" color="var(--primary)" stroke-width="1.5" />
         <h1 class="logo-text">Pivoo.cz</h1>
       </div>
-      <p class="subtitle">Tvůj osobní pivní deníček</p>
+      <p class="auth-subtitle">Tvůj osobní pivní deníček</p>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <div v-if="errorMessage" class="auth-error-banner">
+        {{ errorMessage }}
+      </div>
+
+      <form @submit.prevent="handleLogin" class="auth-form">
         <BaseInput 
           v-model="username" 
-          label="Přihlašovací jméno" 
+          label="Přihlašovací jméno nebo E-mail" 
           placeholder="Např. Karel" 
           required 
         />
@@ -29,11 +27,14 @@
           required 
         />
 
-        <BaseButton type="submit" variant="submit" class="login-btn" :disabled="isLoading">
-          {{ isLoading ? 'Přihlašuji...' : 'Vstoupit do hospody' }}
+        <BaseButton type="submit" variant="primary" style="margin-top: 1rem; width: 100%;" :disabled="isLoading">
+          <template #icon>
+            <LogInIcon :size="18" />
+          </template>
+          {{ isLoading ? 'Ověřuji...' : 'Vstoupit do hospody' }}
         </BaseButton>
 
-        <div class="register-link">
+        <div class="auth-footer-link">
           Ještě nemáš účet? <router-link to="/register">Zaregistruj se</router-link>
         </div>
       </form>
@@ -44,6 +45,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { BeerIcon, LogInIcon } from 'lucide-vue-next'
 
 import { useAuthStore } from '../stores/auth'
 import BaseInput from '../components/BaseInput.vue'
@@ -55,78 +57,51 @@ const authStore = useAuthStore()
 const username = ref('')
 const password = ref('')
 const isLoading = ref(false)
-
-// Systém notifikací pro chybové hlášky
-const toast = ref({ show: false, message: '', type: 'toast-success' })
-const showToast = (message, type = 'toast-error') => { 
-  toast.value = { show: true, message, type }
-  setTimeout(() => { toast.value.show = false }, 4000) 
-}
+const errorMessage = ref('')
 
 const handleLogin = async () => {
-  // Základní kontrola
-  if (!username.value || !password.value) {
-    showToast("Vyplňte jméno i heslo.");
-    return;
-  }
-
-  isLoading.value = true;
-
+  isLoading.value = true
+  errorMessage.value = ''
   try {
-    // Volání reálného PHP backendu
     const response = await fetch('https://www.pivoo.cz/backend/api/login.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        username: username.value, 
-        password: password.value 
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok && result.status === 'success') {
-      // Úspěšné přihlášení - uložíme reálná data uživatele z databáze do Pinie
-      authStore.login(result.user);
-      router.push('/dashboard');
+      body: JSON.stringify({ username: username.value, password: password.value })
+    })
+    const result = await response.json()
+    if (result.status === 'success') {
+      authStore.login(result.user)
+      router.push('/dashboard')
     } else {
-      // Špatné heslo nebo neexistující uživatel - zobrazíme hlášku z PHP
-      showToast(result.message);
+      errorMessage.value = result.message || 'Přihlášení se nezdařilo.'
     }
   } catch (error) {
-    showToast("Chyba při komunikaci se serverem.");
+    errorMessage.value = 'Chyba při komunikaci se serverem.'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 </script>
 
 <style scoped>
-/* Styly pro toast notifikace (převzato z RegisterView) */
-.toast-notification { position: fixed; top: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: 8px; color: white; font-weight: bold; z-index: 9999; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); }
-.toast-success { background-color: #10b981; }
-.toast-error { background-color: #ef4444; }
-.toast-fade-enter-active, .toast-fade-leave-active { transition: all 0.3s ease; }
-.toast-fade-enter-from, .toast-fade-leave-to { opacity: 0; transform: translateY(-20px); }
-
-.login-wrapper {
+.auth-wrapper {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f3f4f6;
+  background-color: var(--bg-app);
   padding: 1rem;
 }
 
-.login-card {
-  background: white;
-  padding: 3rem 2rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+.auth-card {
+  background: var(--bg-panel);
+  padding: 3rem 2.5rem;
+  border-radius: 16px; /* Modernější zaoblení */
+  box-shadow: var(--shadow-md);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   text-align: center;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
 }
 
 .logo-container {
@@ -134,63 +109,57 @@ const handleLogin = async () => {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.beer-icon {
-  font-size: 4rem;
-  line-height: 1;
 }
 
 .logo-text {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #ca8a04;
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.025em;
   margin: 0;
 }
 
-.subtitle {
-  color: #6b7280;
-  font-size: 1.1rem;
+.auth-subtitle {
+  color: var(--text-muted);
+  font-size: 1rem;
   margin-bottom: 2rem;
+  margin-top: 0.25rem;
 }
 
-.login-form {
+.auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   text-align: left;
 }
 
-.login-btn {
-  margin-top: 0.5rem;
-  font-size: 1.2rem;
+.auth-error-banner {
+  background-color: #fee2e2;
+  color: #ef4444;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  border: 1px solid #fca5a5;
+  font-weight: 600;
 }
 
-/* Vzhled zablokovaného tlačítka při načítání */
-.login-btn:disabled { 
-  opacity: 0.7; 
-  cursor: not-allowed; 
-}
-
-.register-link {
-  margin-top: 1rem;
+.auth-footer-link {
+  margin-top: 1.5rem;
   text-align: center;
-  color: #4b5563;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
-.register-link a {
-  color: #ca8a04;
+.auth-footer-link a {
+  color: var(--primary-hover);
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 700;
+  transition: color 0.2s;
 }
 
-.register-link a:hover {
+.auth-footer-link a:hover {
+  color: var(--primary);
   text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  .login-card { padding: 2rem 1.5rem; }
 }
 </style>

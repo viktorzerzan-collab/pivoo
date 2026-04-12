@@ -1,19 +1,19 @@
 <template>
-  <div class="card beer-card">
+  <div class="card brewery-card">
     <div class="card-body">
       <div class="card-main-info">
-        <div class="icon-wrapper beer-bg">
-          <BeerIcon :size="24" color="#ca8a04" />
+        <div class="icon-wrapper brewery-bg">
+          <FactoryIcon :size="24" color="#b45309" />
         </div>
         <div class="text-content">
-          <h3 class="card-title">{{ beer.name }}</h3>
-          <p class="card-subtitle">{{ beer.brewery_name }} • {{ beer.style || 'Bez stylu' }}</p>
+          <h3 class="card-title">{{ brewery.name }}</h3>
+          <p class="card-subtitle">{{ brewery.city || brewery.country || 'Lokalita neznámá' }}</p>
           
-          <div v-if="beer.avg_rating" class="card-rating">
+          <div v-if="brewery.avg_rating" class="card-rating">
             <StarIcon :size="14" fill="#f59e0b" color="#f59e0b" />
-            <span class="rating-value">{{ Number(beer.avg_rating).toFixed(1) }}</span>
-            <span class="count" v-if="beer.total_checkins">
-              ({{ beer.total_checkins }}x v deníčku)
+            <span class="rating-value">{{ Number(brewery.avg_rating).toFixed(1) }}</span>
+            <span class="count" v-if="brewery.total_beers_in_catalog">
+              ({{ brewery.total_beers_in_catalog }} piva)
             </span>
           </div>
         </div>
@@ -21,20 +21,20 @@
     </div>
     
     <div class="card-footer">
-      <BaseButton variant="secondary" @click="$emit('showDetail', beer)" class="full-width-btn">
+      <BaseButton variant="secondary" @click="$emit('showDetail', brewery)" class="full-width-btn">
         <template #icon><InfoIcon :size="16" /></template>
-        Detail piva
+        Detail pivovaru
       </BaseButton>
     </div>
   </div>
 </template>
 
 <script setup>
-import { BeerIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
+import { FactoryIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 
 defineProps({
-  beer: Object
+  brewery: Object
 })
 defineEmits(['showDetail'])
 </script>
@@ -51,7 +51,6 @@ defineEmits(['showDetail'])
   height: 100%;
 }
 
-/* SJEDNOCENO: Zlaté orámování po najetí */
 .card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
@@ -68,7 +67,7 @@ defineEmits(['showDetail'])
   align-items: center;
   justify-content: center;
 }
-.beer-bg { background: #fef9c3; }
+.brewery-bg { background: #ffedd5; }
 
 .text-content { display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
 

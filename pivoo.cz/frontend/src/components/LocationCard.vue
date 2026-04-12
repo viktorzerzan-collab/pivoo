@@ -1,19 +1,19 @@
 <template>
-  <div class="card beer-card">
+  <div class="card location-card">
     <div class="card-body">
       <div class="card-main-info">
-        <div class="icon-wrapper beer-bg">
-          <BeerIcon :size="24" color="#ca8a04" />
+        <div class="icon-wrapper location-bg">
+          <MapPinIcon :size="24" color="#0369a1" />
         </div>
         <div class="text-content">
-          <h3 class="card-title">{{ beer.name }}</h3>
-          <p class="card-subtitle">{{ beer.brewery_name }} • {{ beer.style || 'Bez stylu' }}</p>
+          <h3 class="card-title">{{ location.name }}</h3>
+          <p class="card-subtitle">{{ location.city || 'Lokalita neznámá' }}</p>
           
-          <div v-if="beer.avg_rating" class="card-rating">
-            <StarIcon :size="14" fill="#f59e0b" color="#f59e0b" />
-            <span class="rating-value">{{ Number(beer.avg_rating).toFixed(1) }}</span>
-            <span class="count" v-if="beer.total_checkins">
-              ({{ beer.total_checkins }}x v deníčku)
+          <div v-if="location.avg_rating" class="card-rating">
+            <StarIcon :size="14" fill="#0ea5e9" color="#0ea5e9" />
+            <span class="rating-value">{{ Number(location.avg_rating).toFixed(1) }}</span>
+            <span class="count" v-if="location.total_visits">
+              ({{ location.total_visits }}x návštěva)
             </span>
           </div>
         </div>
@@ -21,20 +21,20 @@
     </div>
     
     <div class="card-footer">
-      <BaseButton variant="secondary" @click="$emit('showDetail', beer)" class="full-width-btn">
+      <BaseButton variant="secondary" @click="$emit('showDetail', location)" class="full-width-btn">
         <template #icon><InfoIcon :size="16" /></template>
-        Detail piva
+        Detail podniku
       </BaseButton>
     </div>
   </div>
 </template>
 
 <script setup>
-import { BeerIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
+import { MapPinIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 
 defineProps({
-  beer: Object
+  location: Object
 })
 defineEmits(['showDetail'])
 </script>
@@ -51,7 +51,6 @@ defineEmits(['showDetail'])
   height: 100%;
 }
 
-/* SJEDNOCENO: Zlaté orámování po najetí */
 .card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
@@ -68,7 +67,7 @@ defineEmits(['showDetail'])
   align-items: center;
   justify-content: center;
 }
-.beer-bg { background: #fef9c3; }
+.location-bg { background: #e0f2fe; }
 
 .text-content { display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
 
@@ -76,7 +75,7 @@ defineEmits(['showDetail'])
 .card-subtitle { margin: 0; font-size: 0.85rem; color: #64748b; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
-.rating-value { font-size: 0.9rem; font-weight: 800; color: #d97706; }
+.rating-value { font-size: 0.9rem; font-weight: 800; color: #0369a1; }
 .count { font-size: 0.75rem; color: #94a3b8; margin-left: 4px; }
 
 .card-footer { padding: 0 1.25rem 1.25rem; }

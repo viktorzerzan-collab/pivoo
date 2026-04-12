@@ -1,9 +1,11 @@
 <?php
+// Povolení přístupu odkudkoliv (CORS)
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
+// Odchycení "preflight" dotazu od prohlížeče
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -13,32 +15,35 @@ require_once '../Database.php';
 
 $database = new Database();
 $db = $database->getConnection();
+
+// Načtení dat z těla požadavku
 $data = json_decode(file_get_contents("php://input"));
 
-// U piva potřebujeme název, pivovar a styl
-if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style)) {
+// Kontrola, zda máme ID piva, které chceme upravit
+if (!empty($data->id) && !empty($data->name)) {
     try {
-        // Přidán sloupec is_approved s hodnotou 1
-        $query = "INSERT INTO beers (name, brewery_id, style, epm, abv, is_approved) 
-                  VALUES (?, ?, ?, ?, ?, 1)";
+        $query = "UPDATE beers 
+                  SET name = ?, brewery_id = ?, style = ?, epm = ?, abv = ? 
+                  WHERE id = ?";
+                  
         $stmt = $db->prepare($query);
         
-        // EPM a ABV mohou být prázdné
+        // Pokud EPM nebo ABV není vyplněno, pošleme do DB raději null než prázdný string
         $epm = ($data->epm !== '') ? $data->epm : null;
         $abv = ($data->abv !== '') ? $data->abv : null;
 
-        if ($stmt->execute([$data->name, $data->brewery_id, $data->style, $epm, $abv])) {
-            echo json_encode(["status" => "success", "message" => "Pivo bylo úspěšně přidáno do katalogu."]);
+        if ($stmt->execute([$data->name, $data->brewery_id, $data->style, $epm, $abv, $data->id])) {
+            echo json_encode(["status" => "success", "message" => "Pivo v katalogu bylo úspěšně upraveno."]);
         } else {
             http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Pivo se nepodařilo uložit."]);
+            echo json_encode(["status" => "error", "message" => "Nepodařilo se upravit pivo."]);
         }
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Chyba databáze: " . $e->getMessage()]);
     }
 } else {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Název piva, pivovar a styl jsou povinné údaje."]);
+    echo json_encode(["status" => "error", "message" => "Chybí povinná data (ID nebo název)."]);
 }
 ?>

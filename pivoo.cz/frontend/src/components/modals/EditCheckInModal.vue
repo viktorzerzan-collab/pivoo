@@ -1,18 +1,71 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')">
-    <template #header><h2 class="modal-title" style="color: #eab308;">✏️ Úprava zápisu</h2></template>
+    <template #header><h2 class="modal-title">✏️ Upravit záznam</h2></template>
     <template #body>
       <form @submit.prevent="$emit('submit')" class="checkin-form">
-        <div class="form-group"><label>Jaké pivo?</label><select v-model="form.beer_id" required><option v-for="beer in beers" :key="beer.id" :value="beer.id">{{ beer.name }} ({{ beer.brewery_name }})</option></select></div>
-        <div class="form-group"><label>Kde to bylo?</label><select v-model="form.location_id" required><option v-for="loc in locations" :key="loc.id" :value="loc.id">{{ loc.name }}</option></select></div>
+        
+        <BaseSelect v-model="form.beer_id" label="Které pivo jsi pil?" required>
+          <option disabled value="">-- Vyber pivo z katalogu --</option>
+          <option v-for="beer in beers" :key="beer.id" :value="beer.id">
+            {{ beer.name }} ({{ beer.brewery_name }})
+          </option>
+        </BaseSelect>
+
+        <BaseSelect v-model="form.location_id" label="Kde to bylo?" required>
+          <option disabled value="">-- Vyber lokaci --</option>
+          <option v-for="loc in locations" :key="loc.id" :value="loc.id">
+            {{ loc.name }}
+          </option>
+        </BaseSelect>
+
         <div class="form-row">
-          <div class="form-group half"><label>Objem</label><select v-model="form.volume" required><option value="0.30">Malé (0.3l)</option><option value="0.50">Velké (0.5l)</option><option value="1.00">Tuplák (1.0l)</option></select></div>
-          <div class="form-group half"><BaseInput v-model="form.quantity" type="number" min="1" label="Počet kusů" required /></div>
+          <BaseSelect class="half" v-model="form.packaging" label="Forma balení" required>
+            <option value="točené">🍺 Točené</option>
+            <option value="lahev">🍾 Lahev</option>
+            <option value="plechovka">🥫 Plechovka</option>
+            <option value="pet">🧴 PET lahev</option>
+            <option value="sud">🛢️ Soukromý sud</option>
+          </BaseSelect>
+
+          <BaseSelect class="half" v-model="form.volume" label="Objem">
+            <option value="0.30">Malé (0.3l)</option>
+            <option value="0.40">Šnyt (0.4l)</option>
+            <option value="0.50">Velké (0.5l)</option>
+            <option value="1.00">Tuplák (1.0l)</option>
+          </BaseSelect>
         </div>
-        <BaseInput v-model="form.price" type="number" label="Cena za 1 kus (Kč)" />
-        <div class="form-group"><label>Tvoje hodnocení</label><StarRating v-model="form.rating_beer" /></div>
-        <div class="form-group"><label>Poznámka (Volitelné)</label><textarea v-model="form.note" rows="3"></textarea></div>
-        <BaseButton type="submit" variant="submit">Uložit změny</BaseButton>
+
+        <div class="form-row">
+          <BaseInput class="half" v-model="form.quantity" type="number" min="1" label="Počet" required />
+          <BaseInput class="half" v-model="form.price" type="number" step="1" label="Cena za kus (Kč)" />
+        </div>
+
+        <div class="form-row">
+          <BaseSelect class="half" v-model="form.rating_beer" label="Hodnocení piva">
+            <option value="0">Nehodnoceno</option>
+            <option value="1">⭐</option>
+            <option value="2">⭐⭐</option>
+            <option value="3">⭐⭐⭐</option>
+            <option value="4">⭐⭐⭐⭐</option>
+            <option value="5">⭐⭐⭐⭐⭐</option>
+          </BaseSelect>
+
+          <BaseSelect class="half" v-model="form.rating_care" label="Obsluha a péče">
+            <option value="0">Nehodnoceno</option>
+            <option value="1">⭐</option>
+            <option value="2">⭐⭐</option>
+            <option value="3">⭐⭐⭐</option>
+            <option value="4">⭐⭐⭐⭐</option>
+            <option value="5">⭐⭐⭐⭐⭐</option>
+          </BaseSelect>
+        </div>
+
+        <BaseInput v-model="form.note" label="Poznámka" placeholder="Jaké bylo?" />
+
+        <BaseButton type="submit" variant="edit" style="margin-top: 1rem; width: 100%;">
+          Uložit změny
+        </BaseButton>
+
       </form>
     </template>
   </BaseModal>
@@ -21,21 +74,25 @@
 <script setup>
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
-import StarRating from '../StarRating.vue'
 import BaseButton from '../BaseButton.vue'
+import BaseSelect from '../BaseSelect.vue'
 
-defineProps({ show: Boolean, beers: Array, locations: Array, form: Object })
+defineProps({ 
+  show: Boolean, 
+  beers: Array, 
+  locations: Array, 
+  form: Object 
+})
 defineEmits(['close', 'submit'])
 </script>
 
 <style scoped>
-.modal-title { margin: 0; color: #1f2937; font-size: 1.5rem; }
-.checkin-form { display: flex; flex-direction: column; gap: 1.2rem; }
-.form-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; color: #4b5563; font-size: 0.95rem; }
-.form-group select, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; box-sizing: border-box; font-family: inherit; outline: none; transition: 0.2s;}
-.form-group textarea { resize: vertical; }
-.form-group select:focus, .form-group textarea:focus { border-color: #eab308; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2); }
+.modal-title { margin: 0; color: #1e293b; font-size: 1.5rem; }
+.checkin-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
-@media (max-width: 600px) { .form-row { flex-direction: column; gap: 1.2rem; } }
+
+@media (max-width: 600px) { 
+  .form-row { flex-direction: column; gap: 1.25rem; } 
+}
 </style>

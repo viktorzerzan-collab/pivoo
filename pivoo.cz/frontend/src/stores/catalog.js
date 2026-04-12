@@ -5,20 +5,20 @@ export const useCatalogStore = defineStore('catalog', () => {
   const beers = ref([])
   const locations = ref([])
   const breweries = ref([])
+  const styles = ref([]) // Přidáno
   const stats = ref(null)
   const history = ref([])
   const isLoading = ref(true)
 
-  // Jedna mocná funkce, která stáhne úplně všechno naráz
   const fetchAllData = async (userId) => {
     isLoading.value = true
     try {
       const ts = new Date().getTime()
-      // Promise.all zajistí, že se všechny dotazy na server pošlou paralelně (obrovské zrychlení)
-      const [resBeers, resLocs, resBrews, resStats, resHist] = await Promise.all([
+      const [resBeers, resLocs, resBrews, resStyles, resStats, resHist] = await Promise.all([
         fetch(`https://www.pivoo.cz/backend/api/beers.php?t=${ts}`),
         fetch(`https://www.pivoo.cz/backend/api/locations.php?t=${ts}`),
         fetch(`https://www.pivoo.cz/backend/api/breweries.php?t=${ts}`),
+        fetch(`https://www.pivoo.cz/backend/api/styles.php?t=${ts}`), // Přidáno
         fetch(`https://www.pivoo.cz/backend/api/stats.php?user_id=${userId}&t=${ts}`),
         fetch(`https://www.pivoo.cz/backend/api/history.php?user_id=${userId}&t=${ts}`)
       ])
@@ -26,13 +26,14 @@ export const useCatalogStore = defineStore('catalog', () => {
       const dataBeers = await resBeers.json()
       const dataLocs = await resLocs.json()
       const dataBrews = await resBrews.json()
+      const dataStyles = await resStyles.json() // Přidáno
       const dataStats = await resStats.json()
       const dataHist = await resHist.json()
 
-      // Jakmile dorazí data, uložíme je do našeho skladu
       if (dataBeers.status === 'success') beers.value = dataBeers.data
       if (dataLocs.status === 'success') locations.value = dataLocs.data
       if (dataBrews.status === 'success') breweries.value = dataBrews.data
+      if (dataStyles.status === 'success') styles.value = dataStyles.data // Přidáno
       if (dataStats.status === 'success') stats.value = dataStats.stats
       if (dataHist.status === 'success') history.value = dataHist.data
 
@@ -43,7 +44,5 @@ export const useCatalogStore = defineStore('catalog', () => {
     }
   }
 
-  return { 
-    beers, locations, breweries, stats, history, isLoading, fetchAllData 
-  }
+  return { beers, locations, breweries, styles, stats, history, isLoading, fetchAllData }
 })

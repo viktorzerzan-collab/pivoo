@@ -1,46 +1,58 @@
 <?php
-// backend/api/checkin.php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit(); }
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 require_once '../Database.php';
-$db = (new Database())->getConnection();
+
+$database = new Database();
+$db = $database->getConnection();
 $data = json_decode(file_get_contents("php://input"));
 
-// Nyní vyžadujeme i quantity (počet kusů)
-if(!empty($data->user_id) && !empty($data->beer_id) && !empty($data->location_id) && !empty($data->volume) && !empty($data->quantity)) {
-    
-    $query = "INSERT INTO consumptions (user_id, beer_id, location_id, volume, quantity, price, rating_beer, note, consumed_at) 
-              VALUES (:uid, :bid, :lid, :vol, :qty, :price, :rating, :note, NOW())";
-              
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(':uid', $data->user_id);
-    $stmt->bindParam(':bid', $data->beer_id);
-    $stmt->bindParam(':lid', $data->location_id);
-    $stmt->bindParam(':vol', $data->volume);
-    $stmt->bindParam(':qty', $data->quantity); // Zde se ukládá počet kusů
-    
-    // Nepovinné údaje (Cena za kus, Hodnocení, Poznámka)
-    $price = !empty($data->price) ? $data->price : null;
-    $stmt->bindParam(':price', $price);
-    
-    $rating = !empty($data->rating_beer) ? $data->rating_beer : null;
-    $stmt->bindParam(':rating', $rating);
-    
-    $note = !empty($data->note) ? $data->note : null;
-    $stmt->bindParam(':note', $note);
-    
-    if($stmt->execute()) {
-        echo json_encode(["status" => "success", "message" => "Na zdraví! Pivo bylo úspěšně zapsáno. 🍻"]);
-    } else {
+if (!empty($data->user_id) && !empty($data->beer_id) && !empty($data->location_id)) {
+    try {
+        $query = "INSERT INTO consumptions (user_id, beer_id, location_id, volume, quantity, price, rating_beer, rating_care, note, packaging) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        $stmt = $db->prepare($query);
+        
+        $volume = !empty($data->volume) ? $data->volume : null;
+        $quantity = !empty($data->quantity) ? (int)$data->quantity : 1;
+        $price = (!empty($data->price) && $data->price !== '') ? $data->price : null;
+        $rating_beer = !empty($data->rating_beer) ? (int)$data->rating_beer : 0;
+        $rating_care = !empty($data->rating_care) ? (int)$data->rating_care : 0;
+        $note = !empty($data->note) ? $data->note : null;
+        $packaging = !empty($data->packaging) ? $data->packaging : 'točené';
+
+        if ($stmt->execute([
+            $data->user_id, 
+            $data->beer_id, 
+            $data->location_id, 
+            $volume, 
+            $quantity, 
+            $price, 
+            $rating_beer, 
+            $rating_care, 
+            $note, 
+            $packaging
+        ])) {
+            echo json_encode(["status" => "success", "message" => "Zapsáno do deníčku!"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Chyba při zápisu."]);
+        }
+    } catch (PDOException $e) {
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba databáze."]);
+        echo json_encode(["status" => "error", "message" => "Chyba DB: " . $e->getMessage()]);
     }
 } else {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Musíš vyplnit co, kde, kolik a počet kusů!"]);
+    echo json_encode(["status" => "error", "message" => "Chybí data."]);
 }
+?>

@@ -1,11 +1,13 @@
 <?php
-// Povolení komunikace mezi localhostem (Vue) a serverem (Český hosting) - tzv. CORS
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+// Zapnutí chyb pro ladění
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-// Pokud prohlížeč posílá tzv. preflight request, rovnou ho ukončíme úspěchem
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json; charset=UTF-8");
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -13,39 +15,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once '../Database.php';
 
-$database = new Database();
-$db = $database->getConnection();
+try {
+    $database = new Database();
+    $db = $database->getConnection();
 
-// Získání dat, která nám pošle Vue.js (budou ve formátu JSON)
-$data = json_decode(file_get_contents("php://input"));
+    $data = json_decode(file_get_contents("php://input"));
 
-if(!empty($data->username) && !empty($data->password)) {
-    // Najdeme uživatele podle jména
-    $query = "SELECT id, username, first_name, password_hash, role FROM users WHERE username = :username LIMIT 1";
+    if (!isset($data->username) || !isset($data->password)) {
+        echo json_encode(["status" => "error", "message" => "Zadejte jméno a heslo."]);
+        exit();
+    }
+
+    $username = trim($data->username);
+    $password = $data->password;
+
+    // Najdeme uživatele podle jména nebo e-mailu
+    $query = "SELECT id, username, first_name, last_name, password_hash, role FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $db->prepare($query);
-    $stmt->bindParam(':username', $data->username);
-    $stmt->execute();
-    
+    $stmt->execute([$username, $username]);
     $user = $stmt->fetch();
-    
-    // Ověříme, zda uživatel existuje a zda heslo sedí s hashem v databázi
-    if($user && password_verify($data->password, $user['password_hash'])) {
-        // TADY SE POZDĚJI VYGENERUJE JWT TOKEN, zatím pošleme jen success
+
+    if ($user && password_verify($password, $user['password_hash'])) {
+        // Heslo sedí - vytvoříme pole s daty pro frontend (bez hashe!)
+        $userData = [
+            "id" => $user['id'],
+            "username" => $user['username'],
+            "first_name" => $user['first_name'],
+            "last_name" => $user['last_name'],
+            "role" => $user['role']
+        ];
+
         echo json_encode([
             "status" => "success",
-            "message" => "Vítej v hospodě, " . $user['first_name'] . "!",
-            "user" => [
-                "id" => $user['id'],
-                "username" => $user['username'],
-                "name" => $user['first_name'],
-                "role" => $user['role']
-            ]
+            "message" => "Přihlášení úspěšné.",
+            "user" => $userData
         ]);
     } else {
-        http_response_code(401); // 401 znamená Neautorizováno
-        echo json_encode(["status" => "error", "message" => "Špatné jméno nebo heslo, zkus to znovu."]);
+        // Buď uživatel neexistuje, nebo nesedí heslo (pro bezpečnost neříkáme co přesně)
+        echo json_encode(["status" => "error", "message" => "Neplatné přihlašovací údaje."]);
     }
-} else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Musíš vyplnit jméno i heslo."]);
+
+} catch (Throwable $e) {
+    echo json_encode([
+        "status" => "error",
+        "message" => "Chyba serveru: " . $e->getMessage()
+    ]);
 }
