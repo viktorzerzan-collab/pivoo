@@ -48,7 +48,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserPlusIcon } from 'lucide-vue-next'
-import { apiFetch } from '../api' // PŘIDÁN IMPORT
+import { apiFetch } from '../api'
 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
@@ -72,7 +72,6 @@ const handleRegister = async () => {
   
   isLoading.value = true; errorMessage.value = ''
   
-  // Odesíláme jako FormData kvůli souboru
   const formData = new FormData()
   Object.keys(form.value).forEach(key => formData.append(key, form.value[key]))
   if (avatarFile.value) {
@@ -80,7 +79,6 @@ const handleRegister = async () => {
   }
 
   try {
-    // POUŽITÍ UNIVERZÁLNÍ FUNKCE apiFetch
     const result = await apiFetch('/register.php', {
       method: 'POST',
       body: formData 
