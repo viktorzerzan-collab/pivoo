@@ -124,5 +124,10 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .header-filters-row { display: flex; gap: 1rem; width: 60%; }
 .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); }
-@media (max-width: 800px) { .header-filters-row { width: 100%; flex-direction: column; } }
+
+/* Opravená optimalizace pro mobilní zařízení */
+@media (max-width: 800px) { 
+  .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .header-filters-row { width: 100%; flex-direction: column; } 
+}
 </style>

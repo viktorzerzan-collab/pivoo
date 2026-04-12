@@ -93,4 +93,11 @@ const executeDelete = async () => {
 .panel-card { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; }
 .panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; }
 .panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; }
+.empty-dashboard { text-align: center; color: #94a3b8; padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+
+/* Přidaná optimalizace pro mobilní zařízení */
+@media (max-width: 600px) {
+  .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .panel-card { padding: 1rem; }
+}
 </style>

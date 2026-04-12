@@ -40,8 +40,8 @@
                   <td><strong>{{ u.username }}</strong><br><small>{{ u.email }}</small></td>
                   <td><span class="badge" :class="u.role">{{ u.role }}</span></td>
                   <td>
-                    <button v-if="u.id !== user.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, 'user')">
-                      <UserMinusIcon />
+                    <button v-if="u.id !== user.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)">
+                      <Trash2Icon />
                     </button>
                   </td>
                 </tr>
@@ -92,7 +92,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, PencilIcon, Trash2Icon, UserMinusIcon, SaveIcon } from 'lucide-vue-next'
+import { PlusIcon, PencilIcon, Trash2Icon, SaveIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -169,7 +169,11 @@ const openEditModal = (item, t) => {
 const submitForm = async (t) => {
   try {
     const endpoint = isEditing.value ? `update_${t}.php` : `add_${t}.php`
-    const res = await apiFetch(`/${endpoint}`, { method: 'POST', body: formData.value[t] })
+    // OPRAVA: Obaleno do JSON.stringify()
+    const res = await apiFetch(`/${endpoint}`, { 
+      method: 'POST', 
+      body: JSON.stringify(formData.value[t]) 
+    })
     if (res.status === 'success') { 
       showToast(res.message); modals.value[t] = false; await catalogStore.fetchAllData() 
     }
@@ -182,7 +186,11 @@ const confirmDelete = (id, t) => {
 
 const handleDelete = async () => {
   try {
-    await apiFetch(`/delete_${deleteModal.value.type}.php`, { method: 'POST', body: { id: deleteModal.value.id } })
+    // OPRAVA: Obaleno do JSON.stringify()
+    await apiFetch(`/delete_${deleteModal.value.type}.php`, { 
+      method: 'POST', 
+      body: JSON.stringify({ id: deleteModal.value.id }) 
+    })
     showToast("Smazáno")
     deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
   } finally { deleteModal.value.show = false }
@@ -214,4 +222,9 @@ const handleDelete = async () => {
 
 .action-buttons { display: flex; gap: 0.5rem; }
 .w-100 { width: 100px; }
+
+@media (max-width: 600px) {
+  .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .admin-section { padding: 1rem; }
+}
 </style>

@@ -32,7 +32,6 @@
 </template>
 
 <script setup>
-// ... (Zbytek scriptu zůstává stejný jako v předchozí verzi)
 import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PlusIcon, ArrowDownUpIcon } from 'lucide-vue-next'
@@ -74,4 +73,10 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .header-top { display: flex; justify-content: space-between; align-items: center; }
 .header-filters-row { display: flex; gap: 1rem; width: 60%; }
 .beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+
+/* Přidaná optimalizace pro mobilní zařízení */
+@media (max-width: 800px) {
+  .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .header-filters-row { width: 100%; flex-direction: column; }
+}
 </style>
