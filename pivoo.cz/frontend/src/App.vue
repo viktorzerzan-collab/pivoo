@@ -144,13 +144,11 @@ html.dark-mode {
 }
 
 /* --- GRAFICKÉ VYHLAZENÍ: ODSTRANĚNÍ ŠIPEK U ČÍSELNÝCH VSTUPŮ --- */
-/* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-/* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
 }
@@ -285,6 +283,14 @@ button.btn-close:hover {
 .toast-fade-enter-from, .toast-fade-leave-to { 
   opacity: 0; 
   transform: translate(-50%, -20px);
+}
+
+/* --- 7. RESPONSIVNÍ ÚPRAVY --- */
+@media (max-width: 900px) {
+  /* Odsazení obsahu od spodní navigace */
+  .main-content:not(.auth-layout) {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-width: 600px) {
