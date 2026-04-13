@@ -35,6 +35,7 @@
           @showDetail="openDetail" 
         />
       </div>
+      
       <div v-else-if="!isLoading" class="empty-state">
         <FactoryIcon :size="48" color="#cbd5e1" />
         <h3>Žádné pivovary k zobrazení</h3>
@@ -42,7 +43,7 @@
     </div>
 
     <DetailModal :show="isDetailOpen" :item="selectedItem" type="brewery" @close="isDetailOpen = false" />
-    <AddBreweryModal :show="isAddModalOpen" :form="form" @close="isAddModalOpen = false" @submit="submitBrewery" />
+    <AddBreweryModal :show="isAddModalOpen" :isEditing="false" :form="form" @close="isAddModalOpen = false" @submit="submitBrewery" />
   </div>
 </template>
 
@@ -55,7 +56,6 @@ import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 
-import BaseButton from '../components/BaseButton.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import FilterInput from '../components/FilterInput.vue'
 import FilterSelect from '../components/FilterSelect.vue'
@@ -78,7 +78,7 @@ const selectedItem = ref(null)
 
 const form = ref({ 
   name: '', city: '', zip_code: '', country: 'Česká republika', 
-  address: '', street_number: '', email: '', phone: '', website: '' 
+  address: '', street_number: '', email: '', phone: '', website: '', logoFile: null 
 })
 
 const showToast = (message, type = 'toast-success') => { 
@@ -105,14 +105,25 @@ const openDetail = (item) => {
 
 const submitBrewery = async () => {
   try {
-    const result = await apiFetch('/add_brewery.php', { method: 'POST', body: form.value })
+    const formData = new FormData()
+    Object.keys(form.value).forEach(key => {
+      if (form.value[key] !== null && form.value[key] !== '') {
+        formData.append(key, form.value[key])
+      }
+    })
+
+    const result = await apiFetch('/add_brewery.php', { method: 'POST', body: formData })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
-      form.value = { name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '' }
+      form.value = { name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', logoFile: null }
       await catalogStore.fetchAllData()
       showToast("Pivovar přidán") 
+    } else {
+      showToast(result.message || 'Nepodařilo se přidat pivovar.', 'toast-error')
     }
-  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
+  } catch (e) { 
+    showToast('Chyba serveru.', 'toast-error') 
+  }
 }
 
 onMounted(() => { if (user.value) catalogStore.fetchAllData() })
@@ -126,7 +137,6 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .breweries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); }
 
-/* Opravená a doplněná optimalizace pro mobilní zařízení */
 @media (max-width: 800px) { 
   .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .header-filters-row { width: 100%; flex-direction: column; } 

@@ -71,9 +71,9 @@
     </div>
 
     <DeleteConfirmModal :show="deleteModal.show" @close="deleteModal.show = false" @confirm="handleDelete" />
-    <AddBeerModal :show="modals.beer" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
-    <AddBreweryModal :show="modals.brewery" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
-    <AddLocationModal :show="modals.location" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
+    <AddBeerModal :show="modals.beer" :isEditing="isEditing" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
+    <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
+    <AddLocationModal :show="modals.location" :isEditing="isEditing" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
     
     <BaseModal :show="modals.style" @close="modals.style = false">
       <template #header><h2>{{ isEditing ? 'Upravit' : 'Přidat' }} styl</h2></template>
@@ -130,7 +130,7 @@ const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.
 
 const formData = ref({
   beer: { id: null, name: '', brewery_id: '', style: '', epm: '', abv: '' },
-  brewery: { id: null, name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '' },
+  brewery: { id: null, name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', logoFile: null },
   location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' },
   style: { id: null, name: '' }
 })
@@ -156,44 +156,73 @@ const openAddModal = (t) => {
   isEditing.value = false
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
   const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'style'))
+  
+  if (key === 'brewery') formData.value.brewery.logoFile = null
+  
   modals.value[key] = true 
 }
 
 const openEditModal = (item, t) => { 
   isEditing.value = true
   const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'brewery'))
-  formData.value[key] = { ...item }
+  formData.value[key] = { ...item, logoFile: null }
   modals.value[key] = true 
 }
 
 const submitForm = async (t) => {
   try {
     const endpoint = isEditing.value ? `update_${t}.php` : `add_${t}.php`
-    // OPRAVA: Obaleno do JSON.stringify()
-    const res = await apiFetch(`/${endpoint}`, { 
-      method: 'POST', 
-      body: JSON.stringify(formData.value[t]) 
-    })
+    
+    let bodyData;
+    if (t === 'brewery') {
+      bodyData = new FormData();
+      Object.keys(formData.value[t]).forEach(key => {
+         if (formData.value[t][key] !== null && formData.value[t][key] !== undefined && formData.value[t][key] !== '') {
+           bodyData.append(key, formData.value[t][key])
+         }
+      });
+    } else {
+      bodyData = JSON.stringify(formData.value[t])
+    }
+
+    const res = await apiFetch(`/${endpoint}`, { method: 'POST', body: bodyData })
     if (res.status === 'success') { 
       showToast(res.message); modals.value[t] = false; await catalogStore.fetchAllData() 
+    } else {
+      showToast(res.message || 'Chyba při ukládání.', 'toast-error')
     }
   } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
-const confirmDelete = (id, t) => { 
-  deleteModal.value = { show: true, id, type: t === 'users' ? 'user' : t.slice(0, -1) } 
+const confirmDelete = (id, t) => {
+  const typeMap = {
+    users: 'user',
+    beers: 'beer',
+    breweries: 'brewery',
+    locations: 'location',
+    styles: 'style'
+  }
+  deleteModal.value = { show: true, id, type: typeMap[t] } 
 }
 
 const handleDelete = async () => {
   try {
-    // OPRAVA: Obaleno do JSON.stringify()
-    await apiFetch(`/delete_${deleteModal.value.type}.php`, { 
+    const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { 
       method: 'POST', 
       body: JSON.stringify({ id: deleteModal.value.id }) 
     })
-    showToast("Smazáno")
-    deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
-  } finally { deleteModal.value.show = false }
+    
+    if (res.status === 'success') {
+      showToast("Smazáno")
+      deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
+    } else {
+      showToast(res.message || 'Nepodařilo se smazat.', 'toast-error')
+    }
+  } catch(e) {
+    showToast('Chyba při mazání.', 'toast-error')
+  } finally { 
+    deleteModal.value.show = false 
+  }
 }
 </script>
 

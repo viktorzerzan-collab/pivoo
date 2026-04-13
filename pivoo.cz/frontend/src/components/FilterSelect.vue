@@ -16,7 +16,8 @@
 import { ChevronDownIcon } from 'lucide-vue-next'
 defineProps({
   modelValue: [String, Number],
-  icon: Object // Zde předáme ikonu jako komponentu (FilterIcon, ActivityIcon, atd.)
+  // OPRAVA: Ikonky z Lucide mohou být brány jako Funkce nebo Objekt
+  icon: [Object, Function] 
 })
 defineEmits(['update:modelValue'])
 </script>

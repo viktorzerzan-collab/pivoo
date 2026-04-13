@@ -9,7 +9,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// ZABEZPEČENÍ
 $user = JwtHandler::checkUser();
 
 $database = new Database();
@@ -19,7 +18,7 @@ $data = json_decode(file_get_contents("php://input"));
 if (!empty($data->id)) {
     try {
         $query = "UPDATE consumptions 
-                  SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ? 
+                  SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ?, consumed_at = ? 
                   WHERE id = ? AND user_id = ?";
                   
         $stmt = $db->prepare($query);
@@ -29,14 +28,18 @@ if (!empty($data->id)) {
         $volume = !empty($data->volume) ? $data->volume : null;
         $quantity = !empty($data->quantity) ? (int)$data->quantity : 1;
         $price = (!empty($data->price) && $data->price !== '') ? $data->price : null;
-        $rating_beer = !empty($data->rating_beer) ? (int)$data->rating_beer : 0;
-        $rating_care = !empty($data->rating_care) ? (int)$data->rating_care : 0;
+        
+        // OPRAVA ZDE: Stejné ošetření nulových hodnocení jako u přidávání
+        $rating_beer = (!empty($data->rating_beer) && $data->rating_beer > 0) ? (int)$data->rating_beer : null;
+        $rating_care = (!empty($data->rating_care) && $data->rating_care > 0) ? (int)$data->rating_care : null;
+        
         $note = !empty($data->note) ? $data->note : null;
         $packaging = !empty($data->packaging) ? $data->packaging : 'točené';
+        $consumed_at = !empty($data->consumed_at) ? $data->consumed_at : null;
 
         if ($stmt->execute([
             $beer_id, $location_id, $volume, $quantity, $price, $rating_beer, $rating_care,
-            $note, $packaging, $data->id, $user['user_id'] // Povoleno upravit POUZE VLASTNÍ záznam (ID z tokenu)
+            $note, $packaging, $consumed_at, $data->id, $user['user_id']
         ])) {
             echo json_encode(["status" => "success", "message" => "Záznam byl úspěšně upraven."]);
         } else {

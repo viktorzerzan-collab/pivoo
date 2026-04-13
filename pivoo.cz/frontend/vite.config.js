@@ -15,4 +15,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/backend/api': {
+        target: 'https://www.pivoo.cz',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
 })

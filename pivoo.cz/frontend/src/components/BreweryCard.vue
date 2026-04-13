@@ -2,9 +2,12 @@
   <div class="card brewery-card">
     <div class="card-body">
       <div class="card-main-info">
-        <div class="icon-wrapper brewery-bg">
-          <FactoryIcon :size="24" color="#b45309" />
+        
+        <div class="icon-wrapper brewery-bg" :class="{'has-logo': brewery.logo}">
+          <img v-if="brewery.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + brewery.logo" alt="Logo" class="brewery-logo-img" />
+          <FactoryIcon v-else :size="24" color="#b45309" />
         </div>
+
         <div class="text-content">
           <h3 class="card-title">{{ brewery.name }}</h3>
           <p class="card-subtitle">{{ brewery.city || brewery.country || 'Lokalita neznámá' }}</p>
@@ -66,8 +69,13 @@ defineEmits(['showDetail'])
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
 }
 .brewery-bg { background: #ffedd5; }
+.icon-wrapper.has-logo { padding: 0; background: transparent; border: 1px solid var(--border); overflow: hidden; }
+.brewery-logo-img { width: 100%; height: 100%; object-fit: contain; }
 
 .text-content { display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
 

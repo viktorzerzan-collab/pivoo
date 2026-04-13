@@ -2,30 +2,70 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit(); }
 
 require_once '../Database.php';
 require_once '../JwtHandler.php';
-
-// ZABEZPEČENÍ!
 JwtHandler::checkAdmin();
 
-$database = new Database();
-$db = $database->getConnection();
-$data = json_decode(file_get_contents("php://input"));
+$db = (new Database())->getConnection();
+
+$data = !empty($_POST) ? (object) $_POST : json_decode(file_get_contents("php://input"));
 
 if (!empty($data->id) && !empty($data->name)) {
     try {
-        $query = "UPDATE breweries 
-                  SET name = ?, city = ?, country = ?, address = ?, street_number = ?, zip_code = ?, email = ?, phone = ?, website = ? 
-                  WHERE id = ?";
-        $stmt = $db->prepare($query);
-        
+        $new_logo_filename = null;
+        $upload_dir = '../uploads/logos/';
+
+        if (isset($_FILES['logoFile']) && $_FILES['logoFile']['error'] === UPLOAD_ERR_OK) {
+            $stmt_old = $db->prepare("SELECT logo FROM breweries WHERE id = ?");
+            $stmt_old->execute([$data->id]);
+            $oldBrewery = $stmt_old->fetch();
+            
+            $file_tmp = $_FILES['logoFile']['tmp_name'];
+            $image_info = getimagesize($file_tmp);
+            
+            if ($image_info) {
+                $w = $image_info[0]; $h = $image_info[1];
+                $type = $image_info[2];
+                $src = null;
+                
+                if($type == IMAGETYPE_JPEG) $src = imagecreatefromjpeg($file_tmp);
+                elseif($type == IMAGETYPE_PNG) $src = imagecreatefrompng($file_tmp);
+                elseif($type == IMAGETYPE_WEBP) $src = imagecreatefromwebp($file_tmp);
+
+                if ($src) {
+                    $target_size = 400;
+                    $min_side = min($w, $h);
+                    $dst = imagecreatetruecolor($target_size, $target_size);
+                    
+                    if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_WEBP) {
+                        imagealphablending($dst, false);
+                        imagesavealpha($dst, true);
+                        $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+                        imagefilledrectangle($dst, 0, 0, $target_size, $target_size, $transparent);
+                    }
+
+                    imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
+                    
+                    $ext = ($type == IMAGETYPE_PNG) ? '.png' : '.jpg';
+                    $new_logo_filename = uniqid('logo_') . $ext;
+                    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+                    
+                    if ($type == IMAGETYPE_PNG) imagepng($dst, $upload_dir . $new_logo_filename);
+                    else imagejpeg($dst, $upload_dir . $new_logo_filename, 85);
+                    
+                    imagedestroy($src); imagedestroy($dst);
+
+                    if ($oldBrewery && $oldBrewery['logo'] && file_exists($upload_dir . $oldBrewery['logo'])) {
+                        unlink($upload_dir . $oldBrewery['logo']);
+                    }
+                }
+            }
+        }
+
         $city = !empty($data->city) ? $data->city : null;
         $country = !empty($data->country) ? $data->country : null;
         $address = !empty($data->address) ? $data->address : null;
@@ -35,7 +75,17 @@ if (!empty($data->id) && !empty($data->name)) {
         $phone = !empty($data->phone) ? $data->phone : null;
         $website = !empty($data->website) ? $data->website : null;
 
-        if ($stmt->execute([$data->name, $city, $country, $address, $street_number, $zip_code, $email, $phone, $website, $data->id])) {
+        if ($new_logo_filename) {
+            $query = "UPDATE breweries SET name=?, city=?, country=?, address=?, street_number=?, zip_code=?, email=?, phone=?, website=?, logo=? WHERE id=?";
+            $stmt = $db->prepare($query);
+            $params = [$data->name, $city, $country, $address, $street_number, $zip_code, $email, $phone, $website, $new_logo_filename, $data->id];
+        } else {
+            $query = "UPDATE breweries SET name=?, city=?, country=?, address=?, street_number=?, zip_code=?, email=?, phone=?, website=? WHERE id=?";
+            $stmt = $db->prepare($query);
+            $params = [$data->name, $city, $country, $address, $street_number, $zip_code, $email, $phone, $website, $data->id];
+        }
+
+        if ($stmt->execute($params)) {
             echo json_encode(["status" => "success", "message" => "Pivovar byl aktualizován."]);
         } else {
             http_response_code(500);

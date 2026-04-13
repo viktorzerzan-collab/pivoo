@@ -24,6 +24,11 @@
       <div class="beers-grid" v-if="filteredBeers.length > 0">
         <BeerCard v-for="beer in filteredBeers" :key="beer.id" :beer="beer" @showDetail="openBeerDetail" />
       </div>
+      
+      <div v-else-if="!isLoading" class="empty-state">
+        <BeerIcon :size="48" color="#cbd5e1" />
+        <h3>Žádná piva k zobrazení</h3>
+      </div>
     </div>
 
     <AddBeerModal v-if="isAdmin" :show="isAddBeerModalOpen" :breweries="breweries" :styles="styles" :form="newBeerForm" @close="isAddBeerModalOpen = false" @submit="submitNewBeer" />
@@ -34,7 +39,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, ArrowDownUpIcon } from 'lucide-vue-next'
+// Přidán import BeerIcon
+import { PlusIcon, ArrowDownUpIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -60,8 +66,9 @@ const openBeerDetail = async (beer) => {
   selectedBeer.value = beer; isDetailModalOpen.value = true;
   const res = await apiFetch(`/beer_reviews.php?beer_id=${beer.id}`); if (res.status === 'success') beerReviews.value = res.data
 }
+
 const submitNewBeer = async () => {
-  const res = await apiFetch('/add_beer.php', { method: 'POST', body: newBeerForm.value })
+  const res = await apiFetch('/add_beer.php', { method: 'POST', body: JSON.stringify(newBeerForm.value) })
   if (res.status === 'success') { isAddBeerModalOpen.value = false; await catalogStore.fetchAllData() }
 }
 onMounted(() => { if (user.value) catalogStore.fetchAllData() })
@@ -74,7 +81,9 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .header-filters-row { display: flex; gap: 1rem; width: 60%; }
 .beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
-/* Přidaná optimalizace pro mobilní zařízení */
+/* Přidáno stylování pro empty-state */
+.empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); }
+
 @media (max-width: 800px) {
   .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .header-filters-row { width: 100%; flex-direction: column; }

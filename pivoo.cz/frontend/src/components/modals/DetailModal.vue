@@ -2,8 +2,9 @@
   <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 550px;">
     <template #header>
       <div class="detail-header">
-        <div class="icon-box" :class="type">
-          <BeerIcon v-if="type === 'beer'" :size="32" />
+        <div class="icon-box" :class="[type, {'has-logo': item?.logo}]">
+          <img v-if="type === 'brewery' && item?.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" class="detail-logo-img" />
+          <BeerIcon v-else-if="type === 'beer'" :size="32" />
           <FactoryIcon v-else-if="type === 'brewery'" :size="32" />
           <MapPinIcon v-else :size="32" />
         </div>
@@ -101,18 +102,21 @@ import BaseModal from '../BaseModal.vue'
 defineProps({
   show: Boolean,
   item: Object,
-  type: String, // 'beer', 'brewery', 'location'
-  reviews: Array // Pouze pro piva
+  type: String,
+  reviews: Array
 })
 defineEmits(['close'])
 </script>
 
 <style scoped>
 .detail-header { display: flex; align-items: center; gap: 1rem; }
-.icon-box { padding: 0.8rem; border-radius: 12px; }
+.icon-box { padding: 0.8rem; border-radius: 12px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .icon-box.beer { background: #fef9c3; color: #ca8a04; }
 .icon-box.brewery { background: #ffedd5; color: #b45309; }
 .icon-box.location { background: #e0f2fe; color: #0369a1; }
+.icon-box.has-logo { padding: 0; background: transparent; overflow: hidden; border: 1px solid var(--border); }
+.detail-logo-img { width: 100%; height: 100%; object-fit: contain; }
+
 .modal-title { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e293b; }
 .modal-subtitle { margin: 0; color: #64748b; font-size: 0.95rem; }
 

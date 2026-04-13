@@ -9,7 +9,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// UZAMČENÍ: Provede kontrolu, jestli je uživatel alespoň přihlášený
 $user = JwtHandler::checkUser();
 
 $database = new Database();
@@ -18,21 +17,25 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->beer_id) && !empty($data->location_id)) {
     try {
-        $query = "INSERT INTO consumptions (user_id, beer_id, location_id, volume, quantity, price, rating_beer, rating_care, note, packaging) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO consumptions (user_id, beer_id, location_id, volume, quantity, price, rating_beer, rating_care, note, packaging, consumed_at) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $db->prepare($query);
         
         $volume = !empty($data->volume) ? $data->volume : null;
         $quantity = !empty($data->quantity) ? (int)$data->quantity : 1;
         $price = (!empty($data->price) && $data->price !== '') ? $data->price : null;
-        $rating_beer = !empty($data->rating_beer) ? (int)$data->rating_beer : 0;
-        $rating_care = !empty($data->rating_care) ? (int)$data->rating_care : 0;
+        
+        // OPRAVA ZDE: Pokud přijde 0, vložíme NULL. Tím oblafneme CHECK constraint v databázi.
+        $rating_beer = (!empty($data->rating_beer) && $data->rating_beer > 0) ? (int)$data->rating_beer : null;
+        $rating_care = (!empty($data->rating_care) && $data->rating_care > 0) ? (int)$data->rating_care : null;
+        
         $note = !empty($data->note) ? $data->note : null;
         $packaging = !empty($data->packaging) ? $data->packaging : 'točené';
+        $consumed_at = !empty($data->consumed_at) ? $data->consumed_at : date("Y-m-d H:i:s");
 
         if ($stmt->execute([
-            $user['user_id'], // TADY: Bezpečnostní pojistka! Vkládáme ID přímo z JWT Tokenu
+            $user['user_id'], 
             $data->beer_id, 
             $data->location_id, 
             $volume, 
@@ -41,7 +44,8 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
             $rating_beer, 
             $rating_care, 
             $note, 
-            $packaging
+            $packaging,
+            $consumed_at
         ])) {
             echo json_encode(["status" => "success", "message" => "Zapsáno do deníčku!"]);
         } else {

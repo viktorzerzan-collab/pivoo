@@ -1,8 +1,17 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 600px;">
-    <template #header><h2 style="margin: 0; font-size: 1.5rem; color: #1e293b;">🏭 Nový pivovar</h2></template>
+    <template #header>
+      <h2 style="margin: 0; font-size: 1.5rem; color: #1e293b;">
+        🏭 {{ isEditing ? 'Upravit pivovar' : 'Nový pivovar' }}
+      </h2>
+    </template>
     <template #body>
       <form @submit.prevent="$emit('submit')" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        
+        <div style="margin-bottom: 0.5rem;">
+          <BaseFileUpload v-model:file="form.logoFile" label="Logo pivovaru (volitelné)" placeholder="Nahrát logo" />
+        </div>
+
         <BaseInput v-model="form.name" label="Název pivovaru *" required />
         
         <div style="display: flex; gap: 1rem;">
@@ -37,9 +46,11 @@ import { SaveIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
+import BaseFileUpload from '../BaseFileUpload.vue'
 
 defineProps({
   show: Boolean,
+  isEditing: Boolean,
   form: Object
 })
 defineEmits(['close', 'submit'])

@@ -1,6 +1,6 @@
 // frontend/src/api.js
 
-const BASE_URL = 'https://www.pivoo.cz/backend/api';
+const BASE_URL = '/backend/api';
 
 /**
  * Univerzální funkce pro volání API

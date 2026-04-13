@@ -34,9 +34,10 @@
           @showDetail="openDetail" 
         />
       </div>
+      
       <div v-else-if="!isLoading" class="empty-state">
         <MapIcon :size="48" color="#cbd5e1" />
-        <h3>Zatím tu žádné podniky nejsou</h3>
+        <h3>Žádné podniky k zobrazení</h3>
       </div>
     </div>
 
@@ -104,7 +105,7 @@ const openDetail = (loc) => {
 
 const submitLocation = async () => {
   try {
-    const result = await apiFetch('/add_location.php', { method: 'POST', body: form.value })
+    const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
       form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' }
@@ -125,7 +126,6 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); }
 
-/* Opravená optimalizace pro mobilní zařízení */
 @media (max-width: 800px) { 
   .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .header-filters-row { width: 100%; flex-direction: column; } 
