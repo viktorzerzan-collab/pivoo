@@ -41,9 +41,9 @@ defineEmits(['edit', 'delete'])
 .history-item:last-child { border-bottom: none; }
 
 .history-info { display: flex; flex-direction: column; gap: 0.25rem; }
-.beer-main { font-size: 1rem; color: #1e293b; }
-.volume { color: var(--text-muted); font-size: 0.85rem; margin-left: 0.4rem; }
-.location-info { display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #64748b; font-weight: 500; }
+.beer-main { font-size: 1rem; color: var(--text-main); transition: color 0.5s ease; }
+.volume { color: var(--text-muted); font-size: 0.85rem; margin-left: 0.4rem; transition: color 0.5s ease; }
+.location-info { display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; transition: color 0.5s ease; }
 
 .history-actions { display: flex; align-items: center; gap: 1.25rem; }
 .price { font-weight: 700; color: #10b981; font-size: 0.95rem; }

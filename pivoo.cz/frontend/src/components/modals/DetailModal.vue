@@ -117,32 +117,32 @@ defineEmits(['close'])
 .icon-box.has-logo { padding: 0; background: transparent; overflow: hidden; border: 1px solid var(--border); }
 .detail-logo-img { width: 100%; height: 100%; object-fit: contain; }
 
-.modal-title { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e293b; }
-.modal-subtitle { margin: 0; color: #64748b; font-size: 0.95rem; }
+.modal-title { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--text-main); transition: color 0.5s ease; }
+.modal-subtitle { margin: 0; color: var(--text-muted); font-size: 0.95rem; transition: color 0.5s ease; }
 
-.rating-section { text-align: center; padding: 1.25rem; background: #f8fafc; border-radius: 12px; margin: 1rem 0; border: 1px solid #f1f5f9; }
-.label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; }
+.rating-section { text-align: center; padding: 1.25rem; background: var(--bg-app); border-radius: 12px; margin: 1rem 0; border: 1px solid var(--border); transition: background-color 0.5s ease, border-color 0.5s ease; }
+.label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
 .rating-display { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.4rem; }
-.rating-number { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+.rating-number { font-size: 1.5rem; font-weight: 800; color: var(--text-main); transition: color 0.5s ease; }
 .stars { display: flex; gap: 2px; }
 
-.ui-divider { border: 0; border-top: 1px solid #f1f5f9; margin: 1.25rem 0; }
+.ui-divider { border: 0; border-top: 1px solid var(--border); margin: 1.25rem 0; transition: border-color 0.5s ease; }
 
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.stat-mini { display: flex; align-items: center; gap: 0.75rem; background: #f8fafc; padding: 0.75rem; border-radius: 10px; }
+.stat-mini { display: flex; align-items: center; gap: 0.75rem; background: var(--bg-app); padding: 0.75rem; border-radius: 10px; transition: background-color 0.5s ease; }
 .stat-text { display: flex; flex-direction: column; font-size: 0.85rem; }
-.stat-text span { color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
+.stat-text span { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
 
-.section-subtitle { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: #334155; margin: 1.5rem 0 1rem; }
+.section-subtitle { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: var(--text-main); margin: 1.5rem 0 1rem; transition: color 0.5s ease; }
 .reviews-list { display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto; }
-.review-bubble { background: white; border: 1px solid #e2e8f0; padding: 0.8rem; border-radius: 10px; }
-.rev-head { display: flex; justify-content: space-between; font-size: 0.85rem; }
-.rev-note { margin: 0.3rem 0 0; font-style: italic; color: #475569; font-size: 0.9rem; }
-.empty-reviews { text-align: center; color: #94a3b8; font-size: 0.9rem; padding: 1rem; }
+.review-bubble { background: var(--bg-app); border: 1px solid var(--border); padding: 0.8rem; border-radius: 10px; transition: background-color 0.5s ease, border-color 0.5s ease; }
+.rev-head { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-main); }
+.rev-note { margin: 0.3rem 0 0; font-style: italic; color: var(--text-muted); font-size: 0.9rem; }
+.empty-reviews { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 1rem; }
 
 .contact-list { display: flex; flex-direction: column; gap: 1rem; }
-.info-item { display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.95rem; }
+.info-item { display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.95rem; color: var(--text-main); }
 .link { color: var(--primary); text-decoration: none; font-weight: 600; }
 .link:hover { text-decoration: underline; }
-.icon-muted { color: #cbd5e1; flex-shrink: 0; }
+.icon-muted { color: var(--text-muted); flex-shrink: 0; }
 </style>

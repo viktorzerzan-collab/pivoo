@@ -14,21 +14,19 @@
 </template>
 
 <script setup>
-// Importujeme verzi přímo z package.json projektu
 import packageJson from '../../package.json'
-
 const appVersion = packageJson.version
-// Automaticky vygenerujeme dnešní datum jako Build datum
 const buildDate = new Date().toISOString().split('T')[0]
 </script>
 
 <style scoped>
 .app-footer {
-  background-color: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  background-color: var(--bg-panel);
+  border-top: 1px solid var(--border);
   padding: 1.5rem 2rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.9rem;
+  transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
 }
 
 .footer-content {
@@ -40,7 +38,8 @@ const buildDate = new Date().toISOString().split('T')[0]
 }
 
 .copyright strong {
-  color: #334155;
+  color: var(--text-main);
+  transition: color 0.5s ease;
 }
 
 .app-version {
@@ -54,8 +53,9 @@ const buildDate = new Date().toISOString().split('T')[0]
 .version-dot {
   width: 4px;
   height: 4px;
-  background-color: #cbd5e1;
+  background-color: var(--border);
   border-radius: 50%;
+  transition: background-color 0.5s ease;
 }
 
 @media (max-width: 600px) {

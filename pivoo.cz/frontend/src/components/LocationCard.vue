@@ -41,13 +41,13 @@ defineEmits(['showDetail'])
 
 <style scoped>
 .card {
-  background: white;
+  background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background-color 0.5s ease;
   height: 100%;
 }
 
@@ -55,6 +55,7 @@ defineEmits(['showDetail'])
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
   border-color: var(--primary);
+  background-color: var(--card-hover-bg);
 }
 
 .card-body { padding: 1.25rem; flex-grow: 1; }
@@ -71,13 +72,14 @@ defineEmits(['showDetail'])
 
 .text-content { display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
 
-.card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card-subtitle { margin: 0; font-size: 0.85rem; color: #64748b; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
+.card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
 
 .card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
 .rating-value { font-size: 0.9rem; font-weight: 800; color: #0369a1; }
-.count { font-size: 0.75rem; color: #94a3b8; margin-left: 4px; }
+.count { font-size: 0.75rem; color: var(--text-muted); margin-left: 4px; transition: color 0.5s ease; }
 
 .card-footer { padding: 0 1.25rem 1.25rem; }
-.full-width-btn { width: 100%; justify-content: center; }
+.full-width-btn { width: 100%; justify-content: center; background-color: var(--bg-app); border: 1px solid var(--border); color: var(--text-main); }
+.full-width-btn:hover { background-color: var(--border); }
 </style>

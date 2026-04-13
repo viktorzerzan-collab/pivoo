@@ -1,6 +1,8 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')">
-    <template #header><h2 class="modal-title">🍺 Zaznamenat vypitá piva</h2></template>
+    <template #header>
+      <h2 class="modal-title"><BeerIcon class="title-icon" :size="28" /> Zaznamenat vypitá piva</h2>
+    </template>
     <template #body>
       <form @submit.prevent="$emit('submit')" class="checkin-form">
         
@@ -29,11 +31,11 @@
 
         <div class="form-row">
           <BaseSelect class="half" v-model="form.packaging" label="Forma balení" required>
-            <option value="točené">🍺 Točené</option>
-            <option value="lahev">🍾 Lahev</option>
-            <option value="plechovka">🥫 Plechovka</option>
-            <option value="pet">🧴 PET lahev</option>
-            <option value="sud">🛢️ Soukromý sud</option>
+            <option value="točené">Točené</option>
+            <option value="lahev">Lahev</option>
+            <option value="plechovka">Plechovka</option>
+            <option value="pet">PET lahev</option>
+            <option value="sud">Soukromý sud</option>
           </BaseSelect>
 
           <BaseSelect class="half" v-model="form.volume" label="Objem">
@@ -75,12 +77,12 @@
 
 <script setup>
 import { computed, watch } from 'vue'
+import { BeerIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
 import BaseDatePicker from '../BaseDatePicker.vue'
-// IMPORT HVĚZDIČEK
 import StarRating from '../StarRating.vue'
 
 const props = defineProps({ 
@@ -120,13 +122,14 @@ watch(() => props.show, (newVal) => {
 </script>
 
 <style scoped>
-.modal-title { margin: 0; color: #1e293b; font-size: 1.5rem; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.title-icon { color: var(--primary); }
 .checkin-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
-.input-label { font-size: 0.9rem; font-weight: 600; color: #475569; }
+.input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.5s ease; }
 
 @media (max-width: 600px) { 
   .form-row { flex-direction: column; gap: 1.25rem; } 

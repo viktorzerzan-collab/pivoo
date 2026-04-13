@@ -27,7 +27,7 @@ defineEmits(['close'])
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -37,14 +37,16 @@ defineEmits(['close'])
 }
 
 .modal-container {
-  background: white;
+  background: var(--bg-panel);
+  color: var(--text-main);
   width: 100%;
   max-width: 500px;
   border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 .modal-header {
@@ -52,13 +54,15 @@ defineEmits(['close'])
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
+  transition: border-color 0.5s ease;
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: #1e293b;
+  color: var(--text-main);
+  transition: color 0.5s ease;
 }
 
 .modal-body {

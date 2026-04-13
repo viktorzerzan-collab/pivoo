@@ -39,7 +39,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-// Přidán import BeerIcon
 import { PlusIcon, ArrowDownUpIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -81,11 +80,12 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .header-filters-row { display: flex; gap: 1rem; width: 60%; }
 .beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
-/* Přidáno stylování pro empty-state */
-.empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); }
+.empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); transition: background-color 0.5s ease, border-color 0.5s ease; }
+.empty-state h3 { color: var(--text-main); transition: color 0.5s ease; }
 
 @media (max-width: 800px) {
   .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .header-top .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; } /* VZDUŠNĚJŠÍ TLAČÍTKO */
   .header-filters-row { width: 100%; flex-direction: column; }
 }
 </style>

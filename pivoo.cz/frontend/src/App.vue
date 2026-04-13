@@ -1,6 +1,6 @@
 <template>
-  <div class="layout-wrapper">
-    <AppNavigation v-if="!isAuthPage" />
+  <div class="layout-wrapper" :class="{ 'dark-mode': isDark }">
+    <AppNavigation v-if="!isAuthPage" @toggle-theme="toggleTheme" :is-dark="isDark" />
     <main class="main-content" :class="{ 'auth-layout': isAuthPage }">
       <div :class="isAuthPage ? 'full-width' : 'container'">
         <router-view />
@@ -11,13 +11,73 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
+import { useAuthStore } from './stores/auth'
+// OPRAVA: Potřebujeme komunikovat s backendem
+import { apiFetch } from './api' 
 
 const route = useRoute()
+const authStore = useAuthStore()
+const { user, theme } = storeToRefs(authStore)
+
 const isAuthPage = computed(() => route.name === 'login' || route.name === 'register')
+
+// Reaktivní stav pro aktuální vizuální režim
+const isDark = ref(false)
+let autoInterval = null
+
+const checkAutoTheme = () => {
+  if (user.value?.theme_mode === 'auto') {
+    const hour = new Date().getHours()
+    isDark.value = (hour >= 18 || hour < 6)
+  } else {
+    isDark.value = theme.value === 'dark'
+  }
+}
+
+const toggleTheme = async () => {
+  // 1. Okamžitá vizuální odezva pro uživatele
+  const newTheme = isDark.value ? 'light' : 'dark'
+  isDark.value = !isDark.value 
+  authStore.setTheme(newTheme)
+
+  // 2. Pokud měl uživatel "Auto", kliknutím dává najevo, že to chce řídit sám
+  if (user.value?.theme_mode === 'auto') {
+    authStore.updateUser({ theme_mode: 'manual' })
+  }
+
+  // 3. Pokud je přihlášený, pošleme tuto volbu rovnou do DB
+  if (user.value) {
+    try {
+      await apiFetch('/update_profile.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'update_theme',
+          theme_mode: 'manual', // Vynutíme ruční režim
+          theme_preference: newTheme // Uložíme si, zda chce světlý/tmavý
+        })
+      })
+    } catch (error) {
+      console.error('Chyba při ukládání tématu do databáze:', error)
+    }
+  }
+}
+
+watch(() => user.value?.theme_mode, checkAutoTheme)
+watch(theme, checkAutoTheme)
+
+onMounted(() => {
+  checkAutoTheme()
+  autoInterval = setInterval(checkAutoTheme, 60000)
+})
+
+onUnmounted(() => {
+  if (autoInterval) clearInterval(autoInterval)
+})
 </script>
 
 <style>
@@ -37,12 +97,26 @@ const isAuthPage = computed(() => route.name === 'login' || route.name === 'regi
   --orange-hover: #ea580c;
   --danger: #ef4444;
   --danger-hover: #dc2626;
+
+  /* SVĚTLÝ REŽIM (Výchozí) */
   --bg-app: #f1f5f9;
   --bg-panel: #ffffff;
   --text-main: #1e293b;
   --text-muted: #64748b;
   --border: #e2e8f0;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --card-hover-bg: #f8fafc;
+}
+
+/* --- TMAVÝ REŽIM (Aktivován třídou) --- */
+.dark-mode {
+  --bg-app: #0f172a;
+  --bg-panel: #1e293b;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --card-hover-bg: #242f42;
 }
 
 html, body, #app {
@@ -52,13 +126,27 @@ html, body, #app {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.5s ease;
 }
 
-/* --- 2. LAYOUT (STICKY FOOTER) --- */
-.layout-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
+/* --- 2. LAYOUT A PŘECHODY --- */
+.layout-wrapper { 
+  display: flex; 
+  flex-direction: column; 
+  min-height: 100vh; 
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
 .main-content { flex: 1 0 auto; display: flex; flex-direction: column; }
 .container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
 .auth-layout { justify-content: center; align-items: center; flex: 1; }
+
+/* OPRAVA: Povolí dětským komponentám roztáhnout se na celou šířku */
+.full-width {
+  width: 100%;
+}
 
 /* --- 3. UNIVERZÁLNÍ TLAČÍTKA --- */
 button, .base-button {
@@ -70,7 +158,7 @@ button, .base-button {
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   border: none;
   font-size: 0.95rem;
   box-shadow: var(--shadow);
@@ -106,13 +194,13 @@ button.btn-close {
 }
 button.btn-close:hover {
   color: var(--text-main) !important;
-  background: rgba(0,0,0,0.05) !important;
+  background: rgba(255,255,255,0.05) !important;
 }
 
-/* --- 5. OSTATNÍ KOMPONENTY A ODZNAKY --- */
+/* --- 5. OSTATNÍ KOMPONENTY A ODZNAČKY --- */
 .badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
-.badge.admin { background: #fee2e2; color: #ef4444; }
-.badge.user { background: #e0f2fe; color: #0284c7; }
+.badge.admin { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.badge.user { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
 
 /* --- 6. TOAST NOTIFIKACE A ANIMACE --- */
 .toast-notification {

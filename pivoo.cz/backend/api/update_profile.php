@@ -16,21 +16,57 @@ $user = JwtHandler::checkUser();
 $db = (new Database())->getConnection();
 $data = json_decode(file_get_contents("php://input"));
 
-if (!empty($data->old_password) && !empty($data->new_password)) {
-    // 1. Ověříme, zda se staré heslo shoduje s tím v databázi
+// Zjištění akce (výchozí je změna hesla pro zachování zpětné kompatibility)
+$action = isset($data->action) ? $data->action : 'change_password';
+
+// --- AKCE: AKTUALIZACE VZHLEDU ---
+if ($action === 'update_theme') {
+    $mode = isset($data->theme_mode) ? $data->theme_mode : null;
+    $pref = isset($data->theme_preference) ? $data->theme_preference : null;
+
+    if ($mode || $pref) {
+        try {
+            // Aktualizujeme to, co nám frontend poslal (může poslat obojí, nebo jen jedno)
+            if ($mode && $pref) {
+                $update = $db->prepare("UPDATE users SET theme_mode = ?, theme_preference = ? WHERE id = ?");
+                $success = $update->execute([$mode, $pref, $user['user_id']]);
+            } else if ($mode) {
+                $update = $db->prepare("UPDATE users SET theme_mode = ? WHERE id = ?");
+                $success = $update->execute([$mode, $user['user_id']]);
+            } else if ($pref) {
+                $update = $db->prepare("UPDATE users SET theme_preference = ? WHERE id = ?");
+                $success = $update->execute([$pref, $user['user_id']]);
+            }
+
+            if ($success) {
+                echo json_encode(["status" => "success", "message" => "Nastavení vzhledu uloženo."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["status" => "error", "message" => "Chyba při ukládání do databáze."]);
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Chyba serveru."]);
+        }
+    } else {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Chybí data pro aktualizaci."]);
+    }
+    exit();
+}
+
+// --- AKCE: ZMĚNA HESLA ---
+if ($action === 'change_password' && !empty($data->old_password) && !empty($data->new_password)) {
     $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
     $stmt->execute([$user['user_id']]);
     $dbUser = $stmt->fetch();
 
     if ($dbUser && password_verify($data->old_password, $dbUser['password_hash'])) {
-        
-        // 2. Kontrola síly nového hesla (stejná pravidla jako při registraci)
         if (strlen($data->new_password) < 8 || !preg_match('/[0-9]/', $data->new_password) || !preg_match('/[^a-zA-Z0-9]/', $data->new_password)) {
             echo json_encode(["status" => "error", "message" => "Nové heslo musí mít alespoň 8 znaků, obsahovat číslo a speciální znak."]);
             exit();
         }
 
-        // 3. Zahešujeme a uložíme nové heslo
         $new_hash = password_hash($data->new_password, PASSWORD_DEFAULT);
         $update = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
         
@@ -45,6 +81,6 @@ if (!empty($data->old_password) && !empty($data->new_password)) {
     }
 } else {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Vyplňte všechna pole pro změnu hesla."]);
+    echo json_encode(["status" => "error", "message" => "Vyplňte všechna pole."]);
 }
 ?>

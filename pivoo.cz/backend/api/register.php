@@ -24,7 +24,6 @@ try {
         exit();
     }
 
-    // Kontrola věku a hesla...
     $bday = new DateTime($birthdate);
     $today = new DateTime('today');
     if ($bday->diff($today)->y < 18) {
@@ -57,7 +56,10 @@ try {
     }
 
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
-    $insert = $db_connection->prepare("INSERT INTO users (username, first_name, last_name, email, birthdate, password_hash, role, avatar) VALUES (?, ?, ?, ?, ?, ?, 'user', ?)");
+    // Přidáno nastavení výchozího tématu do SQL INSERTu
+    $query = "INSERT INTO users (username, first_name, last_name, email, birthdate, password_hash, role, avatar, theme_mode, theme_preference) 
+              VALUES (?, ?, ?, ?, ?, ?, 'user', ?, 'manual', 'light')";
+    $insert = $db_connection->prepare($query);
     $insert->execute([$username, $first_name, $last_name, $email, $birthdate, $password_hash, $avatar_filename]);
 
     echo json_encode(["status" => "success", "message" => "Registrace úspěšná."]);

@@ -77,7 +77,9 @@ onUnmounted(() => {
 
 <style scoped>
 .file-upload-wrapper { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
-.upload-label { font-weight: 600; color: #334155; font-size: 0.9rem; }
+
+/* OPRAVA: Napojeno na proměnnou pro text s plynulým přechodem */
+.upload-label { font-weight: 600; color: var(--text-main); font-size: 0.9rem; transition: color 0.5s ease; }
 
 .upload-container {
   position: relative;
@@ -85,18 +87,20 @@ onUnmounted(() => {
   min-height: 80px;
   border-radius: 12px; border: 2px dashed var(--border); 
   background-color: var(--bg-app);
-  cursor: pointer; transition: all 0.2s ease;
+  cursor: pointer; transition: all 0.3s ease;
   overflow: hidden;
 }
 
-.upload-container:hover { border-color: var(--primary); background-color: #fefce8; }
+/* OPRAVA: Nahrazeno natvrdo zadané #fefce8 za průhlednou primární barvu, která pasuje do tmavého režimu */
+.upload-container:hover { border-color: var(--primary); background-color: rgba(250, 204, 21, 0.05); }
 
 .upload-placeholder {
   display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.5rem;
 }
 
-.upload-icon { color: #94a3b8; }
-.file-name { color: #64748b; font-size: 0.9rem; }
+/* OPRAVA: Ikona a text napojeny na CSS proměnné pro tmavý režim */
+.upload-icon { color: var(--text-muted); transition: color 0.5s ease; }
+.file-name { color: var(--text-muted); font-size: 0.9rem; transition: color 0.5s ease; }
 
 .image-preview { width: 100%; height: 150px; position: relative; }
 .image-preview img { width: 100%; height: 100%; object-fit: cover; }
@@ -109,5 +113,5 @@ onUnmounted(() => {
 .image-preview:hover .change-overlay { opacity: 1; }
 
 .hidden-input { display: none; }
-.error-text { color: #ef4444; font-size: 0.8rem; font-weight: 600; margin-top: 0.2rem; }
+.error-text { color: var(--danger); font-size: 0.8rem; font-weight: 600; margin-top: 0.2rem; }
 </style>

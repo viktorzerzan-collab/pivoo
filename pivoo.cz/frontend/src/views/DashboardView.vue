@@ -160,13 +160,14 @@ const executeDelete = async () => {
 .dashboard-layout { position: relative; min-height: 400px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .dashboard-content { display: flex; flex-direction: column; gap: 2rem; }
-.panel-card { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; }
-.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; }
-.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; }
-.empty-dashboard { text-align: center; color: #94a3b8; padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.panel-card { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.5s ease, border-color 0.5s ease; }
+.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.5s ease; }
+.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.5s ease; }
+.empty-dashboard { text-align: center; color: var(--text-muted); padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: color 0.5s ease; }
 
 @media (max-width: 600px) {
   .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .section-header .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; } /* VZDUŠNĚJŠÍ TLAČÍTKO */
   .panel-card { padding: 1rem; }
 }
 </style>

@@ -1,7 +1,10 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')">
     <template #header>
-      <h2 class="modal-title">📍 {{ isEditing ? 'Upravit podnik' : 'Nový podnik' }}</h2>
+      <h2 class="modal-title">
+        <MapPinIcon class="title-icon" :size="26" />
+        {{ isEditing ? 'Upravit podnik' : 'Nový podnik' }}
+      </h2>
     </template>
     <template #body>
       <form @submit.prevent="$emit('submit')" class="add-form">
@@ -41,6 +44,7 @@
 </template>
 
 <script setup>
+import { MapPinIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
@@ -55,7 +59,8 @@ defineEmits(['close', 'submit'])
 </script>
 
 <style scoped>
-.modal-title { margin: 0; color: #1e293b; font-size: 1.5rem; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.title-icon { color: var(--blue); }
 .add-form { display: flex; flex-direction: column; gap: 1rem; }
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }

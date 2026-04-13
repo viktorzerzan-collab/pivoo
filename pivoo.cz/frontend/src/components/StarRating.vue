@@ -17,7 +17,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const toggleRating = (star) => {
-  // Pokud uživatel klikne na stejnou hvězdičku, vynulujeme hodnocení (zrušení výběru)
   if (props.modelValue === star) {
     emit('update:modelValue', 0)
   } else {
@@ -32,8 +31,9 @@ const toggleRating = (star) => {
   gap: 0.25rem; 
   font-size: 2.2rem; 
   cursor: pointer; 
-  color: #e2e8f0; 
+  color: var(--border); 
   user-select: none; 
+  transition: color 0.5s ease;
 }
 .star { 
   transition: color 0.2s, transform 0.1s; 
@@ -43,7 +43,7 @@ const toggleRating = (star) => {
   transform: scale(1.15); 
 }
 .star.is-active { 
-  color: #facc15; /* Krásná zlatá/žlutá barva z Tailwindu */
+  color: var(--primary); 
 }
 
 @media (max-width: 600px) {

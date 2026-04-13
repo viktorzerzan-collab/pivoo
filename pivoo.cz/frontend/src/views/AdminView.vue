@@ -80,7 +80,7 @@
       <template #body>
         <form @submit.prevent="submitForm('style')" style="display: flex; flex-direction: column; gap: 1.5rem;">
           <BaseInput v-model="formData.style.name" label="Název stylu *" required />
-          <button type="submit" class="btn-add"><SaveIcon /> Uložit styl</button>
+          <button type="submit" class="btn-add" style="padding: 1rem;"><SaveIcon /> Uložit styl</button>
         </form>
       </template>
     </BaseModal>
@@ -241,19 +241,20 @@ const handleDelete = async () => {
 .admin-tabs button.active { background: var(--primary); color: #1e293b; }
 
 .admin-layout { position: relative; flex: 1; min-height: 400px; }
-.admin-section { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); }
+.admin-section { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
 
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .admin-table-wrapper { overflow-x: auto; }
 .admin-table { width: 100%; border-collapse: collapse; }
-.admin-table th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
-.admin-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.admin-table th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; background: var(--bg-app); transition: background-color 0.5s ease; }
+.admin-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); }
 
 .action-buttons { display: flex; gap: 0.5rem; }
 .w-100 { width: 100px; }
 
 @media (max-width: 600px) {
   .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .section-header .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; } /* VZDUŠNĚJŠÍ TLAČÍTKO */
   .admin-section { padding: 1rem; }
 }
 </style>

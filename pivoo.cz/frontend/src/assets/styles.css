@@ -25,6 +25,7 @@ body {
   background-color: var(--bg-app);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 /* 3. LAYOUT APLIKACE */
@@ -32,10 +33,10 @@ body {
 .main-content { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
 /* 4. TYPOGRAFIE */
-.section-title { font-size: 1.875rem; font-weight: 800; margin: 0; color: #1e293b; letter-spacing: -0.025em; }
+.section-title { font-size: 1.875rem; font-weight: 800; margin: 0; color: var(--text-main); letter-spacing: -0.025em; }
 .auth-subtitle { color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 2rem; font-size: 1rem; }
 
-/* 5. VSTUPNÍ POLE A SELECTY (Globální styl pro dokonalou shodu) */
+/* 5. VSTUPNÍ POLE A SELECTY */
 .base-select {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -46,20 +47,18 @@ body {
   font-size: 1rem;
   box-sizing: border-box;
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: var(--shadow-sm);
   
-  /* Odstranění nativní šipky prohlížeče */
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   
-  /* Vlastní moderní šipka přes SVG pozadí */
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 1.2em;
-  padding-right: 2.5rem; /* Aby text nepřetékal přes šipku */
+  padding-right: 2.5rem;
 }
 
 .base-select:focus {
@@ -68,34 +67,76 @@ body {
 }
 
 .base-select:disabled {
-  background-color: #f1f5f9;
-  color: #94a3b8;
+  background-color: var(--bg-app);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
 /* 6. ADMIN ZÁLOŽKY */
-.admin-tabs { display: inline-flex; background-color: #f1f5f9; padding: 0.375rem; border-radius: 12px; gap: 0.25rem; margin-bottom: 2rem; flex-wrap: wrap; }
-.admin-tabs button { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.25rem; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 0.95rem; color: var(--text-muted); transition: all 0.2s ease; }
-.admin-tabs button:hover:not(.active) { color: var(--text-main); }
+.admin-tabs { 
+  display: inline-flex; 
+  background-color: var(--border); 
+  padding: 0.375rem; 
+  border-radius: 12px; 
+  gap: 0.25rem; 
+  margin-bottom: 2rem; 
+  flex-wrap: wrap; 
+  transition: background-color 0.5s ease;
+}
+.admin-tabs button { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  padding: 0.6rem 1.25rem; 
+  border: none; 
+  background: transparent; 
+  cursor: pointer; 
+  border-radius: 8px; 
+  font-weight: 600; 
+  font-size: 0.95rem; 
+  color: var(--text-muted); 
+  transition: all 0.3s ease; 
+}
+.admin-tabs button:hover:not(.active) { color: var(--text-main); background: rgba(255,255,255,0.05); }
 .admin-tabs button.active { background-color: var(--bg-panel); color: var(--color-add); box-shadow: var(--shadow-sm); }
 
-/* 7. TABULKY A SEKCE */
+/* 7. TABULKY A SEKCE - OPRAVA PRO TMAVÝ REŽIM */
 .admin-section { margin-bottom: 2rem; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; }
-.section-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #334155; }
+.section-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
 
-.admin-table-wrapper { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow-x: auto; }
+.admin-table-wrapper { 
+  background: var(--bg-panel); 
+  border-radius: 12px; 
+  border: 1px solid var(--border); 
+  box-shadow: var(--shadow-sm); 
+  overflow-x: auto; 
+  transition: background-color 0.5s ease, border-color 0.5s ease;
+}
 .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
-.admin-table th { padding: 1rem 1.25rem; background: #f8fafc; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
-.admin-table td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: #334155; }
+.admin-table th { 
+  padding: 1rem 1.25rem; 
+  background: var(--bg-app); 
+  color: var(--text-muted); 
+  font-size: 0.75rem; 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  border-bottom: 1px solid var(--border); 
+  transition: background-color 0.5s ease;
+}
+.admin-table td { 
+  padding: 1rem 1.25rem; 
+  border-bottom: 1px solid var(--border); 
+  vertical-align: middle; 
+  color: var(--text-main); 
+}
 .admin-table tr:last-child td { border-bottom: none; }
-.admin-table tbody tr:hover { background-color: #f8fafc; }
+.admin-table tbody tr:hover { background-color: var(--card-hover-bg); }
 
 /* 8. AKČNÍ TLAČÍTKA A ODZNAČKY */
 .action-buttons { display: flex; align-items: center; gap: 0.5rem; }
 .badge { padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.025em; }
-.badge.admin { background: #fee2e2; color: #ef4444; }
-.badge.user { background: #e0f2fe; color: #0284c7; }
 
 /* 9. HLAVIČKA A NOTIFIKACE */
 .app-header { background: #1e293b; color: white; padding: 1rem 2rem; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 50; }

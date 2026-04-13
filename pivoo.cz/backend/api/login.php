@@ -30,8 +30,9 @@ try {
     $username = trim($data->username);
     $password = $data->password;
 
-    // PŘIDÁNO: Načítáme i sloupec `avatar`
-    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar FROM users WHERE username = ? OR email = ? LIMIT 1";
+    // Přidáno načítání sloupců theme_mode a theme_preference
+    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference 
+              FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $db->prepare($query);
     $stmt->execute([$username, $username]);
     $user = $stmt->fetch();
@@ -43,7 +44,9 @@ try {
             "first_name" => $user['first_name'],
             "last_name" => $user['last_name'],
             "role" => $user['role'],
-            "avatar" => $user['avatar'] // Odesíláme avatar do Vue
+            "avatar" => $user['avatar'],
+            "theme_mode" => $user['theme_mode'] ?? 'manual',
+            "theme_preference" => $user['theme_preference'] ?? 'light'
         ];
 
         $token = JwtHandler::encode([

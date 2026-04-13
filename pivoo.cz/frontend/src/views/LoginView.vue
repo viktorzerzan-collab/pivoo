@@ -91,23 +91,26 @@ const handleLogin = async () => {
 
 <style scoped>
 .auth-wrapper {
+  width: 100%;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: var(--bg-app);
   padding: 1rem;
+  transition: background-color 0.5s ease;
 }
 
 .auth-card {
-  background: white;
+  background: var(--bg-panel);
   padding: 3.5rem 2.5rem;
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 450px;
+  max-width: 700px;
   text-align: center;
   border: 1px solid var(--border);
+  transition: background-color 0.5s ease, border-color 0.5s ease;
 }
 
 .logo-container {
@@ -120,16 +123,18 @@ const handleLogin = async () => {
 .logo-text {
   font-size: 2.5rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-main);
   letter-spacing: -0.05em;
   margin: 0;
+  transition: color 0.5s ease;
 }
 
 .auth-subtitle {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 1.1rem;
   margin-bottom: 2.5rem;
   margin-top: 0.25rem;
+  transition: color 0.5s ease;
 }
 
 .auth-form {
@@ -140,7 +145,7 @@ const handleLogin = async () => {
 }
 
 .auth-error-banner {
-  background-color: #fee2e2;
+  background-color: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   padding: 0.75rem;
   border-radius: 8px;
@@ -153,8 +158,9 @@ const handleLogin = async () => {
 .auth-footer-link {
   margin-top: 2rem;
   text-align: center;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.95rem;
+  transition: color 0.5s ease;
 }
 
 .auth-footer-link a {
