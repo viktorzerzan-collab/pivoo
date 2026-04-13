@@ -3,26 +3,36 @@
     <label v-if="label" class="base-label">{{ label }}</label>
     
     <div class="input-wrapper">
-      <input 
-        :type="currentType" 
-        :value="modelValue" 
+      <textarea
+        v-if="type === 'textarea'"
+        :value="modelValue"
         @input="$emit('update:modelValue', $event.target.value)"
-        class="base-input"
-        :class="{ 'has-icon': type === 'password' }"
+        class="base-input base-textarea"
         v-bind="$attrs"
-      />
-      
-      <button 
-        v-if="type === 'password'" 
-        type="button" 
-        class="toggle-password" 
-        @click="toggleVisibility"
-        aria-label="Zobrazit/Skrýt heslo"
-        tabindex="-1"
-      >
-        <EyeIcon v-if="currentType === 'password'" :size="18" />
-        <EyeOffIcon v-else :size="18" />
-      </button>
+      ></textarea>
+
+      <template v-else>
+        <input 
+          :type="currentType" 
+          :value="modelValue" 
+          @input="$emit('update:modelValue', $event.target.value)"
+          class="base-input"
+          :class="{ 'has-icon': type === 'password' }"
+          v-bind="$attrs"
+        />
+        
+        <button 
+          v-if="type === 'password'" 
+          type="button" 
+          class="toggle-password" 
+          @click="toggleVisibility"
+          aria-label="Zobrazit/Skrýt heslo"
+          tabindex="-1"
+        >
+          <EyeIcon v-if="currentType === 'password'" :size="18" />
+          <EyeOffIcon v-else :size="18" />
+        </button>
+      </template>
     </div>
   </div>
 </template>
@@ -39,15 +49,13 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-// Udržujeme si lokální stav pro typ inputu, abychom ho mohli dynamicky měnit
+// Lokální stav pro typ (kvůli přepínání viditelnosti hesla)
 const currentType = ref(props.type)
 
-// Pokud by se typ změnil zvenčí (např. přes props), zareagujeme
 watch(() => props.type, (newType) => {
   currentType.value = newType
 })
 
-// Přepínání mezi 'password' a 'text'
 const toggleVisibility = () => {
   currentType.value = currentType.value === 'password' ? 'text' : 'password'
 }
@@ -85,31 +93,35 @@ const toggleVisibility = () => {
   font-family: inherit;
   transition: all 0.3s ease;
   outline: none;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
 }
 
-/* --- OPRAVA AUTOFILLU V PROHLÍŽEČÍCH --- */
-/* WebKit prohlížeče (Chrome, Safari, Edge) si vynucují vlastní barvu pro autofill. */
-/* Překryjeme ji pomocí velkého vnitřního stínu a vynutíme naši barvu textu. */
+/* Specifický styling pro textarea */
+.base-textarea {
+  min-height: 100px;
+  resize: vertical; /* Povolí pouze vertikální změnu velikosti */
+  line-height: 1.5;
+}
+
+/* Autofill v prohlížečích */
 .base-input:-webkit-autofill,
 .base-input:-webkit-autofill:hover, 
 .base-input:-webkit-autofill:focus, 
 .base-input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px var(--bg-panel) inset !important;
   -webkit-text-fill-color: var(--text-main) !important;
-  transition: background-color 5000s ease-in-out 0s; /* Pojistka proti probliknutí */
+  transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Odsazení textu, aby nepřetékal přes ikonku oka */
 .base-input.has-icon {
   padding-right: 2.75rem;
 }
 
 .base-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.2);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
 }
 
-/* Styl pro naši ikonku (resetování globálních vlastností tlačítek z App.vue) */
 .toggle-password {
   position: absolute;
   right: 0.5rem;
@@ -129,5 +141,14 @@ const toggleVisibility = () => {
 
 .toggle-password:hover {
   color: var(--text-main) !important;
+}
+
+/* Custom scrollbar pro textarea, aby ladila s aplikací */
+.base-textarea::-webkit-scrollbar {
+  width: 8px;
+}
+.base-textarea::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 10px;
 }
 </style>

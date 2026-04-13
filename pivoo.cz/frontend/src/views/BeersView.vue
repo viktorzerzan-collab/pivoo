@@ -31,7 +31,7 @@
       </div>
     </div>
 
-    <AddBeerModal v-if="isAdmin" :show="isAddBeerModalOpen" :breweries="breweries" :styles="styles" :form="newBeerForm" @close="isAddBeerModalOpen = false" @submit="submitNewBeer" />
+    <AddBeerModal v-if="isAdmin" :show="isAddBeerModalOpen" :isEditing="false" :breweries="breweries" :styles="styles" :form="newBeerForm" @close="isAddBeerModalOpen = false" @submit="submitNewBeer" />
     <DetailModal :show="isDetailModalOpen" :item="selectedBeer" :reviews="beerReviews" type="beer" @close="isDetailModalOpen = false" />
   </div>
 </template>
@@ -54,13 +54,20 @@ const authStore = useAuthStore(); const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore); const { beers, breweries, styles, isLoading } = storeToRefs(catalogStore)
 const isAdmin = computed(() => user.value?.role === 'admin')
 const searchQuery = ref(''); const sortBy = ref('name'); const isAddBeerModalOpen = ref(false); const isDetailModalOpen = ref(false); const selectedBeer = ref(null); const beerReviews = ref([])
-const newBeerForm = ref({ name: '', brewery_id: '', style: '', epm: '', abv: '' })
+
+// Aktualizovaný model pro nové pivo se všemi komplexními parametry
+const newBeerForm = ref({ 
+  name: '', brewery_id: '', style: '', epm: '', abv: '', 
+  ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
+  is_unfiltered: false, is_unpasteurized: false 
+})
 
 const filteredBeers = computed(() => {
   let result = beers.value || []
   if (searchQuery.value) result = result.filter(b => b.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
   return result.slice().sort((a, b) => sortBy.value === 'name' ? a.name.localeCompare(b.name) : (parseFloat(b.avg_rating) || 0) - (parseFloat(a.avg_rating) || 0))
 })
+
 const openBeerDetail = async (beer) => {
   selectedBeer.value = beer; isDetailModalOpen.value = true;
   const res = await apiFetch(`/beer_reviews.php?beer_id=${beer.id}`); if (res.status === 'success') beerReviews.value = res.data
@@ -68,7 +75,16 @@ const openBeerDetail = async (beer) => {
 
 const submitNewBeer = async () => {
   const res = await apiFetch('/add_beer.php', { method: 'POST', body: JSON.stringify(newBeerForm.value) })
-  if (res.status === 'success') { isAddBeerModalOpen.value = false; await catalogStore.fetchAllData() }
+  if (res.status === 'success') { 
+    isAddBeerModalOpen.value = false; 
+    // Reset formuláře po úspěšném odeslání
+    newBeerForm.value = { 
+      name: '', brewery_id: '', style: '', epm: '', abv: '', 
+      ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
+      is_unfiltered: false, is_unpasteurized: false 
+    }
+    await catalogStore.fetchAllData() 
+  }
 }
 onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 </script>

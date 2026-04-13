@@ -129,7 +129,11 @@ const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar'
 const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value }[activeTab.value] || []))
 
 const formData = ref({
-  beer: { id: null, name: '', brewery_id: '', style: '', epm: '', abv: '' },
+  beer: { 
+    id: null, name: '', brewery_id: '', style: '', epm: '', abv: '', 
+    ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
+    is_unfiltered: false, is_unpasteurized: false 
+  },
   brewery: { id: null, name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', logoFile: null },
   location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' },
   style: { id: null, name: '' }
@@ -157,6 +161,15 @@ const openAddModal = (t) => {
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
   const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'style'))
   
+  // Reset formuláře pro nové pivo se všemi poli
+  if (key === 'beer') {
+    formData.value.beer = { 
+      id: null, name: '', brewery_id: '', style: '', epm: '', abv: '', 
+      ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
+      is_unfiltered: false, is_unpasteurized: false 
+    }
+  }
+  
   if (key === 'brewery') formData.value.brewery.logoFile = null
   
   modals.value[key] = true 
@@ -165,7 +178,18 @@ const openAddModal = (t) => {
 const openEditModal = (item, t) => { 
   isEditing.value = true
   const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'brewery'))
-  formData.value[key] = { ...item, logoFile: null }
+  
+  if (key === 'beer') {
+    // Zajistíme, aby se booleany převedly správně z 1/0 na true/false pro shadery
+    formData.value.beer = { 
+      ...item, 
+      is_unfiltered: !!item.is_unfiltered, 
+      is_unpasteurized: !!item.is_unpasteurized 
+    }
+  } else {
+    formData.value[key] = { ...item, logoFile: null }
+  }
+  
   modals.value[key] = true 
 }
 

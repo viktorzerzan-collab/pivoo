@@ -21,14 +21,29 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style)) {
     try {
-        $query = "INSERT INTO beers (name, brewery_id, style, epm, abv, is_approved) 
-                  VALUES (?, ?, ?, ?, ?, 1)";
+        $query = "INSERT INTO beers (
+                    name, brewery_id, style, epm, abv, 
+                    ibu, ebc, hops, malts, fermentation, tags, is_unfiltered, is_unpasteurized,
+                    is_approved
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        
         $stmt = $db->prepare($query);
         
-        $epm = ($data->epm !== '') ? $data->epm : null;
-        $abv = ($data->abv !== '') ? $data->abv : null;
+        $epm = (isset($data->epm) && $data->epm !== '') ? $data->epm : null;
+        $abv = (isset($data->abv) && $data->abv !== '') ? $data->abv : null;
+        $ibu = (isset($data->ibu) && $data->ibu !== '') ? $data->ibu : null;
+        $ebc = (isset($data->ebc) && $data->ebc !== '') ? $data->ebc : null;
+        $hops = (isset($data->hops) && $data->hops !== '') ? $data->hops : null;
+        $malts = (isset($data->malts) && $data->malts !== '') ? $data->malts : null;
+        $fermentation = (isset($data->fermentation) && $data->fermentation !== '') ? $data->fermentation : null;
+        $tags = (isset($data->tags) && $data->tags !== '') ? $data->tags : null;
+        $is_unfiltered = (isset($data->is_unfiltered) && $data->is_unfiltered) ? 1 : 0;
+        $is_unpasteurized = (isset($data->is_unpasteurized) && $data->is_unpasteurized) ? 1 : 0;
 
-        if ($stmt->execute([$data->name, $data->brewery_id, $data->style, $epm, $abv])) {
+        if ($stmt->execute([
+            $data->name, $data->brewery_id, $data->style, $epm, $abv,
+            $ibu, $ebc, $hops, $malts, $fermentation, $tags, $is_unfiltered, $is_unpasteurized
+        ])) {
             echo json_encode(["status" => "success", "message" => "Pivo bylo úspěšně přidáno do katalogu."]);
         } else {
             http_response_code(500);

@@ -1,14 +1,29 @@
 <template>
-  <div class="card beer-card">
+  <div class="card beer-card" :class="{ 'special-beer': beer.is_unfiltered || beer.is_unpasteurized }">
     <div class="card-body">
       <div class="card-main-info">
         <div class="icon-wrapper beer-bg">
           <BeerIcon :size="24" color="#ca8a04" />
         </div>
         <div class="text-content">
-          <h3 class="card-title">{{ beer.name }}</h3>
+          <div class="title-row">
+            <h3 class="card-title">{{ beer.name }}</h3>
+            <div class="mini-badges">
+              <span v-if="beer.is_unfiltered" class="m-badge" title="Nefiltrované">N</span>
+              <span v-if="beer.is_unpasteurized" class="m-badge" title="Nepasterizované">P</span>
+            </div>
+          </div>
           <p class="card-subtitle">{{ beer.brewery_name }} • {{ beer.style || 'Bez stylu' }}</p>
           
+          <div class="card-meta">
+            <div v-if="beer.ibu" class="meta-item" title="Hořkost">
+              <ThermometerIcon :size="12" /> {{ beer.ibu }} IBU
+            </div>
+            <div v-if="beer.abv" class="meta-item" title="Alkohol">
+              <PercentIcon :size="12" /> {{ beer.abv }}%
+            </div>
+          </div>
+
           <div v-if="beer.avg_rating" class="card-rating">
             <StarIcon :size="14" fill="#f59e0b" color="#f59e0b" />
             <span class="rating-value">{{ Number(beer.avg_rating).toFixed(1) }}</span>
@@ -30,7 +45,7 @@
 </template>
 
 <script setup>
-import { BeerIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
+import { BeerIcon, StarIcon, InfoIcon, ThermometerIcon, PercentIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 
 defineProps({
@@ -49,6 +64,8 @@ defineEmits(['showDetail'])
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background-color 0.5s ease;
   height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
 .card:hover {
@@ -70,10 +87,22 @@ defineEmits(['showDetail'])
 }
 .beer-bg { background: #fef9c3; }
 
-.text-content { display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; }
+.text-content { display: flex; flex-direction: column; gap: 0.25rem; overflow: hidden; flex: 1; }
 
+.title-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
+
+.mini-badges { display: flex; gap: 2px; }
+.m-badge { 
+  font-size: 0.65rem; font-weight: 900; background: var(--border); color: var(--text-muted); 
+  width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; 
+  border-radius: 4px; cursor: help;
+}
+
 .card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
+
+.card-meta { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
+.meta-item { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
 
 .card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
 .rating-value { font-size: 0.9rem; font-weight: 800; color: #d97706; }

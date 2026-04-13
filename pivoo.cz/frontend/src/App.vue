@@ -119,7 +119,7 @@ onUnmounted(() => {
   --scrollbar-thumb-hover: #94a3b8;
 }
 
-/* --- TMAVÝ REŽIM (Nyní se aplikuje na <html>) --- */
+/* --- TMAVÝ REŽIM --- */
 html.dark-mode {
   --bg-app: #0f172a;
   --bg-panel: #1e293b;
@@ -129,19 +129,39 @@ html.dark-mode {
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   --card-hover-bg: #242f42;
   
-  /* Posuvník pro tmavý režim (Ztmaveno pro splynutí s panelem) */
   --scrollbar-thumb: #475569;
   --scrollbar-thumb-hover: #64748b;
 }
 
-/* --- OPRAVA USKAKOVÁNÍ STRÁNKY A POSUVNÍKY --- */
-html {
-  overflow-y: scroll; /* Zabrání uskakování obsahu při přepínání stránek */
-  scrollbar-width: thin; /* Pro Firefox */
-  scrollbar-color: var(--scrollbar-thumb) transparent; /* Pro Firefox */
+/* --- GRAFICKÉ VYHLAZENÍ: OZNAČENÍ TEXTU --- */
+::selection {
+  background-color: var(--primary);
+  color: #1e293b;
+}
+::-moz-selection {
+  background-color: var(--primary);
+  color: #1e293b;
 }
 
-/* VLASTNÍ MODERNÍ POSUVNÍK PRO WEBKIT (Chrome, Edge, Safari) */
+/* --- GRAFICKÉ VYHLAZENÍ: ODSTRANĚNÍ ŠIPEK U ČÍSELNÝCH VSTUPŮ --- */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* --- USKAKOVÁNÍ STRÁNKY A POSUVNÍKY --- */
+html {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 14px;  
   height: 14px; 
@@ -154,7 +174,6 @@ html {
 ::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
   border-radius: 10px;
-  /* Trik pro zúžení posuvníku: 4px průhledný rámeček funguje jako vnější padding */
   border: 4px solid transparent; 
   background-clip: content-box;
   transition: background-color 0.3s ease;
@@ -189,9 +208,7 @@ html, body, #app {
 .container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
 .auth-layout { justify-content: center; align-items: center; flex: 1; }
 
-.full-width {
-  width: 100%;
-}
+.full-width { width: 100%; }
 
 /* --- 3. UNIVERZÁLNÍ TLAČÍTKA --- */
 button, .base-button {
