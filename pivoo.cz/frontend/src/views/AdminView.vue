@@ -130,7 +130,7 @@ const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.
 
 const formData = ref({
   beer: { 
-    id: null, name: '', brewery_id: '', style: '', epm: '', abv: '', 
+    id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', 
     ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
     is_unfiltered: false, is_unpasteurized: false 
   },
@@ -161,17 +161,15 @@ const openAddModal = (t) => {
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
   const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'style'))
   
-  // Reset formuláře pro nové pivo se všemi poli
   if (key === 'beer') {
     formData.value.beer = { 
-      id: null, name: '', brewery_id: '', style: '', epm: '', abv: '', 
+      id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', 
       ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
       is_unfiltered: false, is_unpasteurized: false 
     }
   }
   
   if (key === 'brewery') formData.value.brewery.logoFile = null
-  
   modals.value[key] = true 
 }
 
@@ -180,7 +178,6 @@ const openEditModal = (item, t) => {
   const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'brewery'))
   
   if (key === 'beer') {
-    // Zajistíme, aby se booleany převedly správně z 1/0 na true/false pro shadery
     formData.value.beer = { 
       ...item, 
       is_unfiltered: !!item.is_unfiltered, 
@@ -196,7 +193,6 @@ const openEditModal = (item, t) => {
 const submitForm = async (t) => {
   try {
     const endpoint = isEditing.value ? `update_${t}.php` : `add_${t}.php`
-    
     let bodyData;
     if (t === 'brewery') {
       bodyData = new FormData();
@@ -219,13 +215,7 @@ const submitForm = async (t) => {
 }
 
 const confirmDelete = (id, t) => {
-  const typeMap = {
-    users: 'user',
-    beers: 'beer',
-    breweries: 'brewery',
-    locations: 'location',
-    styles: 'style'
-  }
+  const typeMap = { users: 'user', beers: 'beer', breweries: 'brewery', locations: 'location', styles: 'style' }
   deleteModal.value = { show: true, id, type: typeMap[t] } 
 }
 
@@ -253,32 +243,22 @@ const handleDelete = async () => {
 <style scoped>
 .admin-page { flex: 1; display: flex; flex-direction: column; }
 .admin-header { margin-bottom: 2rem; }
-
-.admin-tabs { 
-  display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); 
-  padding-bottom: 0.5rem; margin-top: 1rem; overflow-x: auto;
-}
-.admin-tabs button { 
-  padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); 
-  cursor: pointer; font-weight: 600; border-radius: 8px; white-space: nowrap; box-shadow: none;
-}
+.admin-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem; overflow-x: auto; }
+.admin-tabs button { padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); cursor: pointer; font-weight: 600; border-radius: 8px; white-space: nowrap; box-shadow: none; }
 .admin-tabs button.active { background: var(--primary); color: #1e293b; }
-
 .admin-layout { position: relative; flex: 1; min-height: 400px; }
 .admin-section { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
-
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .admin-table-wrapper { overflow-x: auto; }
 .admin-table { width: 100%; border-collapse: collapse; }
 .admin-table th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; background: var(--bg-app); transition: background-color 0.5s ease; }
 .admin-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); }
-
 .action-buttons { display: flex; gap: 0.5rem; }
 .w-100 { width: 100px; }
 
 @media (max-width: 600px) {
   .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .section-header .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; } /* VZDUŠNĚJŠÍ TLAČÍTKO */
+  .section-header .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
   .admin-section { padding: 1rem; }
 }
 </style>

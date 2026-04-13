@@ -19,10 +19,10 @@ $database = new Database();
 $db = $database->getConnection();
 $data = json_decode(file_get_contents("php://input"));
 
-if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style)) {
+if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style_id)) {
     try {
         $query = "INSERT INTO beers (
-                    name, brewery_id, style, epm, abv, 
+                    name, brewery_id, style_id, epm, abv, 
                     ibu, ebc, hops, malts, fermentation, tags, is_unfiltered, is_unpasteurized,
                     is_approved
                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
@@ -41,7 +41,7 @@ if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style)) {
         $is_unpasteurized = (isset($data->is_unpasteurized) && $data->is_unpasteurized) ? 1 : 0;
 
         if ($stmt->execute([
-            $data->name, $data->brewery_id, $data->style, $epm, $abv,
+            $data->name, $data->brewery_id, $data->style_id, $epm, $abv,
             $ibu, $ebc, $hops, $malts, $fermentation, $tags, $is_unfiltered, $is_unpasteurized
         ])) {
             echo json_encode(["status" => "success", "message" => "Pivo bylo úspěšně přidáno do katalogu."]);

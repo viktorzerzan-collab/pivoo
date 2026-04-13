@@ -55,9 +55,8 @@ const { user } = storeToRefs(authStore); const { beers, breweries, styles, isLoa
 const isAdmin = computed(() => user.value?.role === 'admin')
 const searchQuery = ref(''); const sortBy = ref('name'); const isAddBeerModalOpen = ref(false); const isDetailModalOpen = ref(false); const selectedBeer = ref(null); const beerReviews = ref([])
 
-// Aktualizovaný model pro nové pivo se všemi komplexními parametry
 const newBeerForm = ref({ 
-  name: '', brewery_id: '', style: '', epm: '', abv: '', 
+  name: '', brewery_id: '', style_id: '', epm: '', abv: '', 
   ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
   is_unfiltered: false, is_unpasteurized: false 
 })
@@ -77,9 +76,8 @@ const submitNewBeer = async () => {
   const res = await apiFetch('/add_beer.php', { method: 'POST', body: JSON.stringify(newBeerForm.value) })
   if (res.status === 'success') { 
     isAddBeerModalOpen.value = false; 
-    // Reset formuláře po úspěšném odeslání
     newBeerForm.value = { 
-      name: '', brewery_id: '', style: '', epm: '', abv: '', 
+      name: '', brewery_id: '', style_id: '', epm: '', abv: '', 
       ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
       is_unfiltered: false, is_unpasteurized: false 
     }
@@ -95,13 +93,12 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .header-top { display: flex; justify-content: space-between; align-items: center; }
 .header-filters-row { display: flex; gap: 1rem; width: 60%; }
 .beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-
 .empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); transition: background-color 0.5s ease, border-color 0.5s ease; }
 .empty-state h3 { color: var(--text-main); transition: color 0.5s ease; }
 
 @media (max-width: 800px) {
   .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .header-top .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; } /* VZDUŠNĚJŠÍ TLAČÍTKO */
+  .header-top .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
   .header-filters-row { width: 100%; flex-direction: column; }
 }
 </style>

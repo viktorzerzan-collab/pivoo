@@ -23,7 +23,7 @@ $data = json_decode(file_get_contents("php://input"));
 if (!empty($data->id) && !empty($data->name)) {
     try {
         $query = "UPDATE beers 
-                  SET name = ?, brewery_id = ?, style = ?, epm = ?, abv = ?,
+                  SET name = ?, brewery_id = ?, style_id = ?, epm = ?, abv = ?,
                       ibu = ?, ebc = ?, hops = ?, malts = ?, fermentation = ?, tags = ?,
                       is_unfiltered = ?, is_unpasteurized = ?
                   WHERE id = ?";
@@ -42,7 +42,7 @@ if (!empty($data->id) && !empty($data->name)) {
         $is_unpasteurized = (isset($data->is_unpasteurized) && $data->is_unpasteurized) ? 1 : 0;
 
         if ($stmt->execute([
-            $data->name, $data->brewery_id, $data->style, $epm, $abv,
+            $data->name, $data->brewery_id, $data->style_id, $epm, $abv,
             $ibu, $ebc, $hops, $malts, $fermentation, $tags, $is_unfiltered, $is_unpasteurized,
             $data->id
         ])) {
