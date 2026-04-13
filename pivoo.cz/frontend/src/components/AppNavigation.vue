@@ -119,6 +119,8 @@ const handleLogout = () => {
 
 .header-top-mobile { display: flex; justify-content: space-between; align-items: center; width: auto; }
 .mobile-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+/* Stylování loga - podbarvení odstraněno omezením v .nav-link.router-link-active */
 .logo { display: flex; align-items: center; font-size: 1.5rem; font-weight: 800; color: #fff; text-decoration: none; }
 .logo svg { filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3)); }
 
@@ -147,7 +149,7 @@ const handleLogout = () => {
 .theme-toggle-btn:hover, .mobile-menu-toggle:hover { background: rgba(255, 255, 255, 0.2); }
 .theme-toggle-btn:hover { transform: rotate(15deg); }
 
-/* OPRAVA: Vynulování marginu u SVG, aby ikonky byly přesně uprostřed */
+/* Vynulování marginu u SVG, aby ikonky byly přesně uprostřed */
 .theme-toggle-btn svg, .mobile-menu-toggle svg {
   margin: 0 !important;
 }
@@ -155,9 +157,14 @@ const handleLogout = () => {
 .mobile-only { display: none; }
 
 .main-nav { display: flex; gap: 0.5rem; }
+
+/* Odkazy v menu */
 .nav-link { display: flex; align-items: center; gap: 0.4rem; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s ease; }
 .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.05); }
-.router-link-active { color: var(--primary); background-color: rgba(255, 255, 255, 0.1); }
+
+/* OPRAVA: Změněno z .router-link-active na .nav-link.router-link-active */
+.nav-link.router-link-active { color: var(--primary); background-color: rgba(255, 255, 255, 0.1); }
+
 .admin-link { color: #f87171; }
 .admin-link.router-link-active { color: #ef4444; background-color: rgba(239, 68, 68, 0.1); }
 
@@ -201,6 +208,7 @@ const handleLogout = () => {
   .user-panel-wrapper { width: 100%; margin-left: 0; margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem; }
   .user-trigger { justify-content: space-between; }
   
+  /* Na mobilu nevyjíždí profil jako okno, ale jako inline akordeon */
   .dropdown-menu { position: static; box-shadow: none; border: none; background: transparent; padding-left: 1rem; margin-top: 0.5rem; }
   .dropdown-item { color: #cbd5e1; }
   .dropdown-item:hover { background-color: rgba(255,255,255,0.05); color: white; }

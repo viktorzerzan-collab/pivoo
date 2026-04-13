@@ -1,5 +1,5 @@
 <template>
-  <div class="layout-wrapper" :class="{ 'dark-mode': isDark }">
+  <div class="layout-wrapper">
     <AppNavigation v-if="!isAuthPage" @toggle-theme="toggleTheme" :is-dark="isDark" />
     <main class="main-content" :class="{ 'auth-layout': isAuthPage }">
       <div :class="isAuthPage ? 'full-width' : 'container'">
@@ -17,7 +17,6 @@ import { storeToRefs } from 'pinia'
 import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
 import { useAuthStore } from './stores/auth'
-// OPRAVA: Potřebujeme komunikovat s backendem
 import { apiFetch } from './api' 
 
 const route = useRoute()
@@ -30,6 +29,15 @@ const isAuthPage = computed(() => route.name === 'login' || route.name === 'regi
 const isDark = ref(false)
 let autoInterval = null
 
+// Pomocná funkce pro propsání tmavého režimu přímo na HTML tag (kvůli hlavnímu posuvníku)
+const updateHtmlClass = (isDarkMode) => {
+  if (isDarkMode) {
+    document.documentElement.classList.add('dark-mode')
+  } else {
+    document.documentElement.classList.remove('dark-mode')
+  }
+}
+
 const checkAutoTheme = () => {
   if (user.value?.theme_mode === 'auto') {
     const hour = new Date().getHours()
@@ -37,28 +45,27 @@ const checkAutoTheme = () => {
   } else {
     isDark.value = theme.value === 'dark'
   }
+  updateHtmlClass(isDark.value)
 }
 
 const toggleTheme = async () => {
-  // 1. Okamžitá vizuální odezva pro uživatele
   const newTheme = isDark.value ? 'light' : 'dark'
   isDark.value = !isDark.value 
   authStore.setTheme(newTheme)
+  updateHtmlClass(isDark.value)
 
-  // 2. Pokud měl uživatel "Auto", kliknutím dává najevo, že to chce řídit sám
   if (user.value?.theme_mode === 'auto') {
     authStore.updateUser({ theme_mode: 'manual' })
   }
 
-  // 3. Pokud je přihlášený, pošleme tuto volbu rovnou do DB
   if (user.value) {
     try {
       await apiFetch('/update_profile.php', {
         method: 'POST',
         body: JSON.stringify({
           action: 'update_theme',
-          theme_mode: 'manual', // Vynutíme ruční režim
-          theme_preference: newTheme // Uložíme si, zda chce světlý/tmavý
+          theme_mode: 'manual', 
+          theme_preference: newTheme 
         })
       })
     } catch (error) {
@@ -106,10 +113,14 @@ onUnmounted(() => {
   --border: #e2e8f0;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --card-hover-bg: #f8fafc;
+  
+  /* Posuvník pro světlý režim */
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
 }
 
-/* --- TMAVÝ REŽIM (Aktivován třídou) --- */
-.dark-mode {
+/* --- TMAVÝ REŽIM (Nyní se aplikuje na <html>) --- */
+html.dark-mode {
   --bg-app: #0f172a;
   --bg-panel: #1e293b;
   --text-main: #f1f5f9;
@@ -117,8 +128,43 @@ onUnmounted(() => {
   --border: #334155;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   --card-hover-bg: #242f42;
+  
+  /* Posuvník pro tmavý režim (Ztmaveno pro splynutí s panelem) */
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748b;
 }
 
+/* --- OPRAVA USKAKOVÁNÍ STRÁNKY A POSUVNÍKY --- */
+html {
+  overflow-y: scroll; /* Zabrání uskakování obsahu při přepínání stránek */
+  scrollbar-width: thin; /* Pro Firefox */
+  scrollbar-color: var(--scrollbar-thumb) transparent; /* Pro Firefox */
+}
+
+/* VLASTNÍ MODERNÍ POSUVNÍK PRO WEBKIT (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 14px;  
+  height: 14px; 
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 10px;
+  /* Trik pro zúžení posuvníku: 4px průhledný rámeček funguje jako vnější padding */
+  border: 4px solid transparent; 
+  background-clip: content-box;
+  transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* --- ZÁKLAD DOKUMENTU --- */
 html, body, #app {
   height: 100%;
   width: 100%;
@@ -143,7 +189,6 @@ html, body, #app {
 .container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
 .auth-layout { justify-content: center; align-items: center; flex: 1; }
 
-/* OPRAVA: Povolí dětským komponentám roztáhnout se na celou šířku */
 .full-width {
   width: 100%;
 }
