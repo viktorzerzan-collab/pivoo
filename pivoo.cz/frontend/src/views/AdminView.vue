@@ -37,11 +37,24 @@
             </thead>
             <tbody>
               <template v-if="activeTab === 'users'">
-                <tr v-for="u in allUsers" :key="u.id">
+                <tr v-for="u in allUsers" :key="u?.id" :class="{ 'banned-row': u.is_banned }">
                   <td data-label="Uživatel">
-                    <div class="td-content">
-                      <strong>{{ u.username }}</strong><br>
-                      <small>{{ u.first_name }} {{ u.last_name }}</small>
+                    <div class="td-content user-cell">
+                      <div class="table-avatar">
+                        <img v-if="u.avatar" :src="'https://www.pivoo.cz/backend/uploads/avatars/' + u.avatar" alt="Avatar" />
+                        <div v-else class="table-avatar-placeholder">
+                          <UserIcon :size="20" stroke-width="1.5" />
+                        </div>
+                      </div>
+                      <div class="user-info">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                          <strong :style="u.is_banned ? 'text-decoration: line-through; color: var(--text-muted);' : ''">
+                            {{ u.username }}
+                          </strong>
+                          <span v-if="u.is_banned" class="badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.65rem;">BANNED</span>
+                        </div>
+                        <small>{{ u.first_name }} {{ u.last_name }}</small>
+                      </div>
                     </div>
                   </td>
                   <td data-label="E-mail">
@@ -54,10 +67,20 @@
                   </td>
                   <td data-label="Akce">
                     <div class="td-content action-buttons">
-                      <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')">
+                      <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')" title="Upravit údaje">
                         <PencilIcon />
                       </button>
-                      <button v-if="u.id !== user.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)">
+                      
+                      <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: var(--blue);" @click="openPasswordModal(u)" title="Změnit heslo">
+                        <KeyIcon />
+                      </button>
+                      
+                      <button v-if="u?.id !== user?.id" class="is-icon-only" :style="u.is_banned ? 'background-color: #10b981; color: white; border: none;' : 'background-color: #64748b; color: white; border: none;'" @click="toggleBan(u)" :title="u.is_banned ? 'Odblokovat uživatele' : 'Zablokovat (Ban)'">
+                        <UnlockIcon v-if="u.is_banned" />
+                        <BanIcon v-else />
+                      </button>
+
+                      <button v-if="u?.id !== user?.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)" title="Smazat uživatele">
                         <Trash2Icon />
                       </button>
                     </div>
@@ -66,7 +89,7 @@
               </template>
 
               <template v-else>
-                <tr v-for="item in currentItems" :key="item.id">
+                <tr v-for="item in currentItems" :key="item?.id">
                   <td data-label="Název">
                     <div class="td-content">
                       <strong>{{ item.name }}</strong>
@@ -104,7 +127,22 @@
     <AddBeerModal :show="modals.beer" :isEditing="isEditing" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
     <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
     <AddLocationModal :show="modals.location" :isEditing="isEditing" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
-    <EditUserModal :show="modals.user" :form="formData.user" @close="modals.user = false" @submit="submitForm('user')" />
+    
+    <EditUserModal 
+      :show="modals.user" 
+      :form="formData.user" 
+      :is-current-user="formData.user.id === user?.id"
+      @close="modals.user = false" 
+      @submit="submitForm('user')" 
+      @remove-avatar="handleRemoveAvatar"
+    />
+    
+    <ChangePasswordModal 
+      :show="modals.password" 
+      :user="selectedUserForPassword" 
+      @close="modals.password = false" 
+      @submit="handlePasswordChange" 
+    />
     
     <BaseModal :show="modals.style" @close="modals.style = false">
       <template #header><h2>{{ isEditing ? 'Upravit' : 'Přidat' }} styl</h2></template>
@@ -123,7 +161,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, PencilIcon, Trash2Icon, SaveIcon } from 'lucide-vue-next'
+import { PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, UnlockIcon, UserIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -135,6 +173,7 @@ import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import EditUserModal from '../components/modals/EditUserModal.vue'
+import ChangePasswordModal from '../components/modals/ChangePasswordModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -146,8 +185,9 @@ const allUsers = ref([])
 const isUsersLoading = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false })
+const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false })
 const isEditing = ref(false)
+const selectedUserForPassword = ref(null)
 
 const tabs = [
   { id: 'users', label: 'Uživatelé' },
@@ -169,7 +209,7 @@ const formData = ref({
   brewery: { id: null, name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', logoFile: null },
   location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' },
   style: { id: null, name: '' },
-  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user' }
+  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
 })
 
 const showToast = (message, type = 'toast-success') => { 
@@ -192,7 +232,7 @@ onMounted(() => {
 const openAddModal = (t) => { 
   isEditing.value = false
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
+  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'location' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
   if (key === 'beer') {
     formData.value.beer = { 
@@ -221,6 +261,73 @@ const openEditModal = (item, t) => {
   }
   
   modals.value[key] = true 
+}
+
+const openPasswordModal = (u) => {
+  selectedUserForPassword.value = u
+  modals.value.password = true
+}
+
+const handlePasswordChange = async (payload) => {
+  try {
+    const res = await apiFetch('/admin_change_password.php', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    
+    if (res.status === 'success') {
+      showToast(res.message)
+      modals.value.password = false
+    } else {
+      showToast(res.message || 'Nepodařilo se změnit heslo.', 'toast-error')
+    }
+  } catch (e) {
+    showToast('Chyba serveru při změně hesla.', 'toast-error')
+  }
+}
+
+const handleRemoveAvatar = async (userId) => {
+  if (!confirm('Opravdu chcete tomuto uživateli smazat profilovou fotku?')) return;
+
+  try {
+    const res = await apiFetch('/admin_remove_avatar.php', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId })
+    })
+    
+    if (res.status === 'success') {
+      showToast(res.message)
+      modals.value.user = false 
+      fetchUsers() 
+    } else {
+      showToast(res.message || 'Nepodařilo se smazat fotku.', 'toast-error')
+    }
+  } catch (e) {
+    showToast('Chyba serveru při mazání fotky.', 'toast-error')
+  }
+}
+
+const toggleBan = async (u) => {
+  const newStatus = u.is_banned ? 0 : 1;
+  const actionText = newStatus ? 'zablokovat' : 'odblokovat';
+  
+  if (!confirm(`Opravdu chcete ${actionText} uživatele ${u.username}?`)) return;
+
+  try {
+    const res = await apiFetch('/admin_toggle_ban.php', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: u.id, is_banned: newStatus })
+    })
+    
+    if (res.status === 'success') {
+      showToast(res.message)
+      fetchUsers()
+    } else {
+      showToast(res.message || 'Nepodařilo se změnit stav blokace.', 'toast-error')
+    }
+  } catch (e) {
+    showToast('Chyba serveru při změně blokace.', 'toast-error')
+  }
 }
 
 const submitForm = async (t) => {
@@ -290,13 +397,44 @@ const handleDelete = async () => {
 .action-buttons { display: flex; gap: 0.5rem; }
 .w-100 { width: 100px; }
 
-/* RESPONZIVNÍ KARTOVÉ ZOBRAZENÍ TABULKY PRO MOBILY */
+/* VYLEPŠENÉ STYLY PRO MINIATURU UŽIVATELE (Orámování s mezerou) */
+.user-cell { display: flex; align-items: center; gap: 0.8rem; text-align: left; }
+.user-info { display: flex; flex-direction: column; align-items: flex-start; }
+
+.table-avatar { 
+  width: 44px; 
+  height: 44px; 
+  border-radius: 50%; 
+  border: 2px solid var(--border); /* Silnější vnější rámeček */
+  padding: 2px; /* Vytvoří tu průhlednou "mezeru" mezi fotkou a rámečkem */
+  flex-shrink: 0; 
+  background: var(--bg-app); 
+}
+.table-avatar img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  border-radius: 50%; /* Zakulacení samotné fotky uvnitř */
+}
+.table-avatar-placeholder { 
+  width: 100%; 
+  height: 100%; 
+  background: var(--bg-panel); 
+  border-radius: 50%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  color: var(--text-muted); 
+}
+
+.banned-row td { opacity: 0.85; background-color: rgba(0, 0, 0, 0.02); }
+html.dark-mode .banned-row td { background-color: rgba(255, 255, 255, 0.01); }
+
 @media (max-width: 768px) {
   .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .section-header .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
   .admin-section { padding: 1rem; }
 
-  /* Odstranění rámečku a pozadí u wraperu */
   .admin-table-wrapper { 
     border: none; 
     box-shadow: none; 
@@ -305,16 +443,13 @@ const handleDelete = async () => {
     overflow-x: visible; 
   }
   
-  /* Skrytí hlavičky tabulky */
   .admin-table thead { display: none; }
   
-  /* Přeměna řádků na blokové elementy (karty) */
   .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { 
     display: block; 
     width: 100%; 
   }
   
-  /* Styl samotné karty (jednoho řádku) */
   .admin-table tr { 
     margin-bottom: 1.25rem; 
     border: 1px solid var(--border); 
@@ -324,7 +459,11 @@ const handleDelete = async () => {
     box-shadow: var(--shadow-sm); 
   }
   
-  /* Styl jednotlivých buněk uvnitř karty */
+  .admin-table tr.banned-row {
+    background-color: var(--bg-app);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
   .admin-table td { 
     border-bottom: 1px solid var(--border); 
     padding: 0.75rem 0; 
@@ -334,11 +473,12 @@ const handleDelete = async () => {
     text-align: right;
   }
   
-  /* Poslední buňka bez čáry */
+  .td-content.user-cell { flex-direction: row-reverse; justify-content: flex-end; }
+  .user-info { align-items: flex-end; }
+
   .admin-table td:last-child { border-bottom: none; padding-bottom: 0; }
   .admin-table td:first-child { padding-top: 0; }
   
-  /* Vygenerování labelu na levé straně buňky pomocí atributu data-label */
   .admin-table td::before { 
     content: attr(data-label); 
     font-weight: 800; 
@@ -349,20 +489,19 @@ const handleDelete = async () => {
     flex-shrink: 0;
   }
   
-  /* Kontejner uvnitř buňky (pro zarovnání) */
   .td-content { 
     display: flex; 
     flex-direction: column; 
     align-items: flex-end; 
   }
   
-  /* Tlačítka seřadit horizontálně */
   .td-content.action-buttons { 
     flex-direction: row; 
     align-items: center; 
+    flex-wrap: wrap; 
+    justify-content: flex-end;
   }
   
-  /* Dlouhé emaily nesmí přetéct kartu */
   .email-text { 
     word-break: break-all; 
   }

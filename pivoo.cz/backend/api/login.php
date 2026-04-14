@@ -30,14 +30,21 @@ try {
     $username = trim($data->username);
     $password = $data->password;
 
-    // Přidáno načítání sloupců theme_mode a theme_preference
-    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference 
+    // PŘIDÁNO: Načtení sloupce is_banned
+    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference, is_banned 
               FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $db->prepare($query);
     $stmt->execute([$username, $username]);
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['password_hash'])) {
+        
+        // KONTROLA BANU: Pokud je uživatel zablokován, nepustíme ho dál
+        if (isset($user['is_banned']) && $user['is_banned'] == 1) {
+            echo json_encode(["status" => "error", "message" => "Váš účet byl zablokován administrátorem."]);
+            exit();
+        }
+
         $userData = [
             "id" => $user['id'],
             "username" => $user['username'],

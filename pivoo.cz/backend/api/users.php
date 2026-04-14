@@ -1,4 +1,5 @@
 <?php
+// backend/api/users.php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
@@ -20,7 +21,8 @@ $db = $database->getConnection();
 
 if ($db) {
     try {
-        $query = "SELECT id, username, first_name, last_name, email, role FROM users ORDER BY id DESC";
+        // PŘIDÁNO: Načítáme i sloupec 'is_banned'
+        $query = "SELECT id, username, first_name, last_name, email, role, avatar, is_banned FROM users ORDER BY id DESC";
         $stmt = $db->query($query);
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
