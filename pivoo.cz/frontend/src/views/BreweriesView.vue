@@ -27,14 +27,21 @@
     <div class="catalog-container">
       <BaseLoader :show="isLoading" />
 
-      <div class="breweries-grid" v-if="filteredBreweries.length > 0">
-        <BreweryCard 
-          v-for="brewery in filteredBreweries" 
-          :key="brewery.id" 
-          :brewery="brewery" 
-          @showDetail="openDetail" 
+      <template v-if="filteredBreweries.length > 0">
+        <div class="breweries-grid">
+          <BreweryCard 
+            v-for="brewery in paginatedBreweries" 
+            :key="brewery.id" 
+            :brewery="brewery" 
+            @showDetail="openDetail" 
+          />
+        </div>
+        
+        <BasePagination 
+          v-model:currentPage="currentPage" 
+          :totalPages="totalPages" 
         />
-      </div>
+      </template>
       
       <div v-else-if="!isLoading" class="empty-state">
         <FactoryIcon :size="48" color="#cbd5e1" />
@@ -48,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PlusIcon, FactoryIcon, ArrowDownUpIcon } from 'lucide-vue-next'
 
@@ -62,6 +69,7 @@ import FilterSelect from '../components/FilterSelect.vue'
 import BreweryCard from '../components/BreweryCard.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
+import BasePagination from '../components/BasePagination.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -81,6 +89,14 @@ const form = ref({
   address: '', street_number: '', email: '', phone: '', website: '', logoFile: null 
 })
 
+// STRÁNKOVÁNÍ
+const currentPage = ref(1)
+const itemsPerPage = 30
+
+watch([searchQuery, sortBy], () => {
+  currentPage.value = 1
+})
+
 const showToast = (message, type = 'toast-success') => { 
   toast.value = { show: true, message, type }
   setTimeout(() => { toast.value.show = false }, 3000) 
@@ -96,6 +112,13 @@ const filteredBreweries = computed(() => {
       ? a.name.localeCompare(b.name) 
       : (parseFloat(b.avg_rating) || 0) - (parseFloat(a.avg_rating) || 0)
   )
+})
+
+const totalPages = computed(() => Math.ceil(filteredBreweries.value.length / itemsPerPage))
+
+const paginatedBreweries = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  return filteredBreweries.value.slice(start, start + itemsPerPage)
 })
 
 const openDetail = (item) => { 
@@ -130,7 +153,7 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 </script>
 
 <style scoped>
-.catalog-container { position: relative; min-height: 400px; }
+.catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; }
 .view-header { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
 .header-top { display: flex; justify-content: space-between; align-items: center; }
 .header-filters-row { display: flex; gap: 1rem; width: 60%; }
@@ -140,7 +163,7 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 
 @media (max-width: 800px) { 
   .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .header-top .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; } /* VZDUŠNĚJŠÍ TLAČÍTKO */
+  .header-top .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
   .header-filters-row { width: 100%; flex-direction: column; } 
 }
 </style>

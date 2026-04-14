@@ -37,7 +37,7 @@
             </thead>
             <tbody>
               <template v-if="activeTab === 'users'">
-                <tr v-for="u in allUsers" :key="u?.id" :class="{ 'banned-row': u.is_banned }">
+                <tr v-for="u in paginatedUsers" :key="u?.id" :class="{ 'banned-row': u.is_banned }">
                   <td data-label="Uživatel">
                     <div class="td-content user-cell">
                       <div class="table-avatar">
@@ -89,7 +89,7 @@
               </template>
 
               <template v-else>
-                <tr v-for="item in currentItems" :key="item?.id">
+                <tr v-for="item in paginatedCurrentItems" :key="item?.id">
                   <td data-label="Název">
                     <div class="td-content">
                       <strong>{{ item.name }}</strong>
@@ -120,6 +120,11 @@
             </tbody>
           </table>
         </div>
+        
+        <BasePagination 
+          v-model:currentPage="currentPage" 
+          :totalPages="totalPages" 
+        />
       </div>
     </div>
 
@@ -166,7 +171,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, UnlockIcon, UserIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
@@ -175,6 +180,7 @@ import { useCatalogStore } from '../stores/catalog'
 import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
+import BasePagination from '../components/BasePagination.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -198,6 +204,14 @@ const isEditing = ref(false)
 const selectedUserForPassword = ref(null)
 const selectedUserForBan = ref(null)
 
+// STRÁNKOVÁNÍ
+const currentPage = ref(1)
+const itemsPerPage = 30
+
+watch(activeTab, () => {
+  currentPage.value = 1
+})
+
 const tabs = [
   { id: 'users', label: 'Uživatelé' },
   { id: 'beers', label: 'Piva' },
@@ -208,6 +222,21 @@ const tabs = [
 
 const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl', users: 'uživatele' }[activeTab.value]))
 const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value }[activeTab.value] || []))
+
+const totalPages = computed(() => {
+  const total = activeTab.value === 'users' ? allUsers.value.length : currentItems.value.length
+  return Math.ceil(total / itemsPerPage)
+})
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  return allUsers.value.slice(start, start + itemsPerPage)
+})
+
+const paginatedCurrentItems = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  return currentItems.value.slice(start, start + itemsPerPage)
+})
 
 const formData = ref({
   beer: { 
@@ -241,9 +270,10 @@ onMounted(() => {
 const openAddModal = (t) => { 
   isEditing.value = false
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
+  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'location' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
+  const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
-  if (key === 'beer') {
+  if (keyMap === 'beer') {
     formData.value.beer = { 
       id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', 
       ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
@@ -251,8 +281,8 @@ const openAddModal = (t) => {
     }
   }
   
-  if (key === 'brewery') formData.value.brewery.logoFile = null
-  modals.value[key] = true 
+  if (keyMap === 'brewery') formData.value.brewery.logoFile = null
+  modals.value[keyMap] = true 
 }
 
 const openEditModal = (item, t) => { 
@@ -399,10 +429,10 @@ const handleDelete = async () => {
 .admin-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem; overflow-x: auto; }
 .admin-tabs button { padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); cursor: pointer; font-weight: 600; border-radius: 8px; white-space: nowrap; box-shadow: none; }
 .admin-tabs button.active { background: var(--primary); color: #1e293b; }
-.admin-layout { position: relative; flex: 1; min-height: 400px; }
-.admin-section { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
+.admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
+.admin-section { display: flex; flex-direction: column; flex: 1; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.admin-table-wrapper { overflow-x: auto; }
+.admin-table-wrapper { overflow-x: auto; flex: 1; }
 .admin-table { width: 100%; border-collapse: collapse; }
 .admin-table th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; background: var(--bg-app); transition: background-color 0.5s ease; }
 .admin-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); }
@@ -417,8 +447,8 @@ const handleDelete = async () => {
   width: 44px; 
   height: 44px; 
   border-radius: 50%; 
-  border: 2px solid var(--border); /* Silnější vnější rámeček */
-  padding: 2px; /* Vytvoří tu průhlednou "mezeru" mezi fotkou a rámečkem */
+  border: 2px solid var(--border);
+  padding: 2px;
   flex-shrink: 0; 
   background: var(--bg-app); 
 }
@@ -426,7 +456,7 @@ const handleDelete = async () => {
   width: 100%; 
   height: 100%; 
   object-fit: cover; 
-  border-radius: 50%; /* Zakulacení samotné fotky uvnitř */
+  border-radius: 50%;
 }
 .table-avatar-placeholder { 
   width: 100%; 

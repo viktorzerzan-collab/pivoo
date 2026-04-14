@@ -21,9 +21,17 @@
 
     <div class="catalog-container">
       <BaseLoader :show="isLoading" />
-      <div class="beers-grid" v-if="filteredBeers.length > 0">
-        <BeerCard v-for="beer in filteredBeers" :key="beer.id" :beer="beer" @showDetail="openBeerDetail" />
-      </div>
+      
+      <template v-if="filteredBeers.length > 0">
+        <div class="beers-grid">
+          <BeerCard v-for="beer in paginatedBeers" :key="beer.id" :beer="beer" @showDetail="openBeerDetail" />
+        </div>
+        
+        <BasePagination 
+          v-model:currentPage="currentPage" 
+          :totalPages="totalPages" 
+        />
+      </template>
       
       <div v-else-if="!isLoading" class="empty-state">
         <BeerIcon :size="48" color="#cbd5e1" />
@@ -37,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PlusIcon, ArrowDownUpIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
@@ -49,6 +57,7 @@ import FilterSelect from '../components/FilterSelect.vue'
 import BeerCard from '../components/BeerCard.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
+import BasePagination from '../components/BasePagination.vue'
 
 const authStore = useAuthStore(); const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore); const { beers, breweries, styles, isLoading } = storeToRefs(catalogStore)
@@ -61,10 +70,26 @@ const newBeerForm = ref({
   is_unfiltered: false, is_unpasteurized: false 
 })
 
+// STRÁNKOVÁNÍ
+const currentPage = ref(1)
+const itemsPerPage = 30
+
+// Reset stránky při vyhledávání nebo řazení
+watch([searchQuery, sortBy], () => {
+  currentPage.value = 1
+})
+
 const filteredBeers = computed(() => {
   let result = beers.value || []
   if (searchQuery.value) result = result.filter(b => b.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
   return result.slice().sort((a, b) => sortBy.value === 'name' ? a.name.localeCompare(b.name) : (parseFloat(b.avg_rating) || 0) - (parseFloat(a.avg_rating) || 0))
+})
+
+const totalPages = computed(() => Math.ceil(filteredBeers.value.length / itemsPerPage))
+
+const paginatedBeers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  return filteredBeers.value.slice(start, start + itemsPerPage)
 })
 
 const openBeerDetail = async (beer) => {
@@ -88,7 +113,7 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 </script>
 
 <style scoped>
-.catalog-container { position: relative; min-height: 400px; }
+.catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; }
 .view-header { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
 .header-top { display: flex; justify-content: space-between; align-items: center; }
 .header-filters-row { display: flex; gap: 1rem; width: 60%; }
