@@ -24,7 +24,7 @@
     </div>
 
     <div class="catalog-container">
-      <BaseLoader :show="isLoading" message="Načítám podniky..." />
+      <BaseLoader :show="isLoading" />
 
       <div class="locations-grid" v-if="filteredLocations.length > 0">
         <LocationCard 

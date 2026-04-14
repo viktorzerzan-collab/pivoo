@@ -49,8 +49,22 @@ defineEmits(['edit', 'delete'])
 .price { font-weight: 700; color: #10b981; font-size: 0.95rem; }
 .btn-group { display: flex; gap: 0.5rem; }
 
-@media (max-width: 500px) {
-  .history-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
+/* UPRAVENO: Kartový vzhled pro mobily místo plochého seznamu */
+@media (max-width: 600px) {
+  .history-item { 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 1rem; 
+    background-color: var(--bg-app); 
+    padding: 1.25rem; 
+    margin-bottom: 1rem; 
+    border: 1px solid var(--border); 
+    border-radius: 12px;
+  }
+  .history-item:last-child { 
+    margin-bottom: 0; 
+    border-bottom: 1px solid var(--border); /* Vrátíme rámeček, protože to je teď karta */
+  }
   .history-actions { width: 100%; justify-content: space-between; }
 }
 </style>

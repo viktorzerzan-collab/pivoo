@@ -10,7 +10,7 @@
     </div>
 
     <div class="admin-layout">
-      <BaseLoader :show="isLoading || isUsersLoading" message="Synchronizuji databázi..." />
+      <BaseLoader :show="isLoading || isUsersLoading" />
 
       <div class="admin-section">
         <div class="section-header">
@@ -25,6 +25,7 @@
             <thead>
               <tr v-if="activeTab === 'users'">
                 <th>Uživatel</th>
+                <th>E-mail</th>
                 <th>Role</th>
                 <th class="w-100">Akce</th>
               </tr>
@@ -37,23 +38,52 @@
             <tbody>
               <template v-if="activeTab === 'users'">
                 <tr v-for="u in allUsers" :key="u.id">
-                  <td><strong>{{ u.username }}</strong><br><small>{{ u.email }}</small></td>
-                  <td><span class="badge" :class="u.role">{{ u.role }}</span></td>
-                  <td>
-                    <button v-if="u.id !== user.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)">
-                      <Trash2Icon />
-                    </button>
+                  <td data-label="Uživatel">
+                    <div class="td-content">
+                      <strong>{{ u.username }}</strong><br>
+                      <small>{{ u.first_name }} {{ u.last_name }}</small>
+                    </div>
+                  </td>
+                  <td data-label="E-mail">
+                    <div class="td-content email-text">{{ u.email }}</div>
+                  </td>
+                  <td data-label="Role">
+                    <div class="td-content">
+                      <span class="badge" :class="u.role">{{ u.role }}</span>
+                    </div>
+                  </td>
+                  <td data-label="Akce">
+                    <div class="td-content action-buttons">
+                      <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')">
+                        <PencilIcon />
+                      </button>
+                      <button v-if="u.id !== user.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)">
+                        <Trash2Icon />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </template>
 
               <template v-else>
                 <tr v-for="item in currentItems" :key="item.id">
-                  <td><strong>{{ item.name }}</strong></td>
-                  <td v-if="activeTab === 'beers'"><small>{{ item.brewery_name }} • {{ item.style }}</small></td>
-                  <td v-if="['breweries', 'locations'].includes(activeTab)">{{ item.city || '-' }}</td>
-                  <td>
-                    <div class="action-buttons">
+                  <td data-label="Název">
+                    <div class="td-content">
+                      <strong>{{ item.name }}</strong>
+                    </div>
+                  </td>
+                  <td v-if="activeTab === 'beers'" data-label="Info">
+                    <div class="td-content">
+                      <small>{{ item.brewery_name }} • {{ item.style }}</small>
+                    </div>
+                  </td>
+                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Město">
+                    <div class="td-content">
+                      {{ item.city || '-' }}
+                    </div>
+                  </td>
+                  <td data-label="Akce">
+                    <div class="td-content action-buttons">
                       <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
                         <PencilIcon />
                       </button>
@@ -74,6 +104,7 @@
     <AddBeerModal :show="modals.beer" :isEditing="isEditing" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
     <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
     <AddLocationModal :show="modals.location" :isEditing="isEditing" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
+    <EditUserModal :show="modals.user" :form="formData.user" @close="modals.user = false" @submit="submitForm('user')" />
     
     <BaseModal :show="modals.style" @close="modals.style = false">
       <template #header><h2>{{ isEditing ? 'Upravit' : 'Přidat' }} styl</h2></template>
@@ -103,6 +134,7 @@ import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
+import EditUserModal from '../components/modals/EditUserModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -114,7 +146,7 @@ const allUsers = ref([])
 const isUsersLoading = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false })
+const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false })
 const isEditing = ref(false)
 
 const tabs = [
@@ -125,7 +157,7 @@ const tabs = [
   { id: 'styles', label: 'Styly' }
 ]
 
-const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl' }[activeTab.value]))
+const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl', users: 'uživatele' }[activeTab.value]))
 const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value }[activeTab.value] || []))
 
 const formData = ref({
@@ -136,7 +168,8 @@ const formData = ref({
   },
   brewery: { id: null, name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', logoFile: null },
   location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' },
-  style: { id: null, name: '' }
+  style: { id: null, name: '' },
+  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user' }
 })
 
 const showToast = (message, type = 'toast-success') => { 
@@ -159,7 +192,7 @@ onMounted(() => {
 const openAddModal = (t) => { 
   isEditing.value = false
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'style'))
+  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
   if (key === 'beer') {
     formData.value.beer = { 
@@ -175,7 +208,7 @@ const openAddModal = (t) => {
 
 const openEditModal = (item, t) => { 
   isEditing.value = true
-  const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : 'brewery'))
+  const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'breweries' ? 'brewery' : 'user')))
   
   if (key === 'beer') {
     formData.value.beer = { 
@@ -207,7 +240,8 @@ const submitForm = async (t) => {
 
     const res = await apiFetch(`/${endpoint}`, { method: 'POST', body: bodyData })
     if (res.status === 'success') { 
-      showToast(res.message); modals.value[t] = false; await catalogStore.fetchAllData() 
+      showToast(res.message); modals.value[t] = false; 
+      t === 'user' ? fetchUsers() : catalogStore.fetchAllData() 
     } else {
       showToast(res.message || 'Chyba při ukládání.', 'toast-error')
     }
@@ -256,9 +290,81 @@ const handleDelete = async () => {
 .action-buttons { display: flex; gap: 0.5rem; }
 .w-100 { width: 100px; }
 
-@media (max-width: 600px) {
+/* RESPONZIVNÍ KARTOVÉ ZOBRAZENÍ TABULKY PRO MOBILY */
+@media (max-width: 768px) {
   .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .section-header .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
   .admin-section { padding: 1rem; }
+
+  /* Odstranění rámečku a pozadí u wraperu */
+  .admin-table-wrapper { 
+    border: none; 
+    box-shadow: none; 
+    background: transparent; 
+    padding: 0; 
+    overflow-x: visible; 
+  }
+  
+  /* Skrytí hlavičky tabulky */
+  .admin-table thead { display: none; }
+  
+  /* Přeměna řádků na blokové elementy (karty) */
+  .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { 
+    display: block; 
+    width: 100%; 
+  }
+  
+  /* Styl samotné karty (jednoho řádku) */
+  .admin-table tr { 
+    margin-bottom: 1.25rem; 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 1.25rem; 
+    background: var(--bg-panel); 
+    box-shadow: var(--shadow-sm); 
+  }
+  
+  /* Styl jednotlivých buněk uvnitř karty */
+  .admin-table td { 
+    border-bottom: 1px solid var(--border); 
+    padding: 0.75rem 0; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    text-align: right;
+  }
+  
+  /* Poslední buňka bez čáry */
+  .admin-table td:last-child { border-bottom: none; padding-bottom: 0; }
+  .admin-table td:first-child { padding-top: 0; }
+  
+  /* Vygenerování labelu na levé straně buňky pomocí atributu data-label */
+  .admin-table td::before { 
+    content: attr(data-label); 
+    font-weight: 800; 
+    color: var(--text-muted); 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    margin-right: 1rem;
+    flex-shrink: 0;
+  }
+  
+  /* Kontejner uvnitř buňky (pro zarovnání) */
+  .td-content { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-end; 
+  }
+  
+  /* Tlačítka seřadit horizontálně */
+  .td-content.action-buttons { 
+    flex-direction: row; 
+    align-items: center; 
+  }
+  
+  /* Dlouhé emaily nesmí přetéct kartu */
+  .email-text { 
+    word-break: break-all; 
+  }
 }
 </style>

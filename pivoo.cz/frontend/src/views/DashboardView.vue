@@ -12,7 +12,7 @@
     </div>
 
     <div class="dashboard-layout">
-      <BaseLoader :show="isLoading" message="Načítám tvůj deníček..." />
+      <BaseLoader :show="isLoading" />
 
       <div class="dashboard-content">
         <div class="panel-card">

@@ -26,6 +26,7 @@ export async function apiFetch(endpoint, options = {}) {
   }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
+    cache: 'no-store', // MAGIE: Zabráníme prohlížeči cachovat data z API
     ...options,
     headers
   });

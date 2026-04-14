@@ -25,7 +25,7 @@
     </div>
 
     <div class="catalog-container">
-      <BaseLoader :show="isLoading" message="Načítám pivovary..." />
+      <BaseLoader :show="isLoading" />
 
       <div class="breweries-grid" v-if="filteredBreweries.length > 0">
         <BreweryCard 

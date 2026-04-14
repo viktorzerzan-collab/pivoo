@@ -1,5 +1,5 @@
 <template>
-  <div class="layout-wrapper">
+  <div class="layout-wrapper" :class="{ 'has-bottom-nav': !isAuthPage }">
     <AppNavigation v-if="!isAuthPage" @toggle-theme="toggleTheme" :is-dark="isDark" />
     <main class="main-content" :class="{ 'auth-layout': isAuthPage }">
       <div :class="isAuthPage ? 'full-width' : 'container'">
@@ -287,8 +287,8 @@ button.btn-close:hover {
 
 /* --- 7. RESPONSIVNÍ ÚPRAVY --- */
 @media (max-width: 900px) {
-  /* Odsazení obsahu od spodní navigace */
-  .main-content:not(.auth-layout) {
+  /* Odsazení obsahu od spodní navigace bylo přesunuto na celkový obal aplikace (layout-wrapper), patička se tak automaticky posune výše */
+  .layout-wrapper.has-bottom-nav {
     padding-bottom: calc(70px + env(safe-area-inset-bottom));
   }
 }
