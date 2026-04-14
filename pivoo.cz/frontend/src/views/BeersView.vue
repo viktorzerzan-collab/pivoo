@@ -1,21 +1,17 @@
 <template>
   <div class="beers-page">
     <div class="view-header">
-      <div class="header-top">
-        <div class="title-group">
-          <h2 class="section-title">Katalog piv</h2>
-          <p class="auth-subtitle">Procházej a filtruj piva</p>
+      <div class="header-actions">
+        <div class="header-filters-row">
+          <FilterInput v-model="searchQuery" placeholder="Hledat pivo..." class="flex-2" />
+          <FilterSelect v-model="sortBy" :icon="ArrowDownUpIcon" class="flex-1">
+            <option value="name">Abecedně (A-Z)</option>
+            <option value="rating">Nejlépe hodnocená</option>
+          </FilterSelect>
         </div>
         <button v-if="isAdmin" class="btn-add" @click="isAddBeerModalOpen = true">
           <PlusIcon /> Přidat pivo
         </button>
-      </div>
-      <div class="header-filters-row">
-        <FilterInput v-model="searchQuery" placeholder="Hledat pivo..." class="flex-2" />
-        <FilterSelect v-model="sortBy" :icon="ArrowDownUpIcon" class="flex-1">
-          <option value="name">Abecedně (A-Z)</option>
-          <option value="rating">Nejlépe hodnocená</option>
-        </FilterSelect>
       </div>
     </div>
 
@@ -114,16 +110,16 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 
 <style scoped>
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; }
-.view-header { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
-.header-top { display: flex; justify-content: space-between; align-items: center; }
-.header-filters-row { display: flex; gap: 1rem; width: 60%; }
+.view-header { margin-bottom: 2rem; }
+.header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
+.header-filters-row { display: flex; gap: 1rem; flex: 1; max-width: 600px; }
 .beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 .empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); transition: background-color 0.5s ease, border-color 0.5s ease; }
 .empty-state h3 { color: var(--text-main); transition: color 0.5s ease; }
 
 @media (max-width: 800px) {
-  .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .header-top .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
-  .header-filters-row { width: 100%; flex-direction: column; }
+  .header-actions { flex-direction: column-reverse; align-items: stretch; }
+  .header-actions .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
+  .header-filters-row { width: 100%; flex-direction: column; max-width: none; }
 }
 </style>

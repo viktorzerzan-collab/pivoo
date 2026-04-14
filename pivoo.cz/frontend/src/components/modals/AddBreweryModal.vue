@@ -15,17 +15,18 @@
 
         <BaseInput v-model="form.name" label="Název pivovaru *" required />
         
-        <div class="form-row">
-          <BaseInput v-model="form.address" label="Ulice" style="flex: 2;" />
-          <BaseInput v-model="form.street_number" label="Číslo" style="flex: 1;" />
-        </div>
+        <BaseInput v-model="form.address" label="Ulice a číslo popisné" />
         
         <div class="form-row">
           <BaseInput v-model="form.city" label="Město" style="flex: 2;" />
           <BaseInput v-model="form.zip_code" label="PSČ" style="flex: 1;" />
         </div>
         
-        <BaseInput v-model="form.country" label="Země" />
+        <BaseSelect v-model="form.country_id" label="Země">
+          <option v-for="c in countries" :key="c.id" :value="c.id">
+            {{ c.name_cz }}
+          </option>
+        </BaseSelect>
 
         <div class="form-row">
           <BaseInput v-model="form.email" type="email" label="E-mail" style="flex: 1;" />
@@ -48,11 +49,13 @@ import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseFileUpload from '../BaseFileUpload.vue'
+import BaseSelect from '../BaseSelect.vue'
 
 defineProps({
   show: Boolean,
   isEditing: Boolean,
-  form: Object
+  form: Object,
+  countries: Array
 })
 defineEmits(['close', 'submit'])
 </script>

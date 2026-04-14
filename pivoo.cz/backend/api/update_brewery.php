@@ -67,22 +67,21 @@ if (!empty($data->id) && !empty($data->name)) {
         }
 
         $city = !empty($data->city) ? $data->city : null;
-        $country = !empty($data->country) ? $data->country : null;
+        $country_id = !empty($data->country_id) ? (int)$data->country_id : null;
         $address = !empty($data->address) ? $data->address : null;
-        $street_number = !empty($data->street_number) ? $data->street_number : null;
         $zip_code = !empty($data->zip_code) ? $data->zip_code : null;
         $email = !empty($data->email) ? $data->email : null;
         $phone = !empty($data->phone) ? $data->phone : null;
         $website = !empty($data->website) ? $data->website : null;
 
         if ($new_logo_filename) {
-            $query = "UPDATE breweries SET name=?, city=?, country=?, address=?, street_number=?, zip_code=?, email=?, phone=?, website=?, logo=? WHERE id=?";
+            $query = "UPDATE breweries SET name=?, city=?, country_id=?, address=?, zip_code=?, email=?, phone=?, website=?, logo=? WHERE id=?";
             $stmt = $db->prepare($query);
-            $params = [$data->name, $city, $country, $address, $street_number, $zip_code, $email, $phone, $website, $new_logo_filename, $data->id];
+            $params = [$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $new_logo_filename, $data->id];
         } else {
-            $query = "UPDATE breweries SET name=?, city=?, country=?, address=?, street_number=?, zip_code=?, email=?, phone=?, website=? WHERE id=?";
+            $query = "UPDATE breweries SET name=?, city=?, country_id=?, address=?, zip_code=?, email=?, phone=?, website=? WHERE id=?";
             $stmt = $db->prepare($query);
-            $params = [$data->name, $city, $country, $address, $street_number, $zip_code, $email, $phone, $website, $data->id];
+            $params = [$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $data->id];
         }
 
         if ($stmt->execute($params)) {

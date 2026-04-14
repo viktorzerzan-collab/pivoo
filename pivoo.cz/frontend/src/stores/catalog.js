@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { apiFetch } from '../api' // Importujeme naši novou funkci
+import { apiFetch } from '../api'
 
 export const useCatalogStore = defineStore('catalog', () => {
   const beers = ref([])
   const locations = ref([])
   const breweries = ref([])
   const styles = ref([])
+  const countries = ref([]) // PŘIDÁNO: Číselník zemí
   const stats = ref(null)
   const history = ref([])
   const isLoading = ref(true)
@@ -16,12 +17,12 @@ export const useCatalogStore = defineStore('catalog', () => {
     try {
       const ts = new Date().getTime()
       
-      // Voláme API elegantně a krátce
-      const [dataBeers, dataLocs, dataBrews, dataStyles, dataStats, dataHist] = await Promise.all([
+      const [dataBeers, dataLocs, dataBrews, dataStyles, dataCountries, dataStats, dataHist] = await Promise.all([
         apiFetch(`/beers.php?t=${ts}`),
         apiFetch(`/locations.php?t=${ts}`),
         apiFetch(`/breweries.php?t=${ts}`),
         apiFetch(`/styles.php?t=${ts}`),
+        apiFetch(`/countries.php?t=${ts}`), // PŘIDÁNO
         apiFetch(`/stats.php?t=${ts}`),
         apiFetch(`/history.php?t=${ts}`)
       ])
@@ -30,6 +31,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       if (dataLocs.status === 'success') locations.value = dataLocs.data
       if (dataBrews.status === 'success') breweries.value = dataBrews.data
       if (dataStyles.status === 'success') styles.value = dataStyles.data
+      if (dataCountries.status === 'success') countries.value = dataCountries.data // PŘIDÁNO
       if (dataStats.status === 'success') stats.value = dataStats.stats
       if (dataHist.status === 'success') history.value = dataHist.data
 
@@ -40,5 +42,5 @@ export const useCatalogStore = defineStore('catalog', () => {
     }
   }
 
-  return { beers, locations, breweries, styles, stats, history, isLoading, fetchAllData }
+  return { beers, locations, breweries, styles, countries, stats, history, isLoading, fetchAllData }
 })

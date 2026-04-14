@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// ZABEZPEČENÍ!
 JwtHandler::checkAdmin();
 
 $database = new Database();
@@ -21,15 +20,14 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name) && !empty($data->type)) {
     try {
-        $query = "INSERT INTO locations (name, type, city, country, address, street_number, zip_code, email, phone, website, opening_hours, is_approved) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $query = "INSERT INTO locations (name, type, city, country_id, address, zip_code, email, phone, website, opening_hours, is_approved) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         
         $stmt = $db->prepare($query);
         
         $city = !empty($data->city) ? $data->city : null;
-        $country = !empty($data->country) ? $data->country : 'Česká republika';
+        $country_id = !empty($data->country_id) ? (int)$data->country_id : 1; // 1 = CZ
         $address = !empty($data->address) ? $data->address : null;
-        $street_number = !empty($data->street_number) ? $data->street_number : null;
         $zip_code = !empty($data->zip_code) ? $data->zip_code : null;
         $email = !empty($data->email) ? $data->email : null;
         $phone = !empty($data->phone) ? $data->phone : null;
@@ -40,9 +38,8 @@ if (!empty($data->name) && !empty($data->type)) {
             $data->name, 
             $data->type,
             $city, 
-            $country, 
+            $country_id, 
             $address, 
-            $street_number, 
             $zip_code, 
             $email, 
             $phone, 

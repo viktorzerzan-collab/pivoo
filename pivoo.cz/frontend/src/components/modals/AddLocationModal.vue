@@ -17,15 +17,18 @@
           <option value="jine">Jiné</option>
         </BaseSelect>
 
-        <div class="form-row">
-          <BaseInput v-model="form.address" label="Ulice" class="half" />
-          <BaseInput v-model="form.street_number" label="Číslo" class="half" />
-        </div>
+        <BaseInput v-model="form.address" label="Ulice a číslo popisné" />
 
         <div class="form-row">
           <BaseInput v-model="form.city" label="Město" class="half" />
           <BaseInput v-model="form.zip_code" label="PSČ" class="half" />
         </div>
+
+        <BaseSelect v-model="form.country_id" label="Země">
+          <option v-for="c in countries" :key="c.id" :value="c.id">
+            {{ c.name_cz }}
+          </option>
+        </BaseSelect>
 
         <div class="form-row">
           <BaseInput v-model="form.email" type="email" label="E-mail" class="half" />
@@ -53,7 +56,8 @@ import BaseSelect from '../BaseSelect.vue'
 defineProps({
   show: Boolean,
   isEditing: Boolean,
-  form: Object
+  form: Object,
+  countries: Array
 })
 defineEmits(['close', 'submit'])
 </script>

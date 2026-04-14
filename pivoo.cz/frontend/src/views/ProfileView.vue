@@ -4,11 +4,6 @@
       <div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div>
     </transition>
 
-    <div class="view-header">
-      <h2 class="section-title">Můj profil</h2>
-      <p class="auth-subtitle">Nastavení účtu a vzhledu</p>
-    </div>
-
     <div class="profile-content">
       
       <div class="panel-card user-info-card">

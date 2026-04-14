@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// ZABEZPEČENÍ!
 JwtHandler::checkAdmin();
 
 $database = new Database();
@@ -22,15 +21,14 @@ $data = json_decode(file_get_contents("php://input"));
 if (!empty($data->id) && !empty($data->name)) {
     try {
         $query = "UPDATE locations 
-                  SET name = ?, type = ?, city = ?, country = ?, address = ?, street_number = ?, zip_code = ?, email = ?, phone = ?, website = ?, opening_hours = ? 
+                  SET name = ?, type = ?, city = ?, country_id = ?, address = ?, zip_code = ?, email = ?, phone = ?, website = ?, opening_hours = ? 
                   WHERE id = ?";
                   
         $stmt = $db->prepare($query);
         
         $city = !empty($data->city) ? $data->city : null;
-        $country = !empty($data->country) ? $data->country : null;
+        $country_id = !empty($data->country_id) ? (int)$data->country_id : null;
         $address = !empty($data->address) ? $data->address : null;
-        $street_number = !empty($data->street_number) ? $data->street_number : null;
         $zip_code = !empty($data->zip_code) ? $data->zip_code : null;
         $email = !empty($data->email) ? $data->email : null;
         $phone = !empty($data->phone) ? $data->phone : null;
@@ -41,9 +39,8 @@ if (!empty($data->id) && !empty($data->name)) {
             $data->name, 
             $data->type, 
             $city, 
-            $country, 
+            $country_id, 
             $address, 
-            $street_number, 
             $zip_code, 
             $email, 
             $phone, 

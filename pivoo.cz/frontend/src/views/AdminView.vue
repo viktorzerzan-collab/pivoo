@@ -1,7 +1,6 @@
 <template>
   <div class="admin-page">
     <div class="admin-header">
-      <h2 class="section-title">Administrace</h2>
       <nav class="admin-tabs">
         <button v-for="t in tabs" :key="t.id" @click="activeTab = t.id" :class="{ active: activeTab === t.id }">
           {{ t.label }}
@@ -130,8 +129,8 @@
 
     <DeleteConfirmModal :show="deleteModal.show" @close="deleteModal.show = false" @confirm="handleDelete" />
     <AddBeerModal :show="modals.beer" :isEditing="isEditing" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
-    <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
-    <AddLocationModal :show="modals.location" :isEditing="isEditing" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
+    <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :countries="countries" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
+    <AddLocationModal :show="modals.location" :isEditing="isEditing" :countries="countries" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
     
     <EditUserModal 
       :show="modals.user" 
@@ -192,7 +191,7 @@ import BanConfirmModal from '../components/modals/BanConfirmModal.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore)
-const { beers, breweries, locations, styles, isLoading } = storeToRefs(catalogStore)
+const { beers, breweries, locations, styles, countries, isLoading } = storeToRefs(catalogStore)
 
 const activeTab = ref('users')
 const allUsers = ref([])
@@ -244,8 +243,8 @@ const formData = ref({
     ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
     is_unfiltered: false, is_unpasteurized: false 
   },
-  brewery: { id: null, name: '', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', logoFile: null },
-  location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' },
+  brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null },
+  location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' },
   style: { id: null, name: '' },
   user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
 })
@@ -426,7 +425,7 @@ const handleDelete = async () => {
 <style scoped>
 .admin-page { flex: 1; display: flex; flex-direction: column; }
 .admin-header { margin-bottom: 2rem; }
-.admin-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 1rem; overflow-x: auto; }
+.admin-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; overflow-x: auto; }
 .admin-tabs button { padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); cursor: pointer; font-weight: 600; border-radius: 8px; white-space: nowrap; box-shadow: none; }
 .admin-tabs button.active { background: var(--primary); color: #1e293b; }
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }

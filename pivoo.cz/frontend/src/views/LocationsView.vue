@@ -5,21 +5,17 @@
     </transition>
 
     <div class="view-header">
-      <div class="header-top">
-        <div class="title-group">
-          <h2 class="section-title">Podniky</h2>
-          <p class="auth-subtitle">Kam na dobré pivo</p>
+      <div class="header-actions">
+        <div class="header-filters-row">
+          <FilterInput v-model="searchQuery" placeholder="Hledat podnik..." class="flex-2" />
+          <FilterSelect v-model="sortBy" :icon="ArrowDownUpIcon" class="flex-1">
+            <option value="name">Abecedně (A-Z)</option>
+            <option value="rating">Dle hodnocení</option>
+          </FilterSelect>
         </div>
         <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
           <PlusIcon /> Přidat podnik
         </button>
-      </div>
-      <div class="header-filters-row">
-        <FilterInput v-model="searchQuery" placeholder="Hledat podnik..." class="flex-2" />
-        <FilterSelect v-model="sortBy" :icon="ArrowDownUpIcon" class="flex-1">
-          <option value="name">Abecedně (A-Z)</option>
-          <option value="rating">Dle hodnocení</option>
-        </FilterSelect>
       </div>
     </div>
 
@@ -49,7 +45,7 @@
     </div>
 
     <DetailModal :show="isDetailOpen" :item="selectedItem" type="location" @close="isDetailOpen = false" />
-    <AddLocationModal :show="isAddModalOpen" :form="form" @close="isAddModalOpen = false" @submit="submitLocation" />
+    <AddLocationModal :show="isAddModalOpen" :countries="countries" :form="form" @close="isAddModalOpen = false" @submit="submitLocation" />
   </div>
 </template>
 
@@ -74,7 +70,7 @@ import BasePagination from '../components/BasePagination.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore)
-const { locations, isLoading } = storeToRefs(catalogStore)
+const { locations, countries, isLoading } = storeToRefs(catalogStore)
 const isAdmin = computed(() => user.value?.role === 'admin')
 
 const toast = ref({ show: false, message: '', type: 'toast-success' })
@@ -85,8 +81,8 @@ const isDetailOpen = ref(false)
 const selectedItem = ref(null)
 
 const form = ref({ 
-  name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', 
-  address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' 
+  name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, 
+  address: '', email: '', phone: '', website: '', opening_hours: '' 
 })
 
 // STRÁNKOVÁNÍ
@@ -131,7 +127,7 @@ const submitLocation = async () => {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
-      form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country: 'Česká republika', address: '', street_number: '', email: '', phone: '', website: '', opening_hours: '' }
+      form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
       await catalogStore.fetchAllData()
       showToast("Podnik uložen") 
     }
@@ -143,16 +139,16 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 
 <style scoped>
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; }
-.view-header { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
-.header-top { display: flex; justify-content: space-between; align-items: center; }
-.header-filters-row { display: flex; gap: 1rem; width: 60%; }
+.view-header { margin-bottom: 2rem; }
+.header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
+.header-filters-row { display: flex; gap: 1rem; flex: 1; max-width: 600px; }
 .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); transition: background-color 0.5s ease, border-color 0.5s ease; }
 .empty-state h3 { color: var(--text-main); transition: color 0.5s ease; }
 
 @media (max-width: 800px) { 
-  .header-top { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .header-top .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
-  .header-filters-row { width: 100%; flex-direction: column; } 
+  .header-actions { flex-direction: column-reverse; align-items: stretch; }
+  .header-actions .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
+  .header-filters-row { width: 100%; flex-direction: column; max-width: none; } 
 }
 </style>

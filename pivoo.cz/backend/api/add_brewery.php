@@ -58,20 +58,19 @@ if (!empty($data->name)) {
             }
         }
 
-        $query = "INSERT INTO breweries (name, city, country, address, street_number, zip_code, email, phone, website, is_approved, logo) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+        $query = "INSERT INTO breweries (name, city, country_id, address, zip_code, email, phone, website, is_approved, logo) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
         $stmt = $db->prepare($query);
         
         $city = !empty($data->city) ? $data->city : null;
-        $country = !empty($data->country) ? $data->country : 'Česká republika';
+        $country_id = !empty($data->country_id) ? (int)$data->country_id : 1; // 1 = CZ
         $address = !empty($data->address) ? $data->address : null;
-        $street_number = !empty($data->street_number) ? $data->street_number : null;
         $zip_code = !empty($data->zip_code) ? $data->zip_code : null;
         $email = !empty($data->email) ? $data->email : null;
         $phone = !empty($data->phone) ? $data->phone : null;
         $website = !empty($data->website) ? $data->website : null;
 
-        if ($stmt->execute([$data->name, $city, $country, $address, $street_number, $zip_code, $email, $phone, $website, $logo_filename])) {
+        if ($stmt->execute([$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $logo_filename])) {
             echo json_encode(["status" => "success", "message" => "Pivovar byl úspěšně přidán do katalogu."]);
         } else {
             http_response_code(500);
