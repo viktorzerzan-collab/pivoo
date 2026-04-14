@@ -14,11 +14,45 @@
     </div>
 
     <transition name="fade-popover">
-      <div v-if="isOpen" class="calendar-popover">
+      <div v-if="isOpen" class="calendar-popover" @click.stop>
         <div class="calendar-header">
-          <button type="button" @click.stop="prevMonth" class="cal-btn"><ChevronLeftIcon :size="18" /></button>
-          <strong>{{ monthNames[currentMonth] }} {{ currentYear }}</strong>
-          <button type="button" @click.stop="nextMonth" class="cal-btn"><ChevronRightIcon :size="18" /></button>
+          <button type="button" @click="prevMonth" class="cal-btn"><ChevronLeftIcon :size="18" /></button>
+          
+          <div class="date-selectors">
+            <div class="custom-select-mini" ref="monthDropdownRef">
+              <button type="button" class="select-trigger-mini" @click="toggleMonthDropdown">
+                {{ monthNames[currentMonth] }}
+                <ChevronDownIcon :size="14" :class="{ 'rotated': isMonthOpen }" />
+              </button>
+              <transition name="dropdown-slide">
+                <ul v-if="isMonthOpen" class="options-menu-mini">
+                  <li v-for="(name, index) in monthNames" :key="index" 
+                      @click="selectMonth(index)" 
+                      :class="{ 'is-selected': currentMonth === index }">
+                    {{ name }}
+                  </li>
+                </ul>
+              </transition>
+            </div>
+
+            <div class="custom-select-mini" ref="yearDropdownRef">
+              <button type="button" class="select-trigger-mini" @click="toggleYearDropdown">
+                {{ currentYear }}
+                <ChevronDownIcon :size="14" :class="{ 'rotated': isYearOpen }" />
+              </button>
+              <transition name="dropdown-slide">
+                <ul v-if="isYearOpen" class="options-menu-mini">
+                  <li v-for="year in yearOptions" :key="year" 
+                      @click="selectYear(year)" 
+                      :class="{ 'is-selected': currentYear === year }">
+                    {{ year }}
+                  </li>
+                </ul>
+              </transition>
+            </div>
+          </div>
+
+          <button type="button" @click="nextMonth" class="cal-btn"><ChevronRightIcon :size="18" /></button>
         </div>
         
         <div class="calendar-grid">
@@ -45,7 +79,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-vue-next'
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from 'lucide-vue-next'
 
 const props = defineProps({
   modelValue: String,
@@ -54,6 +88,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const isOpen = ref(false)
+const isMonthOpen = ref(false)
+const isYearOpen = ref(false)
 const pickerRef = ref(null)
 
 const monthNames = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec']
@@ -61,6 +97,16 @@ const weekDays = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
 
 const currentMonth = ref(new Date().getMonth())
 const currentYear = ref(new Date().getFullYear())
+
+// ÚPRAVA: Roky začínají aktuálním rokem a jdou 100 let zpět
+const yearOptions = computed(() => {
+  const currentY = new Date().getFullYear()
+  const years = []
+  for (let i = currentY - 100; i <= currentY; i++) {
+    years.push(i)
+  }
+  return years.reverse() // Aktuální rok bude nahoře
+})
 
 watch(() => props.modelValue, (newVal) => {
   if (newVal) {
@@ -80,16 +126,31 @@ const calendarDays = computed(() => {
   const days = []
   let firstDay = new Date(currentYear.value, currentMonth.value, 1).getDay()
   const emptySlots = firstDay === 0 ? 6 : firstDay - 1
-  
   const daysInMonth = new Date(currentYear.value, currentMonth.value + 1, 0).getDate()
-
   for (let i = 0; i < emptySlots; i++) days.push(null)
   for (let i = 1; i <= daysInMonth; i++) days.push(i)
-  
   return days
 })
 
 const toggleCalendar = () => { isOpen.value = !isOpen.value }
+const toggleMonthDropdown = () => { 
+  isYearOpen.value = false
+  isMonthOpen.value = !isMonthOpen.value 
+}
+const toggleYearDropdown = () => { 
+  isMonthOpen.value = false
+  isYearOpen.value = !isYearOpen.value 
+}
+
+const selectMonth = (index) => {
+  currentMonth.value = index
+  isMonthOpen.value = false
+}
+
+const selectYear = (year) => {
+  currentYear.value = year
+  isYearOpen.value = false
+}
 
 const nextMonth = () => {
   if (currentMonth.value === 11) { currentMonth.value = 0; currentYear.value++ } 
@@ -125,8 +186,11 @@ const isToday = (day) => {
 const handleClickOutside = (event) => {
   if (pickerRef.value && !pickerRef.value.contains(event.target)) {
     isOpen.value = false
+    isMonthOpen.value = false
+    isYearOpen.value = false
   }
 }
+
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
@@ -140,11 +204,61 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 .base-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border); border-radius: 10px; background-color: var(--bg-panel); font-size: 0.95rem; font-family: inherit; color: var(--text-main); cursor: pointer; outline: none; transition: all 0.3s ease; }
 .input-wrapper:hover .base-input { border-color: var(--primary); }
 
-.calendar-popover { position: absolute; top: calc(100% + 0.5rem); left: 0; width: 280px; background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-md); padding: 1rem; z-index: 100; transition: all 0.3s ease; }
-.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; color: var(--text-main); transition: color 0.5s ease; }
+.calendar-popover { position: absolute; top: calc(100% + 0.5rem); left: 0; width: 310px; background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-md); padding: 1rem; z-index: 100; transition: all 0.3s ease; }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; color: var(--text-main); gap: 0.5rem; }
+
 .cal-btn { background: none; border: none; padding: 0.25rem; cursor: pointer; border-radius: 6px; display: flex; align-items: center; color: var(--text-muted); transition: all 0.2s; }
 .cal-btn:hover { background-color: var(--border); color: var(--text-main); }
 
+/* --- STYLIZACE MINI SELECTŮ --- */
+.date-selectors { display: flex; gap: 0.4rem; align-items: center; flex: 1; justify-content: center; }
+.custom-select-mini { position: relative; }
+
+.select-trigger-mini {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.select-trigger-mini:hover { border-color: var(--primary); }
+.select-trigger-mini svg { transition: transform 0.3s ease; color: var(--text-muted); }
+.select-trigger-mini svg.rotated { transform: rotate(180deg); color: var(--primary); }
+
+.options-menu-mini {
+  position: absolute; top: calc(100% + 5px); left: 50%; transform: translateX(-50%);
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  max-height: 200px; overflow-y: auto;
+  list-style: none; padding: 0.4rem; margin: 0;
+  min-width: 100px;
+}
+
+.options-menu-mini li {
+  padding: 0.5rem 0.75rem; border-radius: 6px;
+  cursor: pointer; font-size: 0.85rem; font-weight: 500;
+  color: var(--text-main); transition: all 0.2s ease;
+  text-align: left;
+}
+.options-menu-mini li:hover { background-color: var(--card-hover-bg); color: var(--primary); }
+.options-menu-mini li.is-selected { background-color: rgba(250, 204, 21, 0.1); color: var(--primary); font-weight: 700; }
+
+/* Scrollbar pro menu */
+.options-menu-mini::-webkit-scrollbar { width: 4px; }
+.options-menu-mini::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
+
+/* Animace dropdownu */
+.dropdown-slide-enter-active, .dropdown-slide-leave-active { transition: opacity 0.2s, transform 0.2s; }
+.dropdown-slide-enter-from, .dropdown-slide-leave-to { opacity: 0; transform: translate(-50%, -10px); }
+
+/* --- KALENDÁŘ --- */
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; text-align: center; }
 .cal-day-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.25rem; }
 .cal-day { padding: 0.4rem 0; font-size: 0.9rem; font-weight: 500; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
@@ -158,6 +272,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 .fade-popover-enter-from, .fade-popover-leave-to { opacity: 0; transform: translateY(-10px); }
 
 @media (max-width: 600px) {
-  .calendar-popover { width: 100%; }
+  .calendar-popover { width: 100%; left: 0; right: 0; }
 }
 </style>

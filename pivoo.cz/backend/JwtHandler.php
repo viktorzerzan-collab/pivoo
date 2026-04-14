@@ -3,6 +3,8 @@
 
 // Načteme bezpečný konfigurační soubor, který ignoruje Git
 require_once 'config.php'; 
+// Načteme Database.php pro dodatečné ověření BANu v DB
+require_once 'Database.php';
 
 class JwtHandler {
 
@@ -16,7 +18,6 @@ class JwtHandler {
         $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
         $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
 
-        // ZMĚNA: Používáme tvoji existující konstantu SECRET_KEY z config.php
         $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, SECRET_KEY, true);
         $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
 
@@ -30,7 +31,6 @@ class JwtHandler {
 
         list($base64UrlHeader, $base64UrlPayload, $base64UrlSignature) = $parts;
 
-        // ZMĚNA: Používáme tvoji existující konstantu SECRET_KEY z config.php
         $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, SECRET_KEY, true);
         $validSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
 
@@ -81,6 +81,10 @@ class JwtHandler {
             echo json_encode(["status" => "error", "message" => "Neautorizovaný přístup. Pouze pro administrátory."]);
             exit();
         }
+
+        // Dodatečná kontrola BANu přímo v databázi pro zajištění okamžitého odhlášení
+        self::verifyUserStatus($decoded['user_id']);
+
         return $decoded;
     }
 
@@ -99,7 +103,28 @@ class JwtHandler {
             echo json_encode(["status" => "error", "message" => "Neplatný nebo expirovaný token. Zkuste se přihlásit znovu."]);
             exit();
         }
+
+        // Dodatečná kontrola BANu přímo v databázi pro zajištění okamžitého odhlášení
+        self::verifyUserStatus($decoded['user_id']);
+
         return $decoded;
+    }
+
+    // Pomocná metoda pro ověření stavu účtu v DB (zda nedostal BAN)
+    private static function verifyUserStatus($userId) {
+        $db = (new Database())->getConnection();
+        if ($db) {
+            $stmt = $db->prepare("SELECT is_banned FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch();
+
+            if ($user && $user['is_banned'] == 1) {
+                // Kód 403 Forbidden se odešle na frontend
+                http_response_code(403);
+                echo json_encode(["status" => "error", "message" => "Váš účet byl zablokován administrátorem."]);
+                exit();
+            }
+        }
     }
 }
 ?>

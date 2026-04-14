@@ -26,17 +26,40 @@ export async function apiFetch(endpoint, options = {}) {
   }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
-    cache: 'no-store', // MAGIE: Zabráníme prohlížeči cachovat data z API
+    cache: 'no-store', // Zabráníme prohlížeči cachovat data z API
     ...options,
     headers
   });
 
   if (!response.ok) {
-    if (response.status === 401) {
-      // Zde by se dalo pořešit automatické odhlášení při expiračním tokenu
-      console.error("Uživatel není autorizován.");
+    // Zpracování chyb 401 (Neautorizováno) a 403 (Zakázáno / BAN)
+    if (response.status === 401 || response.status === 403) {
+      console.error(response.status === 403 ? "Přístup odepřen (možný BAN)." : "Uživatel není autorizován.");
+      
+      // Okamžité smazání dat o přihlášení
+      localStorage.removeItem('pivoo_token');
+      localStorage.removeItem('pivoo_user');
+      
+      // Přesměrování na přihlašovací stránku, pokud už tam nejsme
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
     }
-    throw new Error(`API error: ${response.status}`);
+    
+    // Pokusíme se vyčíst chybovou zprávu ze serveru
+    let errorData = null;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      // Ignorujeme, pokud odpověď není validní JSON
+    }
+    
+    if (errorData && errorData.message) {
+      // Vyhodíme chybu se zprávou od serveru (např. "Váš účet byl zablokován.")
+      throw new Error(errorData.message);
+    } else {
+      throw new Error(`API error: ${response.status}`);
+    }
   }
 
   return response.json();

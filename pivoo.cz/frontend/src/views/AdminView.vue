@@ -75,7 +75,7 @@
                         <KeyIcon />
                       </button>
                       
-                      <button v-if="u?.id !== user?.id" class="is-icon-only" :style="u.is_banned ? 'background-color: #10b981; color: white; border: none;' : 'background-color: #64748b; color: white; border: none;'" @click="toggleBan(u)" :title="u.is_banned ? 'Odblokovat uživatele' : 'Zablokovat (Ban)'">
+                      <button v-if="u?.id !== user?.id" class="is-icon-only" :style="u.is_banned ? 'background-color: #10b981; color: white; border: none;' : 'background-color: #64748b; color: white; border: none;'" @click="openBanModal(u)" :title="u.is_banned ? 'Odblokovat uživatele' : 'Zablokovat (Ban)'">
                         <UnlockIcon v-if="u.is_banned" />
                         <BanIcon v-else />
                       </button>
@@ -143,6 +143,13 @@
       @close="modals.password = false" 
       @submit="handlePasswordChange" 
     />
+
+    <BanConfirmModal 
+      :show="modals.ban" 
+      :user="selectedUserForBan" 
+      @close="modals.ban = false" 
+      @confirm="handleBanConfirm" 
+    />
     
     <BaseModal :show="modals.style" @close="modals.style = false">
       <template #header><h2>{{ isEditing ? 'Upravit' : 'Přidat' }} styl</h2></template>
@@ -174,6 +181,7 @@ import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import EditUserModal from '../components/modals/EditUserModal.vue'
 import ChangePasswordModal from '../components/modals/ChangePasswordModal.vue'
+import BanConfirmModal from '../components/modals/BanConfirmModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -185,9 +193,10 @@ const allUsers = ref([])
 const isUsersLoading = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false })
+const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false, ban: false })
 const isEditing = ref(false)
 const selectedUserForPassword = ref(null)
+const selectedUserForBan = ref(null)
 
 const tabs = [
   { id: 'users', label: 'Uživatelé' },
@@ -232,7 +241,7 @@ onMounted(() => {
 const openAddModal = (t) => { 
   isEditing.value = false
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'location' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
+  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
   if (key === 'beer') {
     formData.value.beer = { 
@@ -307,11 +316,13 @@ const handleRemoveAvatar = async (userId) => {
   }
 }
 
-const toggleBan = async (u) => {
+const openBanModal = (u) => {
+  selectedUserForBan.value = u
+  modals.value.ban = true
+}
+
+const handleBanConfirm = async (u) => {
   const newStatus = u.is_banned ? 0 : 1;
-  const actionText = newStatus ? 'zablokovat' : 'odblokovat';
-  
-  if (!confirm(`Opravdu chcete ${actionText} uživatele ${u.username}?`)) return;
 
   try {
     const res = await apiFetch('/admin_toggle_ban.php', {
@@ -321,6 +332,7 @@ const toggleBan = async (u) => {
     
     if (res.status === 'success') {
       showToast(res.message)
+      modals.value.ban = false
       fetchUsers()
     } else {
       showToast(res.message || 'Nepodařilo se změnit stav blokace.', 'toast-error')
