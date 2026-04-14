@@ -157,6 +157,18 @@
             </div>
           </div>
 
+          <div v-if="item?.lat && item?.lng" class="info-item" style="margin-top: 0.5rem;">
+            <MapIcon :size="18" class="icon-muted" />
+            <div class="info-text">
+              <strong>Navigace:</strong><br>
+              <a :href="`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
+                 target="_blank" 
+                 class="link" style="display: inline-flex; align-items: center; gap: 0.3rem;">
+                 Otevřít v mapě <ExternalLinkIcon :size="14" />
+              </a>
+            </div>
+          </div>
+
           <div v-if="item?.opening_hours" class="info-item">
             <ClockIcon :size="18" class="icon-muted" />
             <div class="info-text">
@@ -200,7 +212,7 @@ import {
   BeerIcon, FactoryIcon, MapPinIcon, StarIcon, ActivityIcon, 
   PercentIcon, MessageSquareIcon, PhoneIcon, MailIcon, GlobeIcon, 
   ClockIcon, ThermometerIcon, PipetteIcon, SproutIcon, WheatIcon, 
-  FlaskConicalIcon, TagIcon 
+  FlaskConicalIcon, TagIcon, MapIcon, ExternalLinkIcon 
 } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 

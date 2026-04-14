@@ -8,7 +8,27 @@
       <div class="header-actions">
         <div class="header-filters-row">
           <FilterInput v-model="searchQuery" placeholder="Hledat pivovar..." class="flex-2" />
-          <FilterSelect v-model="sortBy" :icon="ArrowDownUpIcon" class="flex-1">
+          
+          <div class="view-toggle-group">
+            <button 
+              class="toggle-btn" 
+              :class="{ active: !isMapView }" 
+              @click="isMapView = false"
+              title="Zobrazit seznam"
+            >
+              <LayoutGridIcon :size="20" />
+            </button>
+            <button 
+              class="toggle-btn" 
+              :class="{ active: isMapView }" 
+              @click="isMapView = true"
+              title="Zobrazit mapu"
+            >
+              <MapIcon :size="20" />
+            </button>
+          </div>
+
+          <FilterSelect v-model="sortBy" :icon="ArrowDownUpIcon" class="flex-1" v-show="!isMapView">
             <option value="name">Abecedně (A-Z)</option>
             <option value="rating">Dle hodnocení</option>
           </FilterSelect>
@@ -22,7 +42,14 @@
     <div class="catalog-container">
       <BaseLoader :show="isLoading" />
 
-      <template v-if="filteredBreweries.length > 0">
+      <div v-if="isMapView" class="map-wrapper">
+        <MapView 
+          :items="filteredBreweries" 
+          @showDetail="openDetail" 
+        />
+      </div>
+
+      <div v-else-if="!isMapView && filteredBreweries.length > 0" class="list-wrapper">
         <div class="breweries-grid">
           <BreweryCard 
             v-for="brewery in paginatedBreweries" 
@@ -31,14 +58,10 @@
             @showDetail="openDetail" 
           />
         </div>
-        
-        <BasePagination 
-          v-model:currentPage="currentPage" 
-          :totalPages="totalPages" 
-        />
-      </template>
+        <BasePagination v-model:currentPage="currentPage" :totalPages="totalPages" />
+      </div>
       
-      <div v-else-if="!isLoading" class="empty-state">
+      <div v-else-if="!isLoading && filteredBreweries.length === 0" class="empty-state">
         <FactoryIcon :size="48" color="#cbd5e1" />
         <h3>Žádné pivovary k zobrazení</h3>
       </div>
@@ -52,7 +75,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, FactoryIcon, ArrowDownUpIcon } from 'lucide-vue-next'
+import { PlusIcon, FactoryIcon, ArrowDownUpIcon, MapIcon, LayoutGridIcon } from 'lucide-vue-next'
 
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -64,6 +87,7 @@ import FilterSelect from '../components/FilterSelect.vue'
 import BreweryCard from '../components/BreweryCard.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
+import MapView from '../components/MapView.vue'
 import BasePagination from '../components/BasePagination.vue'
 
 const authStore = useAuthStore()
@@ -72,6 +96,7 @@ const { user } = storeToRefs(authStore)
 const { breweries, countries, isLoading } = storeToRefs(catalogStore)
 const isAdmin = computed(() => user.value?.role === 'admin')
 
+const isMapView = ref(false) // Stav přepínače
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const searchQuery = ref('')
 const sortBy = ref('name')
@@ -79,23 +104,17 @@ const isAddModalOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
 
-// Výchozí country_id je 1 (Česká republika)
 const form = ref({ 
   name: '', city: '', zip_code: '', country_id: 1, 
   address: '', email: '', phone: '', website: '', logoFile: null 
 })
 
-// STRÁNKOVÁNÍ
 const currentPage = ref(1)
 const itemsPerPage = 30
 
-watch([searchQuery, sortBy], () => {
-  currentPage.value = 1
-})
-
-const showToast = (message, type = 'toast-success') => { 
-  toast.value = { show: true, message, type }
-  setTimeout(() => { toast.value.show = false }, 3000) 
+const openDetail = (item) => { 
+  selectedItem.value = item
+  isDetailOpen.value = true 
 }
 
 const filteredBreweries = computed(() => {
@@ -117,9 +136,9 @@ const paginatedBreweries = computed(() => {
   return filteredBreweries.value.slice(start, start + itemsPerPage)
 })
 
-const openDetail = (item) => { 
-  selectedItem.value = item
-  isDetailOpen.value = true 
+const showToast = (message, type = 'toast-success') => { 
+  toast.value = { show: true, message, type }
+  setTimeout(() => { toast.value.show = false }, 3000) 
 }
 
 const submitBrewery = async () => {
@@ -137,29 +156,59 @@ const submitBrewery = async () => {
       form.value = { name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null }
       await catalogStore.fetchAllData()
       showToast("Pivovar přidán") 
-    } else {
-      showToast(result.message || 'Nepodařilo se přidat pivovar.', 'toast-error')
     }
-  } catch (e) { 
-    showToast('Chyba serveru.', 'toast-error') 
-  }
+  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
 onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 </script>
 
 <style scoped>
-.catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; }
+/* PŮVODNÍ STYLY PRO ROZLOŽENÍ */
+.catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
 .view-header { margin-bottom: 2rem; }
 .header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
-.header-filters-row { display: flex; gap: 1rem; flex: 1; max-width: 600px; }
-.breweries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+.header-filters-row { display: flex; gap: 1rem; flex: 1; max-width: 800px; align-items: center; }
+
+/* OPRAVENÁ MŘÍŽKA - Pevné wrappery */
+.list-wrapper { width: 100%; display: flex; flex-direction: column; }
+.map-wrapper { width: 100%; }
+.breweries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; width: 100%; }
+
 .empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); transition: background-color 0.5s ease, border-color 0.5s ease; }
 .empty-state h3 { color: var(--text-main); transition: color 0.5s ease; }
 
+/* STYLY PRO PŘEPÍNAČ ZOBRAZENÍ */
+.view-toggle-group {
+  display: flex;
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.toggle-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: none;
+}
+
+.toggle-btn.active {
+  background: var(--bg-panel);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* RESPONSIVNÍ DESIGN PRO MOBILY */
 @media (max-width: 800px) { 
   .header-actions { flex-direction: column-reverse; align-items: stretch; }
   .header-actions .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
   .header-filters-row { width: 100%; flex-direction: column; max-width: none; }
+  .view-toggle-group { width: 100%; justify-content: center; }
 }
 </style>
