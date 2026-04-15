@@ -18,9 +18,21 @@
 
       <transition name="dropdown-slide">
         <div v-if="isOpen" class="options-menu">
+          
+          <div v-if="searchable" class="search-container" @click.stop>
+            <SearchIcon :size="16" class="search-icon" />
+            <input 
+              type="text" 
+              v-model="searchQuery" 
+              class="search-input" 
+              placeholder="Hledat..." 
+              ref="searchInputRef"
+            />
+          </div>
+
           <ul class="options-list">
             <li 
-              v-for="option in parsedOptions" 
+              v-for="option in filteredOptions" 
               :key="option.value" 
               class="option-item"
               :class="{ 
@@ -32,8 +44,8 @@
               {{ option.label }}
               <CheckIcon v-if="modelValue == option.value" :size="16" class="check-icon" />
             </li>
-            <li v-if="parsedOptions.length === 0" class="option-empty">
-              Žádné možnosti k dispozici
+            <li v-if="filteredOptions.length === 0" class="option-empty">
+              Žádné možnosti nenalezeny
             </li>
           </ul>
         </div>
@@ -47,14 +59,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, useSlots } from 'vue'
-import { ChevronDownIcon, CheckIcon } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted, watch, useSlots, nextTick } from 'vue'
+import { ChevronDownIcon, CheckIcon, SearchIcon } from 'lucide-vue-next'
 
 const props = defineProps({
   modelValue: [String, Number],
   label: String,
   placeholder: { type: String, default: '-- Vyberte --' },
-  disabled: Boolean
+  disabled: Boolean,
+  searchable: { type: Boolean, default: false } // NOVÁ PROP: Povoluje vyhledávání
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -64,12 +77,13 @@ const isOpen = ref(false)
 const selectRef = ref(null)
 const slotContainer = ref(null)
 const parsedOptions = ref([])
+const searchQuery = ref('')
+const searchInputRef = ref(null)
 
 // Funkce pro parsování <option> prvků ze slotu
 const updateOptionsFromSlots = () => {
   if (!slotContainer.value) return
   
-  // Najdeme všechny <option> prvky, které jsi vložil do slotu v rodiči
   const options = slotContainer.value.querySelectorAll('option')
   parsedOptions.value = Array.from(options).map(opt => ({
     label: opt.textContent.trim(),
@@ -84,8 +98,27 @@ const selectedLabel = computed(() => {
   return active ? active.label : null
 })
 
+// Filtrované možnosti na základě vyhledávání
+const filteredOptions = computed(() => {
+  if (!props.searchable || !searchQuery.value) return parsedOptions.value
+  
+  const query = searchQuery.value.toLowerCase()
+  return parsedOptions.value.filter(opt => 
+    opt.label.toLowerCase().includes(query) || (opt.disabled && opt.value === "")
+  )
+})
+
 const toggleDropdown = () => {
-  if (!props.disabled) isOpen.value = !isOpen.value
+  if (!props.disabled) {
+    isOpen.value = !isOpen.value
+    
+    // Pokud se dropdown otevírá a je zapnuté hledání, zaostříme kurzor do inputu
+    if (isOpen.value && props.searchable) {
+      nextTick(() => {
+        if (searchInputRef.value) searchInputRef.value.focus()
+      })
+    }
+  }
 }
 
 const selectOption = (option) => {
@@ -94,14 +127,21 @@ const selectOption = (option) => {
   isOpen.value = false
 }
 
-// Zavření při kliknutí mimo komponent
+// Zavření při kliknutí mimo komponent a vyčištění vyhledávání
 const handleClickOutside = (event) => {
   if (selectRef.value && !selectRef.value.contains(event.target)) {
     isOpen.value = false
   }
 }
 
-// Sledujeme změny ve slotu (např. když se načtou pivovary z API)
+// Při zavření menu resetujeme vyhledávání
+watch(isOpen, (newVal) => {
+  if (!newVal) {
+    setTimeout(() => { searchQuery.value = '' }, 200) // Zpoždění kvůli plynulosti animace
+  }
+})
+
+// Sledujeme změny ve slotu
 const observer = new MutationObserver(updateOptionsFromSlots)
 
 onMounted(() => {
@@ -117,7 +157,6 @@ onUnmounted(() => {
   observer.disconnect()
 })
 
-// Reagujeme na změnu slotu manuálně pro jistotu
 watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 </script>
 
@@ -143,7 +182,6 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   width: 100%;
 }
 
-/* STYL SPOUŠTĚČE (Zavřený stav) */
 .select-trigger {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -199,7 +237,6 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   color: var(--primary);
 }
 
-/* STYL ROZBALENÉHO MENU */
 .options-menu {
   position: absolute;
   top: calc(100% + 5px);
@@ -210,15 +247,50 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   border-radius: 12px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  max-height: 250px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* STYL VYHLEDÁVACÍHO POLE */
+.search-container {
+  position: relative;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-panel);
+  border-radius: 12px 12px 0 0;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 0.6rem 0.6rem 2.2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: var(--primary);
 }
 
 .options-list {
   list-style: none;
   padding: 0.5rem;
   margin: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .option-item {
@@ -263,10 +335,10 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 }
 
 /* Scrollbar menu */
-.options-menu::-webkit-scrollbar {
+.options-list::-webkit-scrollbar {
   width: 6px;
 }
-.options-menu::-webkit-scrollbar-thumb {
+.options-list::-webkit-scrollbar-thumb {
   background-color: var(--border);
   border-radius: 10px;
 }

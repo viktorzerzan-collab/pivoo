@@ -15,14 +15,14 @@
           </option>
         </BaseSelect>
 
-        <BaseSelect v-model="form.brewery_id" label="Pivovar" required>
+        <BaseSelect v-model="form.brewery_id" label="Pivovar" searchable required>
           <option disabled value="">-- Vyber pivovar --</option>
           <option v-for="brewery in breweries" :key="brewery.id" :value="brewery.id">
             {{ brewery.name }}
           </option>
         </BaseSelect>
 
-        <BaseSelect v-model="form.beer_id" label="Které pivo jsi pil?" :disabled="!form.brewery_id" required>
+        <BaseSelect v-model="form.beer_id" label="Které pivo jsi pil?" :disabled="!form.brewery_id" searchable required>
           <option disabled value="">-- Vyber pivo --</option>
           <option v-for="beer in filteredBeers" :key="beer.id" :value="beer.id">
             {{ beer.name }}

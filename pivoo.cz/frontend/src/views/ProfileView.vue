@@ -27,7 +27,7 @@
             <BaseFileUpload v-model:file="avatarFile" placeholder="Klikni pro změnu fotky" />
             <div class="btn-group">
               <button v-if="avatarFile" @click="handleAvatarUpload" class="btn-primary">Uložit novou fotku</button>
-              <button v-if="user?.avatar" @click="handleAvatarRemove" class="btn-danger">Odstranit fotku</button>
+              <button v-if="user?.avatar" @click="isRemoveAvatarModalOpen = true" class="btn-danger">Odstranit fotku</button>
             </div>
           </div>
         </div>
@@ -97,6 +97,14 @@
         </form>
       </template>
     </BaseModal>
+
+    <RemoveAvatarConfirmModal 
+      :show="isRemoveAvatarModalOpen" 
+      :user="user"
+      :is-current-user="true"
+      @close="isRemoveAvatarModalOpen = false"
+      @confirm="executeAvatarRemove"
+    />
   </div>
 </template>
 
@@ -111,6 +119,7 @@ import { useAuthStore } from '../stores/auth'
 import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseFileUpload from '../components/BaseFileUpload.vue'
+import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -124,6 +133,7 @@ const showToast = (message, type = 'toast-success') => {
 const passForm = ref({ old_password: '', new_password: '', new_password_confirm: '' })
 const themeForm = ref({ theme_mode: 'manual' })
 const isDeleteModalOpen = ref(false)
+const isRemoveAvatarModalOpen = ref(false)
 const deletePassword = ref('')
 const avatarFile = ref(null)
 
@@ -170,7 +180,7 @@ const handleAvatarUpload = async () => {
   } catch (error) { showToast('Chyba komunikace.', 'toast-error') }
 }
 
-const handleAvatarRemove = async () => {
+const executeAvatarRemove = async () => {
   const formData = new FormData()
   formData.append('action', 'remove')
   try {
@@ -181,6 +191,7 @@ const handleAvatarRemove = async () => {
     
     if (result.status === 'success') {
       authStore.updateUser({ avatar: null })
+      isRemoveAvatarModalOpen.value = false
       showToast(result.message)
     }
   } catch (error) { showToast('Chyba komunikace.', 'toast-error') }

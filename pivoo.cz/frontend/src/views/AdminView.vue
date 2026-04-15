@@ -154,6 +154,14 @@
       @close="modals.ban = false" 
       @confirm="handleBanConfirm" 
     />
+
+    <RemoveAvatarConfirmModal 
+      :show="modals.removeAvatar" 
+      :user="selectedUserForAvatarRemove"
+      :is-current-user="selectedUserForAvatarRemove?.id === user?.id"
+      @close="modals.removeAvatar = false"
+      @confirm="executeRemoveAvatar"
+    />
     
     <BaseModal :show="modals.style" @close="modals.style = false">
       <template #header><h2>{{ isEditing ? 'Upravit' : 'Přidat' }} styl</h2></template>
@@ -187,6 +195,7 @@ import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import EditUserModal from '../components/modals/EditUserModal.vue'
 import ChangePasswordModal from '../components/modals/ChangePasswordModal.vue'
 import BanConfirmModal from '../components/modals/BanConfirmModal.vue'
+import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -198,10 +207,11 @@ const allUsers = ref([])
 const isUsersLoading = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false, ban: false })
+const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false, ban: false, removeAvatar: false })
 const isEditing = ref(false)
 const selectedUserForPassword = ref(null)
 const selectedUserForBan = ref(null)
+const selectedUserForAvatarRemove = ref(null)
 
 // STRÁNKOVÁNÍ
 const currentPage = ref(1)
@@ -269,7 +279,6 @@ onMounted(() => {
 const openAddModal = (t) => { 
   isEditing.value = false
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  const key = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'location' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
   if (keyMap === 'beer') {
@@ -324,9 +333,12 @@ const handlePasswordChange = async (payload) => {
   }
 }
 
-const handleRemoveAvatar = async (userId) => {
-  if (!confirm('Opravdu chcete tomuto uživateli smazat profilovou fotku?')) return;
+const handleRemoveAvatar = (userId) => {
+  selectedUserForAvatarRemove.value = allUsers.value.find(u => u.id === userId)
+  modals.value.removeAvatar = true
+}
 
+const executeRemoveAvatar = async (userId) => {
   try {
     const res = await apiFetch('/admin_remove_avatar.php', {
       method: 'POST',
@@ -335,6 +347,7 @@ const handleRemoveAvatar = async (userId) => {
     
     if (res.status === 'success') {
       showToast(res.message)
+      modals.value.removeAvatar = false
       modals.value.user = false 
       fetchUsers() 
     } else {
@@ -438,7 +451,6 @@ const handleDelete = async () => {
 .action-buttons { display: flex; gap: 0.5rem; }
 .w-100 { width: 100px; }
 
-/* VYLEPŠENÉ STYLY PRO MINIATURU UŽIVATELE (Orámování s mezerou) */
 .user-cell { display: flex; align-items: center; gap: 0.8rem; text-align: left; }
 .user-info { display: flex; flex-direction: column; align-items: flex-start; }
 
