@@ -28,6 +28,14 @@
           </option>
         </BaseSelect>
 
+        <div class="map-container-wrapper">
+          <label class="form-label d-block mb-2">Poloha na mapě (přetáhněte špendlík)</label>
+          <div id="admin-map" class="admin-map-element"></div>
+          <div class="coords-display">
+            GPS: {{ form.lat || '???' }}, {{ form.lng || '???' }}
+          </div>
+        </div>
+
         <div class="form-row">
           <BaseInput v-model="form.email" type="email" label="E-mail" style="flex: 1;" />
           <BaseInput v-model="form.phone" label="Telefon" style="flex: 1;" />
@@ -44,20 +52,84 @@
 </template>
 
 <script setup>
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { FactoryIcon, SaveIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseFileUpload from '../BaseFileUpload.vue'
 import BaseSelect from '../BaseSelect.vue'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
-defineProps({
+const props = defineProps({
   show: Boolean,
   isEditing: Boolean,
   form: Object,
   countries: Array
 })
-defineEmits(['close', 'submit'])
+const emit = defineEmits(['close', 'submit'])
+
+const map = ref(null)
+const marker = ref(null)
+
+const destroyMap = () => {
+  if (map.value) {
+    map.value.remove()
+    map.value = null
+    marker.value = null
+  }
+}
+
+const initMap = () => {
+  destroyMap()
+
+  const lat = parseFloat(props.form.lat) || 49.8175
+  const lng = parseFloat(props.form.lng) || 15.4730
+  const zoom = props.form.lat ? 16 : 6
+
+  map.value = L.map('admin-map').setView([lat, lng], zoom)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map.value)
+
+  marker.value = L.marker([lat, lng], { draggable: true }).addTo(map.value)
+
+  marker.value.on('dragend', (e) => {
+    const newPos = e.target.getLatLng()
+    props.form.lat = newPos.lat.toFixed(8)
+    props.form.lng = newPos.lng.toFixed(8)
+  })
+
+  map.value.on('click', (e) => {
+    const newPos = e.latlng
+    marker.value.setLatLng(newPos)
+    props.form.lat = newPos.lat.toFixed(8)
+    props.form.lng = newPos.lng.toFixed(8)
+  })
+
+  setTimeout(() => {
+    if (map.value) map.value.invalidateSize()
+  }, 250)
+}
+
+watch(() => props.show, (isVisible) => {
+  if (isVisible) {
+    nextTick(() => initMap())
+  } else {
+    destroyMap()
+  }
+})
+
+// Sledujeme změnu ID pivovaru, aby se mapa překreslila při přepnutí bez zavření modalu
+watch(() => props.form.id, () => {
+  if (props.show) {
+    nextTick(() => initMap())
+  }
+})
+
+onBeforeUnmount(() => destroyMap())
 </script>
 
 <style scoped>
@@ -65,4 +137,13 @@ defineEmits(['close', 'submit'])
 .title-icon { color: var(--blue); }
 .add-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
+.map-container-wrapper { margin: 0.5rem 0; }
+.admin-map-element {
+  height: 250px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  z-index: 1;
+}
+.coords-display { font-family: monospace; font-size: 0.8rem; margin-top: 5px; color: var(--text-muted); }
 </style>
