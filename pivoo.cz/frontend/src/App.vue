@@ -25,11 +25,9 @@ const { user, theme } = storeToRefs(authStore)
 
 const isAuthPage = computed(() => route.name === 'login' || route.name === 'register')
 
-// Reaktivní stav pro aktuální vizuální režim
 const isDark = ref(false)
 let autoInterval = null
 
-// Pomocná funkce pro propsání tmavého režimu přímo na HTML tag (kvůli hlavnímu posuvníku)
 const updateHtmlClass = (isDarkMode) => {
   if (isDarkMode) {
     document.documentElement.classList.add('dark-mode')
@@ -114,7 +112,6 @@ onUnmounted(() => {
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --card-hover-bg: #f8fafc;
   
-  /* Posuvník pro světlý režim */
   --scrollbar-thumb: #cbd5e1;
   --scrollbar-thumb-hover: #94a3b8;
 }
@@ -179,6 +176,11 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover);
+}
+
+/* PŘIDÁNO: Logika pro zmrazení pozadí při otevřeném modálu */
+body.modal-open {
+  overflow: hidden;
 }
 
 /* --- ZÁKLAD DOKUMENTU --- */
@@ -287,7 +289,6 @@ button.btn-close:hover {
 
 /* --- 7. RESPONSIVNÍ ÚPRAVY --- */
 @media (max-width: 900px) {
-  /* Odsazení obsahu od spodní navigace bylo přesunuto na celkový obal aplikace (layout-wrapper), patička se tak automaticky posune výše */
   .layout-wrapper.has-bottom-nav {
     padding-bottom: calc(70px + env(safe-area-inset-bottom));
   }

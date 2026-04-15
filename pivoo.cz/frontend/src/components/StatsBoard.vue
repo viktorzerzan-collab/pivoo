@@ -37,41 +37,77 @@ defineProps({
 </script>
 
 <style scoped>
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+.stats-grid { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 1.5rem; 
+  margin-bottom: 0.5rem; 
+}
+
 .stat-card { 
-  background: var(--bg-panel); 
+  background: var(--bg-app); /* Sjednoceno s kartami historie */
   padding: 1.5rem; 
   border-radius: 12px; 
   box-shadow: var(--shadow-sm); 
   text-align: center; 
   border: 1px solid var(--border); 
-  transition: background-color 0.5s ease, border-color 0.5s ease; 
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
 }
+
+/* Interaktivní efekt při najetí/kliku */
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary);
+}
+
 .stat-icon { 
   display: flex; 
   align-items: center; 
   justify-content: center; 
   margin-bottom: 0.75rem; 
 }
+
 .stat-value { 
   font-size: 1.75rem; 
-  font-weight: bold; 
+  font-weight: 800; 
   color: var(--text-main); 
   margin-bottom: 0.25rem; 
   transition: color 0.5s ease; 
+  line-height: 1.2;
 }
-.stat-value.fav-beer { font-size: 1.2rem; } 
+
+.stat-value.fav-beer { 
+  font-size: 1.1rem; 
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+} 
+
 .stat-label { 
   color: var(--text-muted); 
-  font-size: 0.9rem; 
-  font-weight: 500; 
+  font-size: 0.75rem; 
+  font-weight: 700; 
   text-transform: uppercase; 
   letter-spacing: 0.05em; 
   transition: color 0.5s ease; 
 }
-@media (max-width: 600px) {
+
+@media (max-width: 900px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-  .stat-card { padding: 1rem; }
+  .stat-card { padding: 1.25rem; }
   .stat-value { font-size: 1.4rem; }
+}
+
+@media (max-width: 480px) {
+  .stat-value { font-size: 1.25rem; }
+  .stat-label { font-size: 0.65rem; }
 }
 </style>

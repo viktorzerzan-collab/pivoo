@@ -114,9 +114,19 @@ watch(() => props.form.location_id, () => {
   }
 })
 
+// OPRAVA: Nastavení aktuálního data VČETNĚ ČASU při otevření modalu
 watch(() => props.show, (newVal) => {
   if (newVal && !props.form.consumed_at) {
-    props.form.consumed_at = new Date().toISOString().split('T')[0]
+    const now = new Date();
+    // Vytvoříme formát YYYY-MM-DD HH:mm:ss v místním čase
+    const localDateTime = now.getFullYear() + '-' + 
+      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+      String(now.getDate()).padStart(2, '0') + ' ' + 
+      String(now.getHours()).padStart(2, '0') + ':' + 
+      String(now.getMinutes()).padStart(2, '0') + ':' + 
+      String(now.getSeconds()).padStart(2, '0');
+    
+    props.form.consumed_at = localDateTime;
   }
 })
 </script>

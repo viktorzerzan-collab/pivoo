@@ -20,6 +20,13 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
       meta: { requiresAuth: true }
     },
+    // PŘIDÁNO: Nová cesta pro statistiky
+    {
+      path: '/statistics',
+      name: 'statistics',
+      component: () => import('../views/StatisticsView.vue'),
+      meta: { requiresAuth: true }
+    },
     {
       path: '/beers',
       name: 'beers',
@@ -53,11 +60,10 @@ const router = createRouter({
   ]
 })
 
-// Globální háček před každou změnou stránky
 router.beforeEach((to, from) => {
-  // 1. DYNAMICKÁ ZMĚNA TITULKU STRÁNKY
   const titleMap = {
     'dashboard': 'Nástěnka',
+    'statistics': 'Moje statistiky', // Přidáno do mapy titulků
     'beers': 'Katalog piv',
     'breweries': 'Pivovary',
     'locations': 'Podniky',
@@ -67,25 +73,19 @@ router.beforeEach((to, from) => {
     'register': 'Registrace'
   }
 
-  // Nastavení titulku: buď z mapy výše, nebo základní název
   const pageTitle = titleMap[to.name] || 'Tvůj pivní deníček'
   document.title = `Pivoo.cz | ${pageTitle}`
 
-
-  // 2. BEZPEČNOSTNÍ LOGIKA (AUTH A ROLE)
   const authStore = useAuthStore()
-  const isAuthenticated = !!authStore.token // Kontrolujeme přítomnost tokenu
+  const isAuthenticated = !!authStore.token 
   const isAdmin = authStore.user?.role === 'admin'
 
-  // Pokud stránka vyžaduje přihlášení a uživatel není přihlášen, šup na login
   if (to.meta.requiresAuth && !isAuthenticated) {
     return { path: '/' }
   } 
-  // Pokud stránka vyžaduje admina a uživatel jím není, šup na dashboard
   else if (to.meta.requiresAdmin && !isAdmin) {
     return { path: '/dashboard' }
   } 
-  // Pokud uživatel je přihlášen a leze na login/registraci, hodíme ho na dashboard
   else if ((to.name === 'login' || to.name === 'register') && isAuthenticated) {
     return { path: '/dashboard' }
   } 

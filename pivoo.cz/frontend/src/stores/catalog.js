@@ -7,7 +7,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   const locations = ref([])
   const breweries = ref([])
   const styles = ref([])
-  const countries = ref([]) // PŘIDÁNO: Číselník zemí
+  const countries = ref([])
   const stats = ref(null)
   const history = ref([])
   const isLoading = ref(true)
@@ -22,8 +22,9 @@ export const useCatalogStore = defineStore('catalog', () => {
         apiFetch(`/locations.php?t=${ts}`),
         apiFetch(`/breweries.php?t=${ts}`),
         apiFetch(`/styles.php?t=${ts}`),
-        apiFetch(`/countries.php?t=${ts}`), // PŘIDÁNO
-        apiFetch(`/stats.php?t=${ts}`),
+        apiFetch(`/countries.php?t=${ts}`),
+        // ZMĚNA: Přidán parametr period=month pro statistiky na dashboardu
+        apiFetch(`/stats.php?period=month&t=${ts}`),
         apiFetch(`/history.php?t=${ts}`)
       ])
 
@@ -31,7 +32,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       if (dataLocs.status === 'success') locations.value = dataLocs.data
       if (dataBrews.status === 'success') breweries.value = dataBrews.data
       if (dataStyles.status === 'success') styles.value = dataStyles.data
-      if (dataCountries.status === 'success') countries.value = dataCountries.data // PŘIDÁNO
+      if (dataCountries.status === 'success') countries.value = dataCountries.data
       if (dataStats.status === 'success') stats.value = dataStats.stats
       if (dataHist.status === 'success') history.value = dataHist.data
 

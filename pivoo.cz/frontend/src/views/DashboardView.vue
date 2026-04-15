@@ -16,7 +16,7 @@
       <div class="dashboard-content">
         <div class="panel-card">
           <div class="panel-header">
-            <h3><TrendingUpIcon /> Rychlý přehled</h3>
+            <h3><BeerIcon /> Já a pivo v {{ currentMonthName }}</h3>
           </div>
           <StatsBoard :stats="stats" />
         </div>
@@ -42,9 +42,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusCircleIcon, TrendingUpIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
+// UPRAVENO: Odstraněn TrendingUpIcon
+import { PlusCircleIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -65,6 +66,14 @@ const showToast = (message, type = 'toast-success') => {
   setTimeout(() => { toast.value.show = false }, 3000) 
 }
 
+const currentMonthName = computed(() => {
+  const months = [
+    'lednu', 'únoru', 'březnu', 'dubnu', 'květnu', 'červnu', 
+    'červenci', 'srpnu', 'září', 'říjnu', 'listopadu', 'prosinci'
+  ]
+  return months[new Date().getMonth()]
+})
+
 const isModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const isDeleteConfirmModalOpen = ref(false)
@@ -78,14 +87,14 @@ onMounted(() => { if (authStore.user) catalogStore.fetchAllData() })
 
 const openEditModal = (record) => {
   selectedEditRecordId.value = record.id
-  const dateOnly = record.consumed_at ? record.consumed_at.split(' ')[0] : ''
+  const fullDateTime = record.consumed_at || ''
   
   const currentBeer = beers.value.find(b => b.id == record.beer_id)
   const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''
 
   editForm.value = { 
     ...record, 
-    consumed_at: dateOnly, 
+    consumed_at: fullDateTime, 
     brewery_id: Number(prefillBreweryId),
     beer_id: Number(record.beer_id), 
     location_id: Number(record.location_id), 
@@ -116,6 +125,16 @@ const submitCheckIn = async () => {
 
 const submitEdit = async () => {
   try {
+    const now = new Date();
+    const localDateTime = now.getFullYear() + '-' + 
+      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+      String(now.getDate()).padStart(2, '0') + ' ' + 
+      String(now.getHours()).padStart(2, '0') + ':' + 
+      String(now.getMinutes()).padStart(2, '0') + ':' + 
+      String(now.getSeconds()).padStart(2, '0');
+    
+    editForm.value.consumed_at = localDateTime;
+
     const res = await apiFetch('/update_checkin.php', { 
       method: 'POST', 
       body: JSON.stringify({ id: selectedEditRecordId.value, ...editForm.value }) 

@@ -13,9 +13,15 @@
 
       <div class="admin-section">
         <div class="section-header">
-          <h3>{{ tabs.find(t => t.id === activeTab).label }}</h3>
+          <div class="header-info">
+            <FilterInput 
+              v-model="searchQuery" 
+              :placeholder="'Hledat v sekci ' + tabs.find(t => t.id === activeTab).label.toLowerCase() + '...'" 
+              class="admin-search"
+            />
+          </div>
           <button v-if="activeTab !== 'users'" class="btn-add" @click="openAddModal(activeTab)">
-            <PlusIcon /> Přidat {{ currentLabelSingle }}
+            <PlusIcon :size="20" /> Přidat {{ currentLabelSingle }}
           </button>
         </div>
 
@@ -26,12 +32,12 @@
                 <th>Uživatel</th>
                 <th>E-mail</th>
                 <th>Role</th>
-                <th class="w-100">Akce</th>
+                <th class="w-100 text-right">Akce</th>
               </tr>
               <tr v-else>
                 <th>Název</th>
                 <th v-if="activeTab !== 'styles'">Info</th>
-                <th class="w-100">Akce</th>
+                <th class="w-100 text-right">Akce</th>
               </tr>
             </thead>
             <tbody>
@@ -39,18 +45,16 @@
                 <tr v-for="u in paginatedUsers" :key="u?.id" :class="{ 'banned-row': u.is_banned }">
                   <td data-label="Uživatel">
                     <div class="td-content user-cell">
-                      <div class="table-avatar">
+                      <div class="section-icon users-bg" :class="{ 'has-image': u.avatar }">
                         <img v-if="u.avatar" :src="'https://www.pivoo.cz/backend/uploads/avatars/' + u.avatar" alt="Avatar" />
-                        <div v-else class="table-avatar-placeholder">
-                          <UserIcon :size="20" stroke-width="1.5" />
-                        </div>
+                        <UserIcon v-else :size="20" color="#0369a1" stroke-width="2" />
                       </div>
                       <div class="user-info">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="info-top-row">
                           <strong :style="u.is_banned ? 'text-decoration: line-through; color: var(--text-muted);' : ''">
                             {{ u.username }}
                           </strong>
-                          <span v-if="u.is_banned" class="badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.65rem;">BANNED</span>
+                          <span v-if="u.is_banned" class="badge banned-badge">BANNED</span>
                         </div>
                         <small>{{ u.first_name }} {{ u.last_name }}</small>
                       </div>
@@ -67,20 +71,17 @@
                   <td data-label="Akce">
                     <div class="td-content action-buttons">
                       <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')" title="Upravit údaje">
-                        <PencilIcon />
+                        <PencilIcon :size="16" />
                       </button>
-                      
                       <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: var(--blue);" @click="openPasswordModal(u)" title="Změnit heslo">
-                        <KeyIcon />
+                        <KeyIcon :size="16" />
                       </button>
-                      
-                      <button v-if="u?.id !== user?.id" class="is-icon-only" :style="u.is_banned ? 'background-color: #10b981; color: white; border: none;' : 'background-color: #64748b; color: white; border: none;'" @click="openBanModal(u)" :title="u.is_banned ? 'Odblokovat uživatele' : 'Zablokovat (Ban)'">
-                        <UnlockIcon v-if="u.is_banned" />
-                        <BanIcon v-else />
+                      <button v-if="u?.id !== user?.id" class="is-icon-only admin-action-btn" :style="u.is_banned ? 'background-color: #10b981;' : 'background-color: #64748b;'" @click="openBanModal(u)" :title="u.is_banned ? 'Odblokovat' : 'Zablokovat'">
+                        <UnlockIcon v-if="u.is_banned" :size="16" />
+                        <BanIcon v-else :size="16" />
                       </button>
-
                       <button v-if="u?.id !== user?.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)" title="Smazat uživatele">
-                        <Trash2Icon />
+                        <Trash2Icon :size="16" />
                       </button>
                     </div>
                   </td>
@@ -90,16 +91,27 @@
               <template v-else>
                 <tr v-for="item in paginatedCurrentItems" :key="item?.id">
                   <td data-label="Název">
-                    <div class="td-content">
-                      <strong>{{ item.name }}</strong>
+                    <div class="td-content main-item-cell">
+                      <div class="section-icon" :class="[activeTab + '-bg', { 'has-image': activeTab === 'breweries' && item.logo }]">
+                        <img v-if="activeTab === 'breweries' && item.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" alt="Logo" />
+                        <BeerIcon v-else-if="activeTab === 'beers'" :size="20" color="#ca8a04" />
+                        <FactoryIcon v-else-if="activeTab === 'breweries'" :size="20" color="#b45309" />
+                        <MapPinIcon v-else-if="activeTab === 'locations'" :size="20" color="#0369a1" />
+                        <PaletteIcon v-else-if="activeTab === 'styles'" :size="20" color="#64748b" />
+                      </div>
+                      <div class="item-text">
+                        <strong>{{ item.name }}</strong>
+                        <small v-if="activeTab === 'beers'" class="mobile-only">{{ item.brewery_name }}</small>
+                        <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only">{{ item.city || 'Lokalita neuvedena' }}</small>
+                      </div>
                     </div>
                   </td>
-                  <td v-if="activeTab === 'beers'" data-label="Info">
+                  <td v-if="activeTab === 'beers'" data-label="Info" class="desktop-only">
                     <div class="td-content">
                       <small>{{ item.brewery_name }} • {{ item.style }}</small>
                     </div>
                   </td>
-                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Město">
+                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Město" class="desktop-only">
                     <div class="td-content">
                       {{ item.city || '-' }}
                     </div>
@@ -107,10 +119,10 @@
                   <td data-label="Akce">
                     <div class="td-content action-buttons">
                       <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
-                        <PencilIcon />
+                        <PencilIcon :size="16" />
                       </button>
                       <button class="btn-danger is-icon-only" @click="confirmDelete(item.id, activeTab)">
-                        <Trash2Icon />
+                        <Trash2Icon :size="16" />
                       </button>
                     </div>
                   </td>
@@ -118,12 +130,22 @@
               </template>
             </tbody>
           </table>
+          
+          <div v-if="(activeTab === 'users' && filteredUsers.length === 0) || (activeTab !== 'users' && filteredCurrentItems.length === 0)" class="admin-empty-search">
+            <SearchXIcon :size="40" color="var(--text-muted)" />
+            <p>Žádné záznamy neodpovídají hledání.</p>
+          </div>
         </div>
         
-        <BasePagination 
-          v-model:currentPage="currentPage" 
-          :totalPages="totalPages" 
-        />
+        <div class="admin-section-footer">
+          <div class="footer-info desktop-only">
+            Zobrazeno <strong>{{ activeTab === 'users' ? paginatedUsers.length : paginatedCurrentItems.length }}</strong> z <strong>{{ activeTab === 'users' ? filteredUsers.length : filteredCurrentItems.length }}</strong> záznamů
+          </div>
+          <BasePagination 
+            v-model:currentPage="currentPage" 
+            :totalPages="totalPages" 
+          />
+        </div>
       </div>
     </div>
 
@@ -168,7 +190,7 @@
       <template #body>
         <form @submit.prevent="submitForm('style')" style="display: flex; flex-direction: column; gap: 1.5rem;">
           <BaseInput v-model="formData.style.name" label="Název stylu *" required />
-          <button type="submit" class="btn-add" style="padding: 1rem;"><SaveIcon /> Uložit styl</button>
+          <button type="submit" class="btn-add" style="padding: 1rem;"><SaveIcon :size="18" /> Uložit styl</button>
         </form>
       </template>
     </BaseModal>
@@ -180,7 +202,10 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, UnlockIcon, UserIcon } from 'lucide-vue-next'
+import { 
+  PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
+  UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, PaletteIcon
+} from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -188,6 +213,7 @@ import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePagination from '../components/BasePagination.vue'
+import FilterInput from '../components/FilterInput.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -213,13 +239,12 @@ const selectedUserForPassword = ref(null)
 const selectedUserForBan = ref(null)
 const selectedUserForAvatarRemove = ref(null)
 
-// STRÁNKOVÁNÍ
+const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 30
 
-watch(activeTab, () => {
-  currentPage.value = 1
-})
+watch(activeTab, () => { searchQuery.value = ''; currentPage.value = 1 })
+watch(searchQuery, () => { currentPage.value = 1 })
 
 const tabs = [
   { id: 'users', label: 'Uživatelé' },
@@ -230,29 +255,42 @@ const tabs = [
 ]
 
 const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl', users: 'uživatele' }[activeTab.value]))
+
+const filteredUsers = computed(() => {
+  if (!searchQuery.value) return allUsers.value
+  const query = searchQuery.value.toLowerCase()
+  return allUsers.value.filter(u => 
+    u.username.toLowerCase().includes(query) || 
+    u.email.toLowerCase().includes(query) ||
+    `${u.first_name} ${u.last_name}`.toLowerCase().includes(query)
+  )
+})
+
 const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value }[activeTab.value] || []))
 
+const filteredCurrentItems = computed(() => {
+  if (!searchQuery.value) return currentItems.value
+  const query = searchQuery.value.toLowerCase()
+  return currentItems.value.filter(item => item.name.toLowerCase().includes(query))
+})
+
 const totalPages = computed(() => {
-  const total = activeTab.value === 'users' ? allUsers.value.length : currentItems.value.length
+  const total = activeTab.value === 'users' ? filteredUsers.value.length : filteredCurrentItems.value.length
   return Math.ceil(total / itemsPerPage)
 })
 
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
-  return allUsers.value.slice(start, start + itemsPerPage)
+  return filteredUsers.value.slice(start, start + itemsPerPage)
 })
 
 const paginatedCurrentItems = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
-  return currentItems.value.slice(start, start + itemsPerPage)
+  return filteredCurrentItems.value.slice(start, start + itemsPerPage)
 })
 
 const formData = ref({
-  beer: { 
-    id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', 
-    ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
-    is_unfiltered: false, is_unpasteurized: false 
-  },
+  beer: { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false },
   brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null },
   location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' },
   style: { id: null, name: '' },
@@ -282,13 +320,8 @@ const openAddModal = (t) => {
   const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
   if (keyMap === 'beer') {
-    formData.value.beer = { 
-      id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', 
-      ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '',
-      is_unfiltered: false, is_unpasteurized: false 
-    }
+    formData.value.beer = { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false }
   }
-  
   if (keyMap === 'brewery') formData.value.brewery.logoFile = null
   modals.value[keyMap] = true 
 }
@@ -296,41 +329,22 @@ const openAddModal = (t) => {
 const openEditModal = (item, t) => { 
   isEditing.value = true
   const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'breweries' ? 'brewery' : 'user')))
-  
   if (key === 'beer') {
-    formData.value.beer = { 
-      ...item, 
-      is_unfiltered: !!item.is_unfiltered, 
-      is_unpasteurized: !!item.is_unpasteurized 
-    }
+    formData.value.beer = { ...item, is_unfiltered: !!item.is_unfiltered, is_unpasteurized: !!item.is_unpasteurized }
   } else {
     formData.value[key] = { ...item, logoFile: null }
   }
-  
   modals.value[key] = true 
 }
 
-const openPasswordModal = (u) => {
-  selectedUserForPassword.value = u
-  modals.value.password = true
-}
+const openPasswordModal = (u) => { selectedUserForPassword.value = u; modals.value.password = true }
 
 const handlePasswordChange = async (payload) => {
   try {
-    const res = await apiFetch('/admin_change_password.php', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
-    
-    if (res.status === 'success') {
-      showToast(res.message)
-      modals.value.password = false
-    } else {
-      showToast(res.message || 'Nepodařilo se změnit heslo.', 'toast-error')
-    }
-  } catch (e) {
-    showToast('Chyba serveru při změně hesla.', 'toast-error')
-  }
+    const res = await apiFetch('/admin_change_password.php', { method: 'POST', body: JSON.stringify(payload) })
+    if (res.status === 'success') { showToast(res.message); modals.value.password = false } 
+    else { showToast(res.message || 'Nepodařilo se změnit heslo.', 'toast-error') }
+  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
 const handleRemoveAvatar = (userId) => {
@@ -340,48 +354,22 @@ const handleRemoveAvatar = (userId) => {
 
 const executeRemoveAvatar = async (userId) => {
   try {
-    const res = await apiFetch('/admin_remove_avatar.php', {
-      method: 'POST',
-      body: JSON.stringify({ user_id: userId })
-    })
-    
+    const res = await apiFetch('/admin_remove_avatar.php', { method: 'POST', body: JSON.stringify({ user_id: userId }) })
     if (res.status === 'success') {
-      showToast(res.message)
-      modals.value.removeAvatar = false
-      modals.value.user = false 
-      fetchUsers() 
-    } else {
-      showToast(res.message || 'Nepodařilo se smazat fotku.', 'toast-error')
-    }
-  } catch (e) {
-    showToast('Chyba serveru při mazání fotky.', 'toast-error')
-  }
+      showToast(res.message); modals.value.removeAvatar = false; modals.value.user = false; fetchUsers() 
+    } else { showToast(res.message || 'Nepodařilo se smazat fotku.', 'toast-error') }
+  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
-const openBanModal = (u) => {
-  selectedUserForBan.value = u
-  modals.value.ban = true
-}
+const openBanModal = (u) => { selectedUserForBan.value = u; modals.value.ban = true }
 
 const handleBanConfirm = async (u) => {
   const newStatus = u.is_banned ? 0 : 1;
-
   try {
-    const res = await apiFetch('/admin_toggle_ban.php', {
-      method: 'POST',
-      body: JSON.stringify({ user_id: u.id, is_banned: newStatus })
-    })
-    
-    if (res.status === 'success') {
-      showToast(res.message)
-      modals.value.ban = false
-      fetchUsers()
-    } else {
-      showToast(res.message || 'Nepodařilo se změnit stav blokace.', 'toast-error')
-    }
-  } catch (e) {
-    showToast('Chyba serveru při změně blokace.', 'toast-error')
-  }
+    const res = await apiFetch('/admin_toggle_ban.php', { method: 'POST', body: JSON.stringify({ user_id: u.id, is_banned: newStatus }) })
+    if (res.status === 'success') { showToast(res.message); modals.value.ban = false; fetchUsers() } 
+    else { showToast(res.message || 'Chyba při změně blokace.', 'toast-error') }
+  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
 const submitForm = async (t) => {
@@ -398,14 +386,11 @@ const submitForm = async (t) => {
     } else {
       bodyData = JSON.stringify(formData.value[t])
     }
-
     const res = await apiFetch(`/${endpoint}`, { method: 'POST', body: bodyData })
     if (res.status === 'success') { 
       showToast(res.message); modals.value[t] = false; 
       t === 'user' ? fetchUsers() : catalogStore.fetchAllData() 
-    } else {
-      showToast(res.message || 'Chyba při ukládání.', 'toast-error')
-    }
+    } else { showToast(res.message || 'Chyba při ukládání.', 'toast-error') }
   } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
@@ -416,22 +401,12 @@ const confirmDelete = (id, t) => {
 
 const handleDelete = async () => {
   try {
-    const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { 
-      method: 'POST', 
-      body: JSON.stringify({ id: deleteModal.value.id }) 
-    })
-    
+    const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { method: 'POST', body: JSON.stringify({ id: deleteModal.value.id }) })
     if (res.status === 'success') {
-      showToast("Smazáno")
-      deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
-    } else {
-      showToast(res.message || 'Nepodařilo se smazat.', 'toast-error')
-    }
-  } catch(e) {
-    showToast('Chyba při mazání.', 'toast-error')
-  } finally { 
-    deleteModal.value.show = false 
-  }
+      showToast("Smazáno"); deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
+    } else { showToast(res.message || 'Nepodařilo se smazat.', 'toast-error') }
+  } catch(e) { showToast('Chyba při mazání.', 'toast-error') } 
+  finally { deleteModal.value.show = false }
 }
 </script>
 
@@ -439,124 +414,99 @@ const handleDelete = async () => {
 .admin-page { flex: 1; display: flex; flex-direction: column; }
 .admin-header { margin-bottom: 2rem; }
 .admin-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; overflow-x: auto; }
-.admin-tabs button { padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); cursor: pointer; font-weight: 600; border-radius: 8px; white-space: nowrap; box-shadow: none; }
+.admin-tabs button { padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); cursor: pointer; font-weight: 600; border-radius: 8px; white-space: nowrap; box-shadow: none; transition: all 0.2s; }
 .admin-tabs button.active { background: var(--primary); color: #1e293b; }
+
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
-.admin-section { display: flex; flex-direction: column; flex: 1; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.admin-table-wrapper { overflow-x: auto; flex: 1; }
+.admin-section { display: flex; flex-direction: column; flex: 1; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
+
+/* HLAVIČKA */
+.section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; gap: 2rem; }
+.header-info { display: flex; flex-direction: column; gap: 1.25rem; flex: 1; }
+.admin-search { max-width: 380px; }
+
+/* TABULKA */
+.admin-table-wrapper { overflow-x: auto; flex: 1; margin-bottom: 1.5rem; }
 .admin-table { width: 100%; border-collapse: collapse; }
-.admin-table th { text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; background: var(--bg-app); transition: background-color 0.5s ease; }
-.admin-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); }
-.action-buttons { display: flex; gap: 0.5rem; }
-.w-100 { width: 100px; }
-
-.user-cell { display: flex; align-items: center; gap: 0.8rem; text-align: left; }
-.user-info { display: flex; flex-direction: column; align-items: flex-start; }
-
-.table-avatar { 
-  width: 44px; 
-  height: 44px; 
-  border-radius: 50%; 
-  border: 2px solid var(--border);
-  padding: 2px;
-  flex-shrink: 0; 
-  background: var(--bg-app); 
+.admin-table th { 
+  text-align: left; padding: 1rem 0.75rem; border-bottom: 2px solid var(--border); 
+  color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; 
+  letter-spacing: 0.05em; background: transparent;
 }
-.table-avatar img { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
-  border-radius: 50%;
-}
-.table-avatar-placeholder { 
-  width: 100%; 
-  height: 100%; 
-  background: var(--bg-panel); 
-  border-radius: 50%; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  color: var(--text-muted); 
-}
+.admin-table td { padding: 1.25rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); }
+.admin-table tr:hover td { background-color: var(--card-hover-bg); }
 
-.banned-row td { opacity: 0.85; background-color: rgba(0, 0, 0, 0.02); }
-html.dark-mode .banned-row td { background-color: rgba(255, 255, 255, 0.01); }
+/* IKONY A BARVY */
+.section-icon { 
+  width: 42px; height: 42px; border-radius: 10px; display: flex; 
+  align-items: center; justify-content: center; flex-shrink: 0;
+  overflow: hidden; /* Důležité pro ořez fotky */
+  transition: all 0.3s ease;
+}
+.section-icon img { width: 100%; height: 100%; object-fit: cover; }
+/* Odstranění paddingu a podbarvení, pokud je v boxu fotka */
+.section-icon.has-image { padding: 0; background: transparent; border: 1px solid var(--border); }
+
+.beers-bg { background: #fef9c3; }
+.breweries-bg { background: #ffedd5; }
+.locations-bg { background: #e0f2fe; }
+.users-bg { background: #e0f2fe; }
+.styles-bg { background: var(--bg-app); border: 1px solid var(--border); }
+
+.user-cell, .main-item-cell { display: flex; align-items: center; gap: 1rem; }
+
+.action-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.admin-action-btn { color: white; border: none; transition: transform 0.2s; }
+.admin-action-btn:hover { transform: scale(1.05); }
+
+.banned-badge { background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.6rem; border: 1px solid rgba(239, 68, 68, 0.2); }
+.banned-row td { opacity: 0.7; }
+
+/* PATIČKA */
+.admin-section-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid var(--border); margin-top: auto; }
+.footer-info { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+.footer-info strong { color: var(--text-main); }
+
+:deep(.pagination-wrapper) { margin-top: 0; padding: 0; }
+
+.mobile-only { display: none; }
 
 @media (max-width: 768px) {
-  .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .section-header .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
-  .admin-section { padding: 1rem; }
+  .section-header { flex-direction: column; align-items: stretch; gap: 1rem; margin-bottom: 1.5rem; }
+  .admin-search { max-width: none; }
+  .section-header .btn-add { width: 100%; padding: 1rem; order: -1; }
+  .admin-section { padding: 1.25rem; }
+  .mobile-only { display: block; }
+  .desktop-only { display: none; }
 
-  .admin-table-wrapper { 
-    border: none; 
-    box-shadow: none; 
-    background: transparent; 
-    padding: 0; 
-    overflow-x: visible; 
-  }
-  
   .admin-table thead { display: none; }
-  
-  .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { 
-    display: block; 
-    width: 100%; 
-  }
+  .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
   
   .admin-table tr { 
-    margin-bottom: 1.25rem; 
-    border: 1px solid var(--border); 
-    border-radius: 12px; 
-    padding: 1.25rem; 
-    background: var(--bg-panel); 
-    box-shadow: var(--shadow-sm); 
+    margin-bottom: 1.25rem; border: 1px solid var(--border); border-radius: 12px; 
+    padding: 1rem; background: var(--bg-panel); box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   }
-  
-  .admin-table tr.banned-row {
-    background-color: var(--bg-app);
-    border-color: rgba(239, 68, 68, 0.3);
-  }
+  .admin-table tr:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
 
-  .admin-table td { 
-    border-bottom: 1px solid var(--border); 
-    padding: 0.75rem 0; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    text-align: right;
-  }
+  .admin-table td { border: none; padding: 0.4rem 0; display: flex; align-items: center; }
   
-  .td-content.user-cell { flex-direction: row-reverse; justify-content: flex-end; }
-  .user-info { align-items: flex-end; }
+  .user-cell, .main-item-cell { width: 100%; align-items: flex-start; }
+  .user-info, .item-text { display: flex; flex-direction: column; gap: 0.1rem; }
+  .user-info strong, .item-text strong { font-size: 1.05rem; color: var(--text-main); }
+  .user-info small, .item-text small { color: var(--text-muted); font-size: 0.85rem; }
+  
+  /* Upravené odsazení pro text pod ikonou na mobilu */
+  .email-text { font-size: 0.9rem; color: var(--text-muted); padding-left: 52px; margin-bottom: 0.5rem; }
 
-  .admin-table td:last-child { border-bottom: none; padding-bottom: 0; }
-  .admin-table td:first-child { padding-top: 0; }
-  
-  .admin-table td::before { 
-    content: attr(data-label); 
-    font-weight: 800; 
-    color: var(--text-muted); 
-    font-size: 0.75rem; 
-    text-transform: uppercase; 
-    margin-right: 1rem;
-    flex-shrink: 0;
+  .admin-table td[data-label="Akce"] {
+    margin-top: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    justify-content: center;
   }
-  
-  .td-content { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: flex-end; 
-  }
-  
-  .td-content.action-buttons { 
-    flex-direction: row; 
-    align-items: center; 
-    flex-wrap: wrap; 
-    justify-content: flex-end;
-  }
-  
-  .email-text { 
-    word-break: break-all; 
-  }
+  .action-buttons { width: 100%; justify-content: space-around; }
+  .action-buttons button { flex: 1; max-width: 50px; }
+
+  .admin-table td::before { display: none; }
+  .admin-section-footer { flex-direction: column; gap: 1rem; align-items: center; }
 }
 </style>

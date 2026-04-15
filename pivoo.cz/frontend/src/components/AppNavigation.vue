@@ -10,6 +10,7 @@
 
         <nav class="main-nav desktop-only">
           <router-link to="/dashboard" class="nav-link"><LayoutDashboardIcon :size="18" /> Nástěnka</router-link>
+          <router-link to="/statistics" class="nav-link"><BarChart3Icon :size="18" /> Statistiky</router-link>
           <router-link to="/beers" class="nav-link"><BeerIcon :size="18" /> Piva</router-link>
           <router-link to="/breweries" class="nav-link"><FactoryIcon :size="18" /> Pivovary</router-link>
           <router-link to="/locations" class="nav-link"><MapIcon :size="18" /> Podniky</router-link>
@@ -57,6 +58,10 @@
         <LayoutDashboardIcon :size="24" />
         <span>Nástěnka</span>
       </router-link>
+      <router-link to="/statistics" class="bottom-link">
+        <BarChart3Icon :size="24" />
+        <span>Statistiky</span>
+      </router-link>
       <router-link to="/beers" class="bottom-link">
         <BeerIcon :size="24" />
         <span>Piva</span>
@@ -80,7 +85,7 @@ import { storeToRefs } from 'pinia'
 import { 
   BeerIcon, LayoutDashboardIcon, FactoryIcon, MapIcon,
   ShieldAlertIcon, LogOutIcon, UserIcon, ChevronDownIcon,
-  SunIcon, MoonIcon
+  SunIcon, MoonIcon, BarChart3Icon
 } from 'lucide-vue-next'
 
 import { useAuthStore } from '../stores/auth'
@@ -102,7 +107,6 @@ const dropdownContainer = ref(null)
 
 const toggleDropdown = () => { isDropdownOpen.value = !isDropdownOpen.value }
 
-// Zavření dropdownu při kliknutí jinam
 const handleClickOutside = (event) => {
   if (dropdownContainer.value && !dropdownContainer.value.contains(event.target)) {
     isDropdownOpen.value = false
@@ -112,7 +116,6 @@ const handleClickOutside = (event) => {
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
-// Zavřít dropdown automaticky při změně podstránky
 watch(route, () => {
   isDropdownOpen.value = false
 })
@@ -124,18 +127,16 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
-/* HORNÍ LIŠTA */
+/* Styly zůstávají zachovány podle původního souboru */
 .app-header { background-color: #1e293b; color: white; padding: 0.75rem 2rem; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 50; }
 .header-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; width: 100%; }
 
 .header-left { display: flex; align-items: center; gap: 2rem; }
 .header-right { display: flex; align-items: center; gap: 1rem; }
 
-/* Stylování loga */
 .logo { display: flex; align-items: center; font-size: 1.5rem; font-weight: 800; color: #fff; text-decoration: none; }
 .logo svg { filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3)); }
 
-/* Přepínač motivu */
 .theme-toggle-btn {
   background: rgba(255, 255, 255, 0.1);
   border: none;
@@ -153,13 +154,11 @@ const handleLogout = () => {
 .theme-toggle-btn:hover { background: rgba(255, 255, 255, 0.2); transform: rotate(15deg); }
 .theme-toggle-btn svg { margin: 0 !important; }
 
-/* Desktop Menu */
 .main-nav { display: flex; gap: 0.5rem; }
 .nav-link { display: flex; align-items: center; gap: 0.4rem; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s ease; }
 .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.05); }
 .nav-link.router-link-active { color: var(--primary); background-color: rgba(255, 255, 255, 0.1); }
 
-/* Uživatelský profil (Dropdown trigger) */
 .user-panel-wrapper { position: relative; cursor: pointer; user-select: none; }
 .user-trigger { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.75rem; border-radius: 99px; transition: background-color 0.2s; border: 1px solid transparent; }
 .user-trigger:hover { background-color: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
@@ -169,10 +168,8 @@ const handleLogout = () => {
 .dropdown-arrow { color: #94a3b8; transition: transform 0.2s; }
 .dropdown-arrow.rotated { transform: rotate(180deg); }
 
-/* Rozbalovací menu - Kompaktní šířka 160px */
 .dropdown-menu { position: absolute; top: calc(100% + 5px); right: 0; background: var(--bg-panel); border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); min-width: 160px; padding: 0.5rem 0; border: 1px solid var(--border); transform-origin: top right; transition: background-color 0.5s ease, border-color 0.5s ease; }
 
-/* POLOŽKY MENU - Sjednoceno a zarovnáno doleva */
 .dropdown-item { 
   display: flex; 
   align-items: center; 
@@ -196,26 +193,17 @@ const handleLogout = () => {
   color: var(--primary-hover); 
 }
 
-/* ODHLÁŠENÍ - Červené s jemným hoverem */
-.logout-item { 
-  color: var(--danger); 
-}
-
-.logout-item:hover { 
-  background-color: rgba(239, 68, 68, 0.05); 
-  color: var(--danger-hover); 
-}
+.logout-item { color: var(--danger); }
+.logout-item:hover { background-color: rgba(239, 68, 68, 0.05); color: var(--danger-hover); }
 
 .dropdown-divider { height: 1px; background-color: var(--border); margin: 0.25rem 0; transition: background-color 0.5s ease; }
 
 .dropdown-fade-enter-active, .dropdown-fade-leave-active { transition: all 0.2s ease; }
 .dropdown-fade-enter-from, .dropdown-fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-10px); }
 
-/* SPODNÍ NAVIGACE */
 .bottom-nav { display: none; }
 .mobile-only { display: none; }
 
-/* --- RESPONSIVNÍ DESIGN PRO MOBILY --- */
 @media (max-width: 900px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: block; }
@@ -224,7 +212,6 @@ const handleLogout = () => {
   .user-trigger { padding: 0; border: none; }
   .user-trigger:hover { background-color: transparent; border-color: transparent; }
 
-  /* Styl spodní navigace */
   .bottom-nav {
     display: block;
     position: fixed;

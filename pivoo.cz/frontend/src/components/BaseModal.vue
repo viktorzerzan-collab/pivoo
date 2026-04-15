@@ -18,9 +18,27 @@
 </template>
 
 <script setup>
+import { watch, onUnmounted } from 'vue'
 import { XIcon } from 'lucide-vue-next'
-defineProps({ show: Boolean })
+
+const props = defineProps({ 
+  show: Boolean 
+})
 defineEmits(['close'])
+
+// LOGIKA PRO ZMRAZENÍ POZADÍ
+watch(() => props.show, (isShown) => {
+  if (isShown) {
+    document.body.classList.add('modal-open')
+  } else {
+    document.body.classList.remove('modal-open')
+  }
+}, { immediate: true })
+
+// Pro jistotu odstraníme třídu při odstranění komponenty
+onUnmounted(() => {
+  document.body.classList.remove('modal-open')
+})
 </script>
 
 <style scoped>
