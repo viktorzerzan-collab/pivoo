@@ -1,47 +1,58 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
 import { apiFetch } from '../api'
 
-export const useCatalogStore = defineStore('catalog', () => {
-  const beers = ref([])
-  const locations = ref([])
-  const breweries = ref([])
-  const styles = ref([])
-  const countries = ref([])
-  const stats = ref(null)
-  const history = ref([])
-  const isLoading = ref(true)
-
-  const fetchAllData = async () => {
-    isLoading.value = true
-    try {
-      const ts = new Date().getTime()
+export const useCatalogStore = defineStore('catalog', {
+  state: () => ({
+    beers: [],
+    breweries: [],
+    locations: [],
+    styles: [],      
+    countries: [],   
+    stats: null,
+    detailedStats: null,
+    history: [],
+    isLoading: false,
+    error: null,
+  }),
+  actions: {
+    async fetchAllData() {
+      // Pokud už se data stahují, nezačínej znovu
+      if (this.isLoading) return
       
-      const [dataBeers, dataLocs, dataBrews, dataStyles, dataCountries, dataStats, dataHist] = await Promise.all([
-        apiFetch(`/beers.php?t=${ts}`),
-        apiFetch(`/locations.php?t=${ts}`),
-        apiFetch(`/breweries.php?t=${ts}`),
-        apiFetch(`/styles.php?t=${ts}`),
-        apiFetch(`/countries.php?t=${ts}`),
-        // ZMĚNA: Přidán parametr period=month pro statistiky na dashboardu
-        apiFetch(`/stats.php?period=month&t=${ts}`),
-        apiFetch(`/history.php?t=${ts}`)
-      ])
+      this.isLoading = true
+      this.error = null
+      try {
+        const [
+          beersRes, 
+          breweriesRes, 
+          locationsRes, 
+          stylesRes, 
+          countriesRes, 
+          statsRes, 
+          historyRes
+        ] = await Promise.all([
+          apiFetch('/beers.php'),
+          apiFetch('/breweries.php'),
+          apiFetch('/locations.php'),
+          apiFetch('/styles.php'),      
+          apiFetch('/countries.php'),   
+          apiFetch('/stats.php'),
+          apiFetch('/history.php')
+        ])
 
-      if (dataBeers.status === 'success') beers.value = dataBeers.data
-      if (dataLocs.status === 'success') locations.value = dataLocs.data
-      if (dataBrews.status === 'success') breweries.value = dataBrews.data
-      if (dataStyles.status === 'success') styles.value = dataStyles.data
-      if (dataCountries.status === 'success') countries.value = dataCountries.data
-      if (dataStats.status === 'success') stats.value = dataStats.stats
-      if (dataHist.status === 'success') history.value = dataHist.data
-
-    } catch (error) {
-      console.error("Chyba při stahování dat:", error)
-    } finally {
-      isLoading.value = false
+        if (beersRes.status === 'success') this.beers = beersRes.data
+        if (breweriesRes.status === 'success') this.breweries = breweriesRes.data
+        if (locationsRes.status === 'success') this.locations = locationsRes.data
+        if (stylesRes.status === 'success') this.styles = stylesRes.data
+        if (countriesRes.status === 'success') this.countries = countriesRes.data
+        if (statsRes.status === 'success') this.stats = statsRes.data
+        if (historyRes.status === 'success') this.history = historyRes.data
+      } catch (err) {
+        this.error = 'Nepodařilo se načíst data.'
+        console.error('Fetch error:', err)
+      } finally {
+        this.isLoading = false
+      }
     }
   }
-
-  return { beers, locations, breweries, styles, countries, stats, history, isLoading, fetchAllData }
 })

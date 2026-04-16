@@ -4,18 +4,54 @@
       <div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div>
     </transition>
 
-    <div class="view-header">
-      <div class="header-actions">
-        <div class="header-filters-row">
-          <FilterInput v-model="searchQuery" placeholder="Hledat podnik..." class="flex-2" />
-          <FilterSelect v-model="sortBy" :icon="ArrowDownUpIcon" class="flex-1">
-            <option value="name">Abecedně (A-Z)</option>
-            <option value="rating">Dle hodnocení</option>
-          </FilterSelect>
+    <div class="page-header">
+      <h2>Katalog podniků</h2>
+      <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
+        <PlusIcon :size="20" /> Přidat podnik
+      </button>
+    </div>
+
+    <div class="filters-section panel-card">
+      <div class="filters-header" @click="filtersOpen = !filtersOpen">
+        <div class="filters-title">
+          <FilterIcon :size="20" /> 
+          <h3>Filtrování a vyhledávání</h3>
         </div>
-        <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
-          <PlusIcon /> Přidat podnik
-        </button>
+        <ChevronDownIcon :class="{ 'rotated': filtersOpen }" :size="20" class="toggle-icon" />
+      </div>
+      
+      <transition name="slide-fade">
+        <div v-show="filtersOpen" class="filters-body">
+          <div class="filters-grid">
+            <FilterInput v-model="filters.search" label="Název podniku" placeholder="Hledat podnik..." />
+            
+            <BaseSelect v-model="filters.city" label="Město" placeholder="Všechna města" searchable>
+              <option value="">Všechna města</option>
+              <option v-for="city in uniqueCities" :key="city" :value="city">{{ city }}</option>
+            </BaseSelect>
+
+            <BaseSelect v-model="filters.country" label="Země" placeholder="Všechny země" searchable>
+              <option value="">Všechny země</option>
+              <option v-for="c in countries" :key="c.id" :value="c.id">{{ c.name_cz }}</option>
+            </BaseSelect>
+          </div>
+          
+          <div class="filters-footer">
+            <button class="btn-secondary" @click="resetFilters">Resetovat filtry</button>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <div class="results-bar">
+      <span class="results-count">Nalezeno podniků: <strong>{{ filteredLocations.length }}</strong></span>
+      
+      <div class="results-actions">
+        <div class="sort-control-wrapper">
+          <BaseSelect v-model="sortBy" placeholder="Řadit podle..." :searchable="false">
+            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </BaseSelect>
+        </div>
       </div>
     </div>
 
@@ -33,14 +69,17 @@
         </div>
         
         <BasePagination 
-          v-model:currentPage="currentPage" 
-          :totalPages="totalPages" 
+          v-if="totalPages > 1"
+          :current-page="currentPage" 
+          :total-pages="totalPages"
+          @page-changed="changePage" 
         />
       </template>
       
       <div v-else-if="!isLoading" class="empty-state">
-        <MapIcon :size="48" color="#cbd5e1" />
-        <h3>Žádné podniky k zobrazení</h3>
+        <MapIcon :size="48" color="#cbd5e1" :stroke-width="1" />
+        <p>Žádné podniky neodpovídají zadaným filtrům.</p>
+        <button class="btn-secondary mt-2" @click="resetFilters">Zrušit filtry</button>
       </div>
     </div>
 
@@ -52,16 +91,15 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, MapIcon, ArrowDownUpIcon } from 'lucide-vue-next'
+import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon } from 'lucide-vue-next'
 
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 
-import BaseButton from '../components/BaseButton.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import FilterInput from '../components/FilterInput.vue'
-import FilterSelect from '../components/FilterSelect.vue'
+import BaseSelect from '../components/BaseSelect.vue'
 import LocationCard from '../components/LocationCard.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
@@ -74,9 +112,9 @@ const { locations, countries, isLoading } = storeToRefs(catalogStore)
 const isAdmin = computed(() => user.value?.role === 'admin')
 
 const toast = ref({ show: false, message: '', type: 'toast-success' })
-const searchQuery = ref('')
-const sortBy = ref('name')
+
 const isAddModalOpen = ref(false)
+const filtersOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
 
@@ -85,29 +123,95 @@ const form = ref({
   address: '', email: '', phone: '', website: '', opening_hours: '' 
 })
 
-// STRÁNKOVÁNÍ
 const currentPage = ref(1)
 const itemsPerPage = 30
 
-watch([searchQuery, sortBy], () => {
-  currentPage.value = 1
-})
-
-const showToast = (message, type = 'toast-success') => { 
-  toast.value = { show: true, message, type }
-  setTimeout(() => { toast.value.show = false }, 3000) 
+const changePage = (page) => {
+  currentPage.value = page
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
+
+const initialFilters = {
+  search: '',
+  city: '',
+  country: ''
+}
+
+const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
+const sortBy = ref('newest')
+
+const resetFilters = () => {
+  filters.value = JSON.parse(JSON.stringify(initialFilters))
+  sortBy.value = 'newest'
+  currentPage.value = 1
+}
+
+watch([filters, sortBy], () => { currentPage.value = 1 }, { deep: true })
+
+const sortOptions = [
+  { value: 'newest', label: 'Datum přidání (Od nejnovějšího)' },
+  { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' },
+  { value: 'rating_desc', label: 'Hodnocení (Od nejlepšího)' },
+  { value: 'rating_asc', label: 'Hodnocení (Od nejhoršího)' },
+  { value: 'name_asc', label: 'Název (A-Z)' },
+  { value: 'name_desc', label: 'Název (Z-A)' },
+  { value: 'city_asc', label: 'Město (A-Z)' },
+  { value: 'city_desc', label: 'Město (Z-A)' }
+]
+
+const uniqueCities = computed(() => {
+  const cities = new Set()
+  if (locations.value) {
+    locations.value.filter(loc => loc.type === 'hospoda').forEach(l => {
+      if (l.city && l.city.trim() !== '') {
+        cities.add(l.city.trim())
+      }
+    })
+  }
+  return Array.from(cities).sort((a, b) => a.localeCompare(b))
+})
 
 const filteredLocations = computed(() => {
   let result = (locations.value || []).filter(loc => loc.type === 'hospoda')
-  if (searchQuery.value) {
-    result = result.filter(loc => loc.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+
+  // Fulltext hledání už jen v názvu podniku
+  if (filters.value.search) {
+    const q = filters.value.search.toLowerCase()
+    result = result.filter(l => l.name.toLowerCase().includes(q))
   }
-  return result.slice().sort((a, b) => 
-    sortBy.value === 'name' 
-      ? a.name.localeCompare(b.name) 
-      : (parseFloat(b.avg_rating) || 0) - (parseFloat(a.avg_rating) || 0)
-  )
+
+  if (filters.value.city) {
+    result = result.filter(l => l.city === filters.value.city)
+  }
+
+  if (filters.value.country) {
+    result = result.filter(l => l.country_id == filters.value.country)
+  }
+
+  result.sort((a, b) => {
+    const getRating = (val) => (val != null && val !== '') ? parseFloat(val) : -1
+    const valA = getRating(a.avg_rating)
+    const valB = getRating(b.avg_rating)
+
+    const compareStr = (strA, strB, asc) => {
+      const sA = strA || ''; const sB = strB || '';
+      return asc ? sA.localeCompare(sB) : sB.localeCompare(sA);
+    }
+    
+    switch (sortBy.value) {
+      case 'name_asc': return compareStr(a.name, b.name, true)
+      case 'name_desc': return compareStr(a.name, b.name, false)
+      case 'city_asc': return compareStr(a.city, b.city, true)
+      case 'city_desc': return compareStr(a.city, b.city, false)
+      case 'rating_desc': return valB - valA
+      case 'rating_asc': return valA - valB
+      case 'newest': return new Date(b.created_at || 0) - new Date(a.created_at || 0)
+      case 'oldest': return new Date(a.created_at || 0) - new Date(b.created_at || 0)
+      default: return 0
+    }
+  })
+
+  return result
 })
 
 const totalPages = computed(() => Math.ceil(filteredLocations.value.length / itemsPerPage))
@@ -120,6 +224,11 @@ const paginatedLocations = computed(() => {
 const openDetail = (loc) => { 
   selectedItem.value = loc
   isDetailOpen.value = true 
+}
+
+const showToast = (message, type = 'toast-success') => { 
+  toast.value = { show: true, message, type }
+  setTimeout(() => { toast.value.show = false }, 3000) 
 }
 
 const submitLocation = async () => {
@@ -138,17 +247,56 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 </script>
 
 <style scoped>
-.catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; }
-.view-header { margin-bottom: 2rem; }
-.header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
-.header-filters-row { display: flex; gap: 1rem; flex: 1; max-width: 600px; }
-.locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
-.empty-state { text-align: center; padding: 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: var(--bg-panel); border-radius: 12px; border: 1px dashed var(--border); transition: background-color 0.5s ease, border-color 0.5s ease; }
-.empty-state h3 { color: var(--text-main); transition: color 0.5s ease; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.page-header h2 { margin: 0; font-size: 2rem; color: var(--text-main); transition: color 0.5s ease; }
+
+.panel-card { 
+  background: var(--bg-panel); 
+  border: 1px solid var(--border); 
+  border-radius: 12px; 
+  margin-bottom: 2rem; 
+  position: relative;
+  z-index: 20; 
+  transition: background-color 0.5s ease, border-color 0.5s ease; 
+}
+
+.filters-header { 
+  display: flex; justify-content: space-between; align-items: center; 
+  padding: 1.25rem 1.5rem; cursor: pointer; user-select: none; 
+  background: transparent; 
+  transition: background-color 0.5s ease; 
+}
+.filters-title { display: flex; align-items: center; gap: 0.75rem; }
+.filters-title h3 { margin: 0; font-size: 1.1rem; color: var(--text-main); transition: color 0.5s ease; }
+.toggle-icon { color: var(--text-muted); transition: transform 0.3s ease, color 0.5s ease; }
+.toggle-icon.rotated { transform: rotate(180deg); }
+.filters-body { padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border); transition: border-color 0.5s ease; }
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
+
+.results-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); transition: border-color 0.5s ease; }
+.results-count { color: var(--text-muted); font-size: 0.95rem; transition: color 0.5s ease; }
+.results-count strong { color: var(--text-main); transition: color 0.5s ease; }
+
+.results-actions { display: flex; align-items: center; gap: 1rem; }
+.sort-control-wrapper { width: 260px; }
+
+.catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
+.locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; width: 100%; margin-bottom: 2rem; }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 1rem; text-align: center; color: var(--text-muted); transition: color 0.5s ease; }
+.empty-state p { margin: 1rem 0; font-size: 1.1rem; }
+.mt-2 { margin-top: 0.5rem; }
+
+.slide-fade-enter-active { transition: all 0.3s ease-out; }
+.slide-fade-leave-active { transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1); }
+.slide-fade-enter-from, .slide-fade-leave-to { transform: translateY(-10px); opacity: 0; }
 
 @media (max-width: 800px) { 
-  .header-actions { flex-direction: column-reverse; align-items: stretch; }
-  .header-actions .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
-  .header-filters-row { width: 100%; flex-direction: column; max-width: none; } 
+  .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .page-header .btn-add { width: 100%; justify-content: center; }
+  .results-bar { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .results-actions { width: 100%; flex-direction: row-reverse; justify-content: space-between; }
+  .sort-control-wrapper { flex: 1; width: auto; }
 }
 </style>

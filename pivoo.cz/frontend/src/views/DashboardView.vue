@@ -42,9 +42,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-// UPRAVENO: Odstraněn TrendingUpIcon
 import { PlusCircleIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -83,7 +82,19 @@ const selectedEditRecordId = ref(null)
 const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
 const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
 
-onMounted(() => { if (authStore.user) catalogStore.fetchAllData() })
+// 1. Načtení dat při příchodu z jiné stránky (kdy už uživatel existuje)
+onMounted(() => { 
+  if (authStore.user) {
+    catalogStore.fetchAllData() 
+  }
+})
+
+// 2. Načtení dat po tvrdém obnovení (F5) - jakmile aplikace zjistí, že je uživatel přihlášen
+watch(() => authStore.user, (newUser) => {
+  if (newUser) {
+    catalogStore.fetchAllData()
+  }
+})
 
 const openEditModal = (record) => {
   selectedEditRecordId.value = record.id
@@ -125,16 +136,6 @@ const submitCheckIn = async () => {
 
 const submitEdit = async () => {
   try {
-    const now = new Date();
-    const localDateTime = now.getFullYear() + '-' + 
-      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-      String(now.getDate()).padStart(2, '0') + ' ' + 
-      String(now.getHours()).padStart(2, '0') + ':' + 
-      String(now.getMinutes()).padStart(2, '0') + ':' + 
-      String(now.getSeconds()).padStart(2, '0');
-    
-    editForm.value.consumed_at = localDateTime;
-
     const res = await apiFetch('/update_checkin.php', { 
       method: 'POST', 
       body: JSON.stringify({ id: selectedEditRecordId.value, ...editForm.value }) 

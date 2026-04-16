@@ -8,11 +8,11 @@
         </div>
 
         <div class="filter-wrapper">
-          <FilterSelect v-model="period" :icon="CalendarIcon" class="period-select">
+          <BaseSelect v-model="period" :searchable="false">
             <option value="month">Tento měsíc</option>
             <option value="year">Tento rok</option>
             <option value="all">Celková historie</option>
-          </FilterSelect>
+          </BaseSelect>
         </div>
       </div>
     </div>
@@ -159,12 +159,12 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { 
   BeerIcon, FactoryIcon, MapPinIcon, 
-  CalendarIcon, CalendarDaysIcon, TrophyIcon, 
+  CalendarDaysIcon, TrophyIcon, 
   CoinsIcon, ShapesIcon
 } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import BaseLoader from '../components/BaseLoader.vue'
-import FilterSelect from '../components/FilterSelect.vue'
+import BaseSelect from '../components/BaseSelect.vue'
 
 const isLoading = ref(true)
 const period = ref('month')
