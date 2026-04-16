@@ -71,9 +71,8 @@
         
         <BasePagination 
           v-if="totalPages > 1"
-          :current-page="currentPage" 
+          v-model:currentPage="currentPage" 
           :total-pages="totalPages"
-          @page-changed="changePage" 
         />
       </div>
       
@@ -197,16 +196,11 @@ const filteredBreweries = computed(() => {
   return result
 })
 
-const totalPages = computed(() => Math.ceil(filteredBreweries.length / itemsPerPage))
+const totalPages = computed(() => Math.ceil(filteredBreweries.value.length / itemsPerPage))
 const paginatedBreweries = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   return filteredBreweries.value.slice(start, start + itemsPerPage)
 })
-
-const changePage = (page) => {
-  currentPage.value = page
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
 
 const openDetail = (item) => { 
   selectedItem.value = item
@@ -253,7 +247,6 @@ onMounted(() => { catalogStore.fetchAllData() })
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
-/* Zarovnání výsledkové lišty */
 .results-bar { 
   display: flex; 
   justify-content: space-between; 
@@ -277,7 +270,7 @@ onMounted(() => { catalogStore.fetchAllData() })
   .desktop-action-bar { display: none; }
   
   .results-bar { 
-    flex-direction: column-reverse; 
+    flex-direction: column; /* Změněno z column-reverse na column */
     align-items: stretch; 
     gap: 1rem; 
     border-bottom: none;

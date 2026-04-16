@@ -16,10 +16,6 @@
               <span v-if="item.is_unfiltered" class="prop-badge">Nefiltrované</span>
               <span v-if="item.is_unpasteurized" class="prop-badge">Nepasterizované</span>
             </div>
-            
-            <div v-if="type === 'location' && item?.type" class="property-badges">
-              <span class="prop-badge loc-type">{{ formatLocationType(item.type) }}</span>
-            </div>
           </div>
           
           <p class="modal-subtitle">

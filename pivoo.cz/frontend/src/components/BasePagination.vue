@@ -3,8 +3,17 @@
     <button
       class="page-btn"
       :disabled="currentPage === 1"
+      @click="changePage(1)"
+      title="První strana"
+    >
+      <ChevronsLeftIcon :size="20" />
+    </button>
+
+    <button
+      class="page-btn"
+      :disabled="currentPage === 1"
       @click="changePage(currentPage - 1)"
-      title="Předchozí stránka"
+      title="Předchozí strana"
     >
       <ChevronLeftIcon :size="20" />
     </button>
@@ -17,15 +26,29 @@
       class="page-btn"
       :disabled="currentPage === totalPages"
       @click="changePage(currentPage + 1)"
-      title="Další stránka"
+      title="Další strana"
     >
       <ChevronRightIcon :size="20" />
+    </button>
+
+    <button
+      class="page-btn"
+      :disabled="currentPage === totalPages"
+      @click="changePage(totalPages)"
+      title="Poslední strana"
+    >
+      <ChevronsRightIcon :size="20" />
     </button>
   </div>
 </template>
 
 <script setup>
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-vue-next'
+import { 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  ChevronsLeftIcon, 
+  ChevronsRightIcon 
+} from 'lucide-vue-next'
 
 defineProps({
   currentPage: {
@@ -40,7 +63,6 @@ defineProps({
 
 const emit = defineEmits(['update:currentPage'])
 
-// Nová funkce, která kromě změny stránky zařídí i odskrolování nahoru
 const changePage = (newPage) => {
   emit('update:currentPage', newPage)
   
@@ -58,7 +80,7 @@ const changePage = (newPage) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.75rem;
   margin-top: 2.5rem;
   padding: 1rem 0;
 }
@@ -99,14 +121,25 @@ const changePage = (newPage) => {
 .page-numbers {
   display: flex;
   align-items: center;
+  padding: 0 0.5rem;
 }
 
 .page-info {
   font-size: 0.95rem;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .page-info strong {
   color: var(--text-main);
+}
+
+@media (max-width: 480px) {
+  .pagination-wrapper {
+    gap: 0.4rem;
+  }
+  .page-info {
+    font-size: 0.85rem;
+  }
 }
 </style>

@@ -18,7 +18,6 @@
               >
                 <StarIcon :size="20" :fill="location.is_favorite ? 'var(--primary)' : 'none'" :color="location.is_favorite ? 'var(--primary)' : 'var(--text-muted)'" />
               </button>
-              <span class="type-badge">{{ formatType(location.type) }}</span>
             </div>
           </div>
           

@@ -82,9 +82,8 @@
         
         <BasePagination 
           v-if="totalPages > 1"
-          :current-page="currentPage" 
+          v-model:currentPage="currentPage" 
           :total-pages="totalPages"
-          @page-changed="changePage"
         />
       </template>
       
@@ -180,11 +179,6 @@ const submitBeer = async () => {
 
 const currentPage = ref(1)
 const itemsPerPage = 12
-
-const changePage = (page) => {
-  currentPage.value = page
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
 
 const initialFilters = {
   search: '', brewery: '', style: '', country: '',
@@ -293,7 +287,6 @@ const openDetail = (beer) => { /* Detail emit */ }
 .filters-title { display: flex; align-items: center; gap: 0.75rem; }
 .filters-title h3 { margin: 0; font-size: 1.1rem; color: var(--text-main); }
 
-/* PŘIDÁNO: Barva ikonky ve filtru */
 .panel-icon { color: var(--primary); }
 
 .toggle-icon { color: var(--text-muted); transition: transform 0.3s ease; }
@@ -332,7 +325,7 @@ const openDetail = (beer) => { /* Detail emit */ }
   .desktop-action-bar { display: none; }
   
   .results-bar { 
-    flex-direction: column-reverse; 
+    flex-direction: column; /* Změněno z column-reverse na column */
     align-items: stretch; 
     gap: 1rem; 
     border-bottom: none;

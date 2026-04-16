@@ -75,9 +75,8 @@
         
         <BasePagination 
           v-if="totalPages > 1"
-          :current-page="currentPage" 
+          v-model:currentPage="currentPage" 
           :total-pages="totalPages"
-          @page-changed="changePage" 
         />
       </template>
       
@@ -275,7 +274,7 @@ onMounted(() => { catalogStore.fetchAllData() })
   .desktop-action-bar { display: none; }
   
   .results-bar { 
-    flex-direction: column-reverse; 
+    flex-direction: column; /* Změněno z column-reverse na column */
     align-items: stretch; 
     gap: 1rem; 
     border-bottom: none;

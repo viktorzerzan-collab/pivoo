@@ -13,7 +13,7 @@
           <router-link to="/statistics" class="nav-link"><BarChart3Icon :size="18" /> Statistiky</router-link>
           <router-link to="/beers" class="nav-link"><BeerIcon :size="18" /> Piva</router-link>
           <router-link to="/breweries" class="nav-link"><FactoryIcon :size="18" /> Pivovary</router-link>
-          <router-link to="/locations" class="nav-link"><MapIcon :size="18" /> Podniky</router-link>
+          <router-link to="/locations" class="nav-link"><MapPinIcon :size="18" /> Podniky</router-link>
         </nav>
       </div>
 
@@ -71,7 +71,7 @@
         <span>Pivovary</span>
       </router-link>
       <router-link to="/locations" class="bottom-link">
-        <MapIcon :size="24" />
+        <MapPinIcon :size="24" />
         <span>Podniky</span>
       </router-link>
     </div>
@@ -83,7 +83,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { 
-  BeerIcon, LayoutDashboardIcon, FactoryIcon, MapIcon,
+  BeerIcon, LayoutDashboardIcon, FactoryIcon, MapPinIcon,
   ShieldAlertIcon, LogOutIcon, UserIcon, ChevronDownIcon,
   SunIcon, MoonIcon, BarChart3Icon
 } from 'lucide-vue-next'
