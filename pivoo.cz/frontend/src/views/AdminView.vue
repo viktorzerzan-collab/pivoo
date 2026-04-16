@@ -48,7 +48,7 @@
                     <div class="td-content user-cell">
                       <div class="section-icon users-bg" :class="{ 'has-image': u.avatar }">
                         <img v-if="u.avatar" :src="'https://www.pivoo.cz/backend/uploads/avatars/' + u.avatar" alt="Avatar" />
-                        <UserIcon v-else :size="20" color="#0369a1" stroke-width="2" />
+                        <UserIcon v-else :size="20" color="var(--primary)" stroke-width="2" />
                       </div>
                       <div class="user-info">
                         <div class="info-top-row">
@@ -74,7 +74,7 @@
                       <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')" title="Upravit údaje">
                         <PencilIcon :size="16" />
                       </button>
-                      <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: var(--blue);" @click="openPasswordModal(u)" title="Změnit heslo">
+                      <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: #3b82f6;" @click="openPasswordModal(u)" title="Změnit heslo">
                         <KeyIcon :size="16" />
                       </button>
                       <button v-if="u?.id !== user?.id" class="is-icon-only admin-action-btn" :style="u.is_banned ? 'background-color: #10b981;' : 'background-color: #64748b;'" @click="openBanModal(u)" :title="u.is_banned ? 'Odblokovat' : 'Zablokovat'">
@@ -95,10 +95,10 @@
                     <div class="td-content main-item-cell">
                       <div class="section-icon" :class="[activeTab + '-bg', { 'has-image': activeTab === 'breweries' && item.logo }]">
                         <img v-if="activeTab === 'breweries' && item.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" alt="Logo" />
-                        <BeerIcon v-else-if="activeTab === 'beers'" :size="20" color="#ca8a04" />
-                        <FactoryIcon v-else-if="activeTab === 'breweries'" :size="20" color="#b45309" />
-                        <MapPinIcon v-else-if="activeTab === 'locations'" :size="20" color="#0369a1" />
-                        <PaletteIcon v-else-if="activeTab === 'styles'" :size="20" color="#64748b" />
+                        <BeerIcon v-else-if="activeTab === 'beers'" :size="20" color="var(--primary)" />
+                        <FactoryIcon v-else-if="activeTab === 'breweries'" :size="20" color="var(--primary)" />
+                        <MapPinIcon v-else-if="activeTab === 'locations'" :size="20" color="var(--primary)" />
+                        <HopIcon v-else-if="activeTab === 'styles'" :size="20" color="var(--primary)" />
                       </div>
                       <div class="item-text">
                         <strong>{{ item.name }}</strong>
@@ -213,7 +213,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { 
   PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
-  UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, PaletteIcon
+  UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon
 } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -328,7 +328,6 @@ const openAddModal = (t) => {
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
   const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
-  // OPRAVA: Resetování formuláře na výchozí hodnoty při každém novém přidání
   if (keyMap === 'beer') {
     formData.value.beer = { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false }
   } else if (keyMap === 'brewery') {
@@ -438,12 +437,10 @@ const handleDelete = async () => {
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
 .admin-section { display: flex; flex-direction: column; flex: 1; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
 
-/* HLAVIČKA */
 .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; gap: 2rem; }
 .header-info { display: flex; flex-direction: column; gap: 1.25rem; flex: 1; }
 .admin-search { max-width: 380px; }
 
-/* TABULKA */
 .admin-table-wrapper { overflow-x: auto; flex: 1; margin-bottom: 1.5rem; }
 .admin-table { width: 100%; border-collapse: collapse; }
 .admin-table th { 
@@ -451,25 +448,24 @@ const handleDelete = async () => {
   color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; 
   letter-spacing: 0.05em; background: transparent;
 }
+.text-right { text-align: right !important; }
+
 .admin-table td { padding: 1.25rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); }
 .admin-table tr:hover td { background-color: var(--card-hover-bg); }
 
-/* IKONY A BARVY */
+/* IKONY: Sjednocení na tmavé pozadí pro všechny podsekce */
 .section-icon { 
   width: 42px; height: 42px; border-radius: 10px; display: flex; 
   align-items: center; justify-content: center; flex-shrink: 0;
-  overflow: hidden; /* Důležité pro ořez fotky */
+  overflow: hidden;
   transition: all 0.3s ease;
+  background: #1e293b; /* Tmavé pozadí jako v hlavičce */
 }
 .section-icon img { width: 100%; height: 100%; object-fit: cover; }
-/* Odstranění paddingu a podbarvení, pokud je v boxu fotka */
 .section-icon.has-image { padding: 0; background: transparent; border: 1px solid var(--border); }
 
-.beers-bg { background: #fef9c3; }
-.breweries-bg { background: #ffedd5; }
-.locations-bg { background: #e0f2fe; }
-.users-bg { background: #e0f2fe; }
-.styles-bg { background: var(--bg-app); border: 1px solid var(--border); }
+/* Odstranění individuálních barev pozadí pro ikony */
+.beers-bg, .breweries-bg, .locations-bg, .users-bg, .styles-bg { background: #1e293b; }
 
 .user-cell, .main-item-cell { display: flex; align-items: center; gap: 1rem; }
 
@@ -480,7 +476,6 @@ const handleDelete = async () => {
 .banned-badge { background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.6rem; border: 1px solid rgba(239, 68, 68, 0.2); }
 .banned-row td { opacity: 0.7; }
 
-/* PATIČKA */
 .admin-section-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid var(--border); margin-top: auto; }
 .footer-info { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
 .footer-info strong { color: var(--text-main); }
@@ -514,7 +509,6 @@ const handleDelete = async () => {
   .user-info strong, .item-text strong { font-size: 1.05rem; color: var(--text-main); }
   .user-info small, .item-text small { color: var(--text-muted); font-size: 0.85rem; }
   
-  /* Upravené odsazení pro text pod ikonou na mobilu */
   .email-text { font-size: 0.9rem; color: var(--text-muted); padding-left: 52px; margin-bottom: 0.5rem; }
 
   .admin-table td[data-label="Akce"] {

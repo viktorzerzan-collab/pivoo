@@ -11,21 +11,21 @@
         <BaseSelect v-model="form.location_id" label="Kde to bylo?" required>
           <option disabled value="">-- Vyber lokaci --</option>
           <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
-            {{ loc.is_favorite ? '⭐ ' : '' }}{{ loc.name }}
+            {{ loc.is_favorite ? '⭐' : '📍' }} {{ loc.name }}
           </option>
         </BaseSelect>
 
         <BaseSelect v-model="form.brewery_id" label="Pivovar" searchable required>
           <option disabled value="">-- Vyber pivovar --</option>
           <option v-for="brewery in sortedBreweries" :key="brewery.id" :value="brewery.id">
-            {{ brewery.is_favorite ? '⭐ ' : '' }}{{ brewery.name }}
+            {{ brewery.is_favorite ? '⭐' : '🏭' }} {{ brewery.name }}
           </option>
         </BaseSelect>
 
         <BaseSelect v-model="form.beer_id" label="Které pivo jsi pil?" :disabled="!form.brewery_id" searchable required>
           <option disabled value="">-- Vyber pivo --</option>
           <option v-for="beer in sortedBeers" :key="beer.id" :value="beer.id">
-            {{ beer.is_favorite ? '⭐ ' : '' }}{{ beer.name }}
+            {{ beer.is_favorite ? '⭐' : '🍺' }} {{ beer.name }}
           </option>
         </BaseSelect>
 
@@ -94,16 +94,21 @@ const props = defineProps({
 })
 defineEmits(['close', 'submit'])
 
-// Pomocná funkce pro řazení oblíbených na začátek
-const sortByFav = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0)
+// Logika řazení: Oblíbené (is_favorite === 1) jdou nahoru
+const sortByFavorite = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0);
 
-const sortedLocations = computed(() => [...props.locations].sort(sortByFav))
-const sortedBreweries = computed(() => [...props.breweries].sort(sortByFav))
+const sortedLocations = computed(() => {
+  return [...props.locations].sort(sortByFavorite);
+})
+
+const sortedBreweries = computed(() => {
+  return [...props.breweries].sort(sortByFavorite);
+})
 
 const sortedBeers = computed(() => {
   if (!props.form.brewery_id) return []
   const filtered = props.beers.filter(b => b.brewery_id == props.form.brewery_id)
-  return [...filtered].sort(sortByFav)
+  return [...filtered].sort(sortByFavorite)
 })
 
 watch(() => props.form.brewery_id, () => {

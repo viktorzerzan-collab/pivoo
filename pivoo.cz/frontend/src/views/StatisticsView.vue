@@ -259,6 +259,10 @@ onMounted(() => fetchDetailedStats())
 
 @media (max-width: 800px) {
   .header-actions { flex-direction: column; align-items: stretch; }
+  
+  /* OPRAVA PŘEPÍNAČE: Tlačítka vyplní celou šířku kontejneru rovnoměrně */
+  .scope-toggle button { flex: 1; }
+  
   .filter-wrapper { width: 100%; }
   .stats-grid-detailed { grid-template-columns: 1fr; }
   .chart-container { gap: 0.4rem; height: 140px; }

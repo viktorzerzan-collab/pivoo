@@ -16,14 +16,14 @@
       <div class="dashboard-content">
         <div class="panel-card">
           <div class="panel-header">
-            <h3><BeerIcon /> Já a pivo v {{ currentMonthName }}</h3>
+            <h3><BeerIcon class="panel-icon" /> Já a pivo v {{ currentMonthName }}</h3>
           </div>
           <StatsBoard :stats="stats" />
         </div>
 
         <div class="panel-card">
           <div class="panel-header">
-            <h3><HistoryIcon /> Poslední záznamy</h3>
+            <h3><HistoryIcon class="panel-icon" /> Poslední záznamy</h3>
           </div>
           <HistoryList :history="history" @edit="openEditModal" @delete="confirmDelete" />
           
@@ -82,14 +82,12 @@ const selectedEditRecordId = ref(null)
 const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
 const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
 
-// 1. Načtení dat při příchodu z jiné stránky
 onMounted(() => { 
   if (authStore.user) {
     catalogStore.fetchAllData() 
   }
 })
 
-// 2. Načtení dat po tvrdém obnovení (F5)
 watch(() => authStore.user, (newUser) => {
   if (newUser) {
     catalogStore.fetchAllData()
@@ -130,7 +128,7 @@ const submitCheckIn = async () => {
       showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error')
     }
   } catch (e) {
-    showToast('Chyba serveru (kód 500). Zkontroluj DB!', 'toast-error')
+    showToast('Chyba serveru (kód 500).', 'toast-error')
   }
 }
 
@@ -178,14 +176,32 @@ const executeDelete = async () => {
 <style scoped>
 .dashboard-layout { position: relative; min-height: 400px; }
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
+
+.btn-add { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  padding: 0.75rem 1.5rem; 
+  font-weight: 600; 
+}
+
 .dashboard-content { display: flex; flex-direction: column; gap: 2rem; }
 .panel-card { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.5s ease, border-color 0.5s ease; }
 .panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.5s ease; }
 .panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.5s ease; }
+
+/* PŘIDÁNO: Definice barvy pro ikony v panelech */
+.panel-icon { color: var(--primary); }
+
 .empty-dashboard { text-align: center; color: var(--text-muted); padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: color 0.5s ease; }
 
 @media (max-width: 600px) {
-  .section-actions .btn-add { width: 100%; padding: 1rem; font-size: 1.05rem; }
+  .section-actions .btn-add { 
+    width: 100%; 
+    padding: 1rem; 
+    justify-content: center; 
+    font-size: 1.1rem; 
+  }
   .panel-card { padding: 1rem; }
 }
 </style>
