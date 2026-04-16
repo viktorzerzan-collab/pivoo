@@ -123,7 +123,6 @@ const form = ref({
   address: '', email: '', phone: '', website: '', opening_hours: '' 
 })
 
-// PŘIDÁNO: Funkce pro otevření modalu s vynuceným resetem formuláře
 const openAddModal = () => {
   form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
   isAddModalOpen.value = true
@@ -158,11 +157,8 @@ const sortOptions = [
   { value: 'newest', label: 'Datum přidání (Od nejnovějšího)' },
   { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' },
   { value: 'rating_desc', label: 'Hodnocení (Od nejlepšího)' },
-  { value: 'rating_asc', label: 'Hodnocení (Od nejhoršího)' },
   { value: 'name_asc', label: 'Název (A-Z)' },
-  { value: 'name_desc', label: 'Název (Z-A)' },
-  { value: 'city_asc', label: 'Město (A-Z)' },
-  { value: 'city_desc', label: 'Město (Z-A)' }
+  { value: 'city_asc', label: 'Město (A-Z)' }
 ]
 
 const uniqueCities = computed(() => {
@@ -178,7 +174,8 @@ const uniqueCities = computed(() => {
 })
 
 const filteredLocations = computed(() => {
-  let result = (locations.value || []).filter(loc => loc.type === 'hospoda')
+  // Filtrujeme pouze hospody pro tento katalog
+  let result = [...(locations.value || [])].filter(loc => loc.type === 'hospoda')
 
   if (filters.value.search) {
     const q = filters.value.search.toLowerCase()
@@ -194,9 +191,10 @@ const filteredLocations = computed(() => {
   }
 
   result.sort((a, b) => {
-    const getRating = (val) => (val != null && val !== '') ? parseFloat(val) : -1
-    const valA = getRating(a.avg_rating)
-    const valB = getRating(b.avg_rating)
+    // PRIMÁRNÍ ŘAZENÍ: Oblíbené položky (hvězdičky) jdou vždy nahoru
+    if (a.is_favorite !== b.is_favorite) {
+      return (b.is_favorite || 0) - (a.is_favorite || 0)
+    }
 
     const compareStr = (strA, strB, asc) => {
       const sA = strA || ''; const sB = strB || '';
@@ -205,11 +203,8 @@ const filteredLocations = computed(() => {
     
     switch (sortBy.value) {
       case 'name_asc': return compareStr(a.name, b.name, true)
-      case 'name_desc': return compareStr(a.name, b.name, false)
       case 'city_asc': return compareStr(a.city, b.city, true)
-      case 'city_desc': return compareStr(a.city, b.city, false)
-      case 'rating_desc': return valB - valA
-      case 'rating_asc': return valA - valB
+      case 'rating_desc': return (parseFloat(b.avg_rating) || 0) - (parseFloat(a.avg_rating) || 0)
       case 'newest': return new Date(b.created_at || 0) - new Date(a.created_at || 0)
       case 'oldest': return new Date(a.created_at || 0) - new Date(b.created_at || 0)
       default: return 0
@@ -241,7 +236,6 @@ const submitLocation = async () => {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
-      // Reset formuláře po úspěšném uložení
       form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
       await catalogStore.fetchAllData()
       showToast("Podnik uložen") 

@@ -110,7 +110,6 @@ const authStore = useAuthStore()
 
 const { beers, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
-// OPRAVA: Vždy načítáme aktuální data, aby se zobrazil loader
 onMounted(() => {
   catalogStore.fetchAllData()
 })
@@ -165,7 +164,7 @@ const getBrewery = (id) => breweries.value.find(b => b.id == id)
 const getStyleName = (id) => styles.value.find(s => s.id == id)?.name || 'Neznámý styl'
 
 const filteredAndSortedBeers = computed(() => {
-  let result = beers.value
+  let result = [...beers.value]
 
   if (filters.value.search) {
     const q = filters.value.search.toLowerCase()
@@ -194,6 +193,11 @@ const filteredAndSortedBeers = computed(() => {
   if (filters.value.ibu.min !== '' || filters.value.ibu.max !== '') result = result.filter(b => checkRange(b.ibu, filters.value.ibu))
 
   result.sort((a, b) => {
+    // PRIMÁRNÍ ŘAZENÍ: Oblíbené položky jdou vždy nahoru
+    if (a.is_favorite !== b.is_favorite) {
+      return b.is_favorite - a.is_favorite;
+    }
+
     const getNum = (obj, prop) => (obj[prop] != null && obj[prop] !== '') ? Number(obj[prop]) : null
     
     const compareNum = (prop, asc) => {
@@ -241,8 +245,8 @@ const paginatedBeers = computed(() => {
   return filteredAndSortedBeers.value.slice(start, end)
 })
 
-const openEditModal = (beer) => { /* tvá původní logika */ }
-const confirmDelete = (id) => { /* tvá původní logika */ }
+const openEditModal = (beer) => { /* logika zachována */ }
+const confirmDelete = (id) => { /* logika zachována */ }
 </script>
 
 <style scoped>

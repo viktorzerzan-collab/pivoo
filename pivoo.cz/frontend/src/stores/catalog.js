@@ -16,7 +16,6 @@ export const useCatalogStore = defineStore('catalog', {
   }),
   actions: {
     async fetchAllData() {
-      // Pokud už se data stahují, nezačínej znovu
       if (this.isLoading) return
       
       this.isLoading = true
@@ -53,6 +52,35 @@ export const useCatalogStore = defineStore('catalog', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    // NOVÁ AKCE: Přepnutí oblíbeného stavu
+    async toggleFavorite(entityId, entityType) {
+      try {
+        const res = await apiFetch('/toggle_favorite.php', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            entity_id: entityId, 
+            entity_type: entityType 
+          })
+        })
+        
+        if (res.status === 'success') {
+          // Najdeme seznam podle typu
+          const listMap = { 'beer': 'beers', 'brewery': 'breweries', 'location': 'locations' }
+          const listName = listMap[entityType]
+          
+          // Najdeme položku v paměti a upravíme její příznak
+          const item = this[listName].find(i => i.id == entityId)
+          if (item) {
+            item.is_favorite = res.is_favorite ? 1 : 0
+          }
+          return true
+        }
+      } catch (error) {
+        console.error('Chyba při přepínání oblíbených:', error)
+      }
+      return false
     }
   }
 })

@@ -1,5 +1,5 @@
 <template>
-  <div class="card beer-card" :class="{ 'special-beer': beer.is_unfiltered || beer.is_unpasteurized }">
+  <div class="card beer-card" :class="{ 'special-beer': beer.is_unfiltered || beer.is_unpasteurized, 'is-fav': beer.is_favorite }">
     <div class="card-body">
       <div class="card-main-info">
         <div class="icon-wrapper beer-bg">
@@ -8,9 +8,20 @@
         <div class="text-content">
           <div class="title-row">
             <h3 class="card-title">{{ beer.name }}</h3>
-            <div class="mini-badges">
-              <span v-if="beer.is_unfiltered" class="m-badge" title="Nefiltrované">N</span>
-              <span v-if="beer.is_unpasteurized" class="m-badge" title="Nepasterizované">P</span>
+            <div class="action-wrap">
+              <button 
+                v-if="authStore.user"
+                class="fav-btn" 
+                :class="{ 'active': beer.is_favorite }" 
+                @click.stop="toggleFav" 
+                title="Přidat do oblíbených"
+              >
+                <StarIcon :size="20" :fill="beer.is_favorite ? 'var(--primary)' : 'none'" :color="beer.is_favorite ? 'var(--primary)' : 'var(--text-muted)'" />
+              </button>
+              <div class="mini-badges">
+                <span v-if="beer.is_unfiltered" class="m-badge" title="Nefiltrované">N</span>
+                <span v-if="beer.is_unpasteurized" class="m-badge" title="Nepasterizované">P</span>
+              </div>
             </div>
           </div>
           
@@ -60,13 +71,25 @@
 </template>
 
 <script setup>
-import { BeerIcon, StarIcon, InfoIcon, ThermometerIcon, PercentIcon, ActivityIcon, PipetteIcon } from 'lucide-vue-next'
+import { 
+  BeerIcon, StarIcon, InfoIcon, ThermometerIcon, 
+  PercentIcon, ActivityIcon, PipetteIcon 
+} from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
+import { useCatalogStore } from '../stores/catalog'
+import { useAuthStore } from '../stores/auth'
 
-defineProps({
+const props = defineProps({
   beer: Object
 })
 defineEmits(['showDetail'])
+
+const catalogStore = useCatalogStore()
+const authStore = useAuthStore()
+
+const toggleFav = () => {
+  catalogStore.toggleFavorite(props.beer.id, 'beer')
+}
 </script>
 
 <style scoped>
@@ -81,6 +104,12 @@ defineEmits(['showDetail'])
   height: 100%;
   position: relative;
   overflow: hidden;
+}
+
+/* Změna zvýraznění na pivní žlutou barvu z hoveru */
+.card.is-fav { 
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
 .card:hover {
@@ -104,8 +133,25 @@ defineEmits(['showDetail'])
 
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; overflow: hidden; flex: 1; }
 
-.title-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
-.card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
+.title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; flex: 1; }
+
+.action-wrap { display: flex; align-items: center; gap: 0.5rem; }
+
+.fav-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  box-shadow: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fav-btn:hover { transform: scale(1.2); color: var(--primary); }
+.fav-btn.active { color: var(--primary); }
 
 .mini-badges { display: flex; gap: 2px; }
 .m-badge { 
@@ -116,7 +162,6 @@ defineEmits(['showDetail'])
 
 .card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
 
-/* Styly pro opravdovou vlaječku */
 .flag-icon { width: 20px; height: auto; vertical-align: middle; margin-right: 0.3rem; border-radius: 2px; box-shadow: 0 0 1px rgba(0,0,0,0.3); }
 .flag { margin-right: 0.2rem; font-size: 1rem; vertical-align: middle; }
 

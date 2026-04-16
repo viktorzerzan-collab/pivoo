@@ -10,22 +10,22 @@
 
         <BaseSelect v-model="form.location_id" label="Kde to bylo?" required>
           <option disabled value="">-- Vyber lokaci --</option>
-          <option v-for="loc in locations" :key="loc.id" :value="loc.id">
-            {{ loc.name }}
+          <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
+            {{ loc.is_favorite ? '⭐ ' : '' }}{{ loc.name }}
           </option>
         </BaseSelect>
 
         <BaseSelect v-model="form.brewery_id" label="Pivovar" searchable required>
           <option disabled value="">-- Vyber pivovar --</option>
-          <option v-for="brewery in breweries" :key="brewery.id" :value="brewery.id">
-            {{ brewery.name }}
+          <option v-for="brewery in sortedBreweries" :key="brewery.id" :value="brewery.id">
+            {{ brewery.is_favorite ? '⭐ ' : '' }}{{ brewery.name }}
           </option>
         </BaseSelect>
 
         <BaseSelect v-model="form.beer_id" label="Které pivo jsi pil?" :disabled="!form.brewery_id" searchable required>
           <option disabled value="">-- Vyber pivo --</option>
-          <option v-for="beer in filteredBeers" :key="beer.id" :value="beer.id">
-            {{ beer.name }}
+          <option v-for="beer in sortedBeers" :key="beer.id" :value="beer.id">
+            {{ beer.is_favorite ? '⭐ ' : '' }}{{ beer.name }}
           </option>
         </BaseSelect>
 
@@ -94,9 +94,16 @@ const props = defineProps({
 })
 defineEmits(['close', 'submit'])
 
-const filteredBeers = computed(() => {
+// Pomocná funkce pro řazení oblíbených na začátek
+const sortByFav = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0)
+
+const sortedLocations = computed(() => [...props.locations].sort(sortByFav))
+const sortedBreweries = computed(() => [...props.breweries].sort(sortByFav))
+
+const sortedBeers = computed(() => {
   if (!props.form.brewery_id) return []
-  return props.beers.filter(b => b.brewery_id == props.form.brewery_id)
+  const filtered = props.beers.filter(b => b.brewery_id == props.form.brewery_id)
+  return [...filtered].sort(sortByFav)
 })
 
 watch(() => props.form.brewery_id, () => {
@@ -114,11 +121,9 @@ watch(() => props.form.location_id, () => {
   }
 })
 
-// OPRAVA: Nastavení aktuálního data VČETNĚ ČASU při otevření modalu
 watch(() => props.show, (newVal) => {
   if (newVal && !props.form.consumed_at) {
     const now = new Date();
-    // Vytvoříme formát YYYY-MM-DD HH:mm:ss v místním čase
     const localDateTime = now.getFullYear() + '-' + 
       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
       String(now.getDate()).padStart(2, '0') + ' ' + 

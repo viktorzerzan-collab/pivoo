@@ -1,5 +1,5 @@
 <template>
-  <div class="card brewery-card">
+  <div class="card brewery-card" :class="{ 'is-fav': brewery.is_favorite }">
     <div class="card-body">
       <div class="card-main-info">
         
@@ -9,7 +9,18 @@
         </div>
 
         <div class="text-content">
-          <h3 class="card-title">{{ brewery.name }}</h3>
+          <div class="title-row">
+            <h3 class="card-title">{{ brewery.name }}</h3>
+            <button 
+              v-if="authStore.user"
+              class="fav-btn" 
+              :class="{ 'active': brewery.is_favorite }" 
+              @click.stop="toggleFav" 
+              title="Přidat do oblíbených"
+            >
+              <StarIcon :size="20" :fill="brewery.is_favorite ? 'var(--primary)' : 'none'" :color="brewery.is_favorite ? 'var(--primary)' : 'var(--text-muted)'" />
+            </button>
+          </div>
           
           <p class="card-subtitle">
             <img v-if="brewery.country_code" :src="`https://flagcdn.com/w20/${brewery.country_code}.png`" class="flag-icon" :title="brewery.country" alt="flag" />
@@ -46,11 +57,20 @@
 <script setup>
 import { FactoryIcon, StarIcon, InfoIcon, MapPinIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
+import { useCatalogStore } from '../stores/catalog'
+import { useAuthStore } from '../stores/auth'
 
-defineProps({
+const props = defineProps({
   brewery: Object
 })
 defineEmits(['showDetail'])
+
+const catalogStore = useCatalogStore()
+const authStore = useAuthStore()
+
+const toggleFav = () => {
+  catalogStore.toggleFavorite(props.brewery.id, 'brewery')
+}
 
 const formatLocation = (brewery) => {
   let loc = brewery.city || '';
@@ -71,6 +91,12 @@ const formatLocation = (brewery) => {
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background-color 0.5s ease;
   height: 100%;
+  position: relative;
+}
+
+.card.is-fav { 
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
 .card:hover {
@@ -99,7 +125,24 @@ const formatLocation = (brewery) => {
 
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; overflow: hidden; flex: 1; }
 
-.card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
+.title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; flex: 1; }
+
+.fav-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  box-shadow: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fav-btn:hover { transform: scale(1.2); color: var(--primary); }
+.fav-btn.active { color: var(--primary); }
+
 .card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.5s ease; }
 
 .flag-icon { width: 20px; height: auto; vertical-align: middle; margin-right: 0.3rem; border-radius: 2px; box-shadow: 0 0 1px rgba(0,0,0,0.3); }
