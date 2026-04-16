@@ -12,31 +12,31 @@
         
         <BaseSelect v-model="form.type" label="Typ podniku" required>
           <option value="hospoda">Hospoda / Bar</option>
-          <option value="pivoteka">Pivotéka</option>
-          <option value="obchod">Obchod</option>
           <option value="jine">Jiné</option>
         </BaseSelect>
 
-        <BaseInput v-model="form.address" label="Ulice a číslo popisné" />
+        <template v-if="form.type !== 'jine'">
+          <BaseInput v-model="form.address" label="Ulice a číslo popisné" />
 
-        <div class="form-row">
-          <BaseInput v-model="form.city" label="Město" class="half" />
-          <BaseInput v-model="form.zip_code" label="PSČ" class="half" />
-        </div>
+          <div class="form-row">
+            <BaseInput v-model="form.city" label="Město" class="half" />
+            <BaseInput v-model="form.zip_code" label="PSČ" class="half" />
+          </div>
 
-        <BaseSelect v-model="form.country_id" label="Země">
-          <option v-for="c in countries" :key="c.id" :value="c.id">
-            {{ c.name_cz }}
-          </option>
-        </BaseSelect>
+          <BaseSelect v-model="form.country_id" label="Země">
+            <option v-for="c in countries" :key="c.id" :value="c.id">
+              {{ c.name_cz }}
+            </option>
+          </BaseSelect>
 
-        <div class="form-row">
-          <BaseInput v-model="form.email" type="email" label="E-mail" class="half" />
-          <BaseInput v-model="form.phone" label="Telefon" class="half" />
-        </div>
+          <div class="form-row">
+            <BaseInput v-model="form.email" type="email" label="E-mail" class="half" />
+            <BaseInput v-model="form.phone" label="Telefon" class="half" />
+          </div>
 
-        <BaseInput v-model="form.website" type="url" label="Webové stránky" />
-        <BaseInput v-model="form.opening_hours" label="Otevírací doba (volné pole)" placeholder="Např. Po-Pá 16:00-23:00" />
+          <BaseInput v-model="form.website" type="url" label="Webové stránky" />
+          <BaseInput v-model="form.opening_hours" label="Otevírací doba (volné pole)" placeholder="Např. Po-Pá 16:00-23:00" />
+        </template>
 
         <BaseButton type="submit" variant="add" style="margin-top: 1rem;">
           Uložit podnik

@@ -4,6 +4,8 @@
       <div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div>
     </transition>
 
+    <BaseLoader :show="isLoading" />
+
     <div class="page-header">
       <h2>Katalog pivovarů</h2>
       <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
@@ -75,8 +77,6 @@
     </div>
 
     <div class="catalog-container">
-      <BaseLoader :show="isLoading" />
-
       <div v-if="isMapView" class="map-wrapper">
         <MapView 
           :items="filteredBreweries" 
@@ -176,7 +176,6 @@ const resetFilters = () => {
 
 watch([filters, sortBy], () => { currentPage.value = 1 }, { deep: true })
 
-// Sjednocené názvosloví a přidáno řazení podle města
 const sortOptions = [
   { value: 'newest', label: 'Datum přidání (Od nejnovějšího)' },
   { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' },
@@ -314,7 +313,7 @@ onMounted(() => { if (user.value) catalogStore.fetchAllData() })
 .results-count strong { color: var(--text-main); transition: color 0.5s ease; }
 
 .results-actions { display: flex; align-items: center; gap: 1rem; }
-.sort-control-wrapper { width: 260px; } /* Rozšířeno na 260px stejně jako u piv pro delší texty */
+.sort-control-wrapper { width: 260px; }
 
 .view-toggle-group {
   display: flex;

@@ -4,9 +4,11 @@
       <div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div>
     </transition>
 
+    <BaseLoader :show="isLoading" />
+
     <div class="page-header">
       <h2>Katalog podniků</h2>
-      <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
+      <button v-if="isAdmin" class="btn-add" @click="openAddModal">
         <PlusIcon :size="20" /> Přidat podnik
       </button>
     </div>
@@ -56,8 +58,6 @@
     </div>
 
     <div class="catalog-container">
-      <BaseLoader :show="isLoading" />
-
       <template v-if="filteredLocations.length > 0">
         <div class="locations-grid">
           <LocationCard 
@@ -123,6 +123,12 @@ const form = ref({
   address: '', email: '', phone: '', website: '', opening_hours: '' 
 })
 
+// PŘIDÁNO: Funkce pro otevření modalu s vynuceným resetem formuláře
+const openAddModal = () => {
+  form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
+  isAddModalOpen.value = true
+}
+
 const currentPage = ref(1)
 const itemsPerPage = 30
 
@@ -174,7 +180,6 @@ const uniqueCities = computed(() => {
 const filteredLocations = computed(() => {
   let result = (locations.value || []).filter(loc => loc.type === 'hospoda')
 
-  // Fulltext hledání už jen v názvu podniku
   if (filters.value.search) {
     const q = filters.value.search.toLowerCase()
     result = result.filter(l => l.name.toLowerCase().includes(q))
@@ -236,6 +241,7 @@ const submitLocation = async () => {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
+      // Reset formuláře po úspěšném uložení
       form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
       await catalogStore.fetchAllData()
       showToast("Podnik uložen") 

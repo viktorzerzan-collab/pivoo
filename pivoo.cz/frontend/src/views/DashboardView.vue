@@ -82,14 +82,14 @@ const selectedEditRecordId = ref(null)
 const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
 const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
 
-// 1. Načtení dat při příchodu z jiné stránky (kdy už uživatel existuje)
+// 1. Načtení dat při příchodu z jiné stránky
 onMounted(() => { 
   if (authStore.user) {
     catalogStore.fetchAllData() 
   }
 })
 
-// 2. Načtení dat po tvrdém obnovení (F5) - jakmile aplikace zjistí, že je uživatel přihlášen
+// 2. Načtení dat po tvrdém obnovení (F5)
 watch(() => authStore.user, (newUser) => {
   if (newUser) {
     catalogStore.fetchAllData()

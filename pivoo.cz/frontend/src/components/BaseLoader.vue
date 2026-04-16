@@ -12,7 +12,8 @@
 <script setup>
 defineProps({
   show: Boolean,
-  message: { type: String, default: 'Načítám data...' }
+  // Sjednocený výchozí text pro celou aplikaci
+  message: { type: String, default: 'Probíhá načítání...' }
 })
 </script>
 

@@ -28,11 +28,13 @@ if ($period === 'month') {
 
 if ($db) {
     try {
-        // 1. Součty
+        // 1. Součty (Upraveno pro potřeby frontendu)
         $query = "SELECT 
-                    SUM(volume * quantity) as total_liters, 
-                    SUM(price * quantity) as total_spent,
-                    SUM(quantity) as total_beers
+                    SUM(quantity) as total_beers,
+                    COUNT(DISTINCT beer_id) as unique_beers,
+                    SUM(price * quantity) as total_price,
+                    COUNT(DISTINCT location_id) as unique_locations,
+                    SUM(volume * quantity) as total_liters
                   FROM consumptions 
                   WHERE user_id = :uid" . $dateCondition;
                   
@@ -56,10 +58,12 @@ if ($db) {
 
         echo json_encode([
             "status" => "success",
-            "stats" => [
-                "liters" => $stats['total_liters'] ? round($stats['total_liters'], 2) : 0,
-                "spent" => $stats['total_spent'] ? (int)$stats['total_spent'] : 0,
-                "count" => $stats['total_beers'] ? (int)$stats['total_beers'] : 0,
+            "data" => [
+                "total_beers" => $stats['total_beers'] ? (int)$stats['total_beers'] : 0,
+                "unique_beers" => $stats['unique_beers'] ? (int)$stats['unique_beers'] : 0,
+                "total_price" => $stats['total_price'] ? (float)$stats['total_price'] : 0,
+                "unique_locations" => $stats['unique_locations'] ? (int)$stats['unique_locations'] : 0,
+                "total_liters" => $stats['total_liters'] ? round($stats['total_liters'], 2) : 0,
                 "favorite" => $fav ? $fav['name'] : 'Žádné záznamy'
             ]
         ]);

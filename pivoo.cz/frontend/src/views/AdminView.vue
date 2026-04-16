@@ -37,6 +37,7 @@
               <tr v-else>
                 <th>Název</th>
                 <th v-if="activeTab !== 'styles'">Info</th>
+                <th v-if="activeTab === 'locations'" class="desktop-only">Typ podniku</th>
                 <th class="w-100 text-right">Akce</th>
               </tr>
             </thead>
@@ -103,6 +104,9 @@
                         <strong>{{ item.name }}</strong>
                         <small v-if="activeTab === 'beers'" class="mobile-only">{{ item.brewery_name }}</small>
                         <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only">{{ item.city || 'Lokalita neuvedena' }}</small>
+                        <small v-if="activeTab === 'locations'" class="mobile-only">
+                          Typ: {{ item.type === 'hospoda' ? 'Hospoda / Bar' : (item.type === 'jine' ? 'Jiné' : item.type) }}
+                        </small>
                       </div>
                     </div>
                   </td>
@@ -114,6 +118,11 @@
                   <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Město" class="desktop-only">
                     <div class="td-content">
                       {{ item.city || '-' }}
+                    </div>
+                  </td>
+                  <td v-if="activeTab === 'locations'" data-label="Typ podniku" class="desktop-only">
+                    <div class="td-content">
+                      {{ item.type === 'hospoda' ? 'Hospoda / Bar' : (item.type === 'jine' ? 'Jiné' : item.type) }}
                     </div>
                   </td>
                   <td data-label="Akce">
@@ -291,7 +300,7 @@ const paginatedCurrentItems = computed(() => {
 
 const formData = ref({
   beer: { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false },
-  brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null },
+  brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null },
   location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' },
   style: { id: null, name: '' },
   user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
@@ -319,10 +328,19 @@ const openAddModal = (t) => {
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
   const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
   
+  // OPRAVA: Resetování formuláře na výchozí hodnoty při každém novém přidání
   if (keyMap === 'beer') {
     formData.value.beer = { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false }
+  } else if (keyMap === 'brewery') {
+    formData.value.brewery = { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null }
+  } else if (keyMap === 'location') {
+    formData.value.location = { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
+  } else if (keyMap === 'style') {
+    formData.value.style = { id: null, name: '' }
+  } else if (keyMap === 'user') {
+    formData.value.user = { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
   }
-  if (keyMap === 'brewery') formData.value.brewery.logoFile = null
+  
   modals.value[keyMap] = true 
 }
 

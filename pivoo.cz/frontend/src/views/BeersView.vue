@@ -1,5 +1,7 @@
 <template>
   <div class="beers-page">
+    <BaseLoader :show="isLoading" />
+
     <div class="page-header">
       <h2>Katalog piv</h2>
       <button v-if="authStore.user" class="btn-add" @click="isAddModalOpen = true">
@@ -59,8 +61,6 @@
     </div>
 
     <div class="catalog-container">
-      <BaseLoader :show="isLoading" />
-      
       <template v-if="filteredAndSortedBeers.length > 0">
         <div class="beers-grid">
           <BeerCard 
@@ -88,8 +88,7 @@
         <button class="btn-secondary mt-2" @click="resetFilters">Zrušit filtry</button>
       </div>
     </div>
-
-    </div>
+  </div>
 </template>
 
 <script setup>
@@ -111,8 +110,9 @@ const authStore = useAuthStore()
 
 const { beers, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
+// OPRAVA: Vždy načítáme aktuální data, aby se zobrazil loader
 onMounted(() => {
-  if (beers.value.length === 0) catalogStore.fetchAllData()
+  catalogStore.fetchAllData()
 })
 
 const isAddModalOpen = ref(false)

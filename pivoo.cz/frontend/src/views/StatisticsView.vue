@@ -25,7 +25,7 @@
           
           <div class="panel-card stats-card">
             <div class="panel-header">
-              <h3><BeerIcon :size="20" class="panel-icon" /> {{ scope === 'me' ? 'Nejoblíbenější piva' : 'Nejvypitější piva' }}</h3>
+              <h3><BeerIcon :size="20" class="panel-icon" /> Nejoblíbenější piva</h3>
             </div>
             <div class="ranking-list" v-if="statsData.beers.length > 0">
               <div v-for="(item, index) in statsData.beers" :key="index" class="ranking-item">
@@ -59,7 +59,7 @@
 
           <div class="panel-card stats-card">
             <div class="panel-header">
-              <h3><MapPinIcon :size="20" class="panel-icon" /> {{ scope === 'me' ? 'Kde nejraději piju' : 'Nejoblíbenější místa' }}</h3>
+              <h3><MapPinIcon :size="20" class="panel-icon" /> Nejoblíbenější místa</h3>
             </div>
             <div class="ranking-list" v-if="statsData.locations.length > 0">
               <div v-for="(item, index) in statsData.locations" :key="index" class="ranking-item">
