@@ -1,113 +1,76 @@
 <template>
   <div class="stats-grid" v-if="stats">
-    
-    <div class="stat-card">
-      <div class="stat-icon"><BeerIcon :size="32" color="var(--primary)" /></div>
-      <div class="stat-value">{{ stats.count }}</div>
-      <div class="stat-label">Vypitých kousků</div>
-    </div>
-    
-    <div class="stat-card">
-      <div class="stat-icon"><DropletIcon :size="32" color="#3b82f6" /></div>
-      <div class="stat-value">{{ stats.liters }} l</div>
-      <div class="stat-label">Celkový objem</div>
-    </div>
-    
-    <div class="stat-card">
-      <div class="stat-icon"><CoinsIcon :size="32" color="#10b981" /></div>
-      <div class="stat-value">{{ stats.spent }} Kč</div>
-      <div class="stat-label">Utraceno</div>
-    </div>
-    
-    <div class="stat-card">
-      <div class="stat-icon"><CrownIcon :size="32" color="#f59e0b" /></div>
-      <div class="stat-value fav-beer">{{ stats.favorite }}</div>
-      <div class="stat-label">Nejoblíbenější</div>
+    <div class="stat-box">
+      <div class="stat-icon-wrapper">
+        <BeerIcon :size="24" class="stat-icon" />
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Vypitá piva</span>
+        <span class="stat-value">{{ stats.total_beers || 0 }}</span>
+      </div>
     </div>
 
+    <div class="stat-box">
+      <div class="stat-icon-wrapper">
+        <CalendarIcon :size="24" class="stat-icon" />
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Různých druhů</span>
+        <span class="stat-value">{{ stats.unique_beers || 0 }}</span>
+      </div>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-icon-wrapper">
+        <CoinsIcon :size="24" class="stat-icon" />
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Útrata</span>
+        <span class="stat-value">{{ totalPrice }} Kč</span>
+      </div>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-icon-wrapper">
+        <MapPinIcon :size="24" class="stat-icon" />
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Podniků</span>
+        <span class="stat-value">{{ stats.unique_locations || 0 }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <div v-else class="empty-stats">
+    <p>Načítám tvé statistiky...</p>
   </div>
 </template>
 
 <script setup>
-import { BeerIcon, DropletIcon, CoinsIcon, CrownIcon } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { BeerIcon, CalendarIcon, CoinsIcon, MapPinIcon } from 'lucide-vue-next'
 
-defineProps({
-  stats: { type: Object, required: false }
+const props = defineProps({
+  stats: {
+    type: Object,
+    default: null // Změněno na null pro lepší detekci stavu načítání
+  }
+})
+
+// Bezpečný výpočet ceny s použitím volitelného řetězení (?.)
+const totalPrice = computed(() => {
+  return props.stats?.total_price ? Math.round(Number(props.stats.total_price)) : 0
 })
 </script>
 
 <style scoped>
-.stats-grid { 
-  display: grid; 
-  grid-template-columns: repeat(4, 1fr); 
-  gap: 1.5rem; 
-  margin-bottom: 0.5rem; 
-}
-
-.stat-card { 
-  background: var(--bg-app); /* Sjednoceno s kartami historie */
-  padding: 1.5rem; 
-  border-radius: 12px; 
-  box-shadow: var(--shadow-sm); 
-  text-align: center; 
-  border: 1px solid var(--border); 
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: default;
-}
-
-/* Interaktivní efekt při najetí/kliku */
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow);
-  border-color: var(--primary);
-}
-
-.stat-icon { 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  margin-bottom: 0.75rem; 
-}
-
-.stat-value { 
-  font-size: 1.75rem; 
-  font-weight: 800; 
-  color: var(--text-main); 
-  margin-bottom: 0.25rem; 
-  transition: color 0.5s ease; 
-  line-height: 1.2;
-}
-
-.stat-value.fav-beer { 
-  font-size: 1.1rem; 
-  word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-} 
-
-.stat-label { 
-  color: var(--text-muted); 
-  font-size: 0.75rem; 
-  font-weight: 700; 
-  text-transform: uppercase; 
-  letter-spacing: 0.05em; 
-  transition: color 0.5s ease; 
-}
-
-@media (max-width: 900px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-  .stat-card { padding: 1.25rem; }
-  .stat-value { font-size: 1.4rem; }
-}
-
-@media (max-width: 480px) {
-  .stat-value { font-size: 1.25rem; }
-  .stat-label { font-size: 0.65rem; }
-}
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.stat-box { background: var(--bg-app); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.3s ease; }
+.stat-box:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.stat-icon-wrapper { background: rgba(250, 204, 21, 0.15); color: var(--primary); padding: 0.75rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.stat-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.stat-value { font-size: 1.25rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+.empty-stats { padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; background: var(--bg-app); border-radius: 10px; border: 1px dashed var(--border); }
+@media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
 </style>
