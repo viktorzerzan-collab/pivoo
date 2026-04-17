@@ -35,7 +35,8 @@
           </div>
 
           <BaseInput v-model="form.website" type="url" label="Webové stránky" />
-          <BaseInput v-model="form.opening_hours" label="Otevírací doba (volné pole)" placeholder="Např. Po-Pá 16:00-23:00" />
+          
+          <OpeningHoursInput v-model="form.opening_hours" label="Otevírací doba" />
         </template>
 
         <BaseButton type="submit" variant="add" style="margin-top: 1rem;">
@@ -52,6 +53,7 @@ import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
+import OpeningHoursInput from '../OpeningHoursInput.vue' // PŘIDÁNO
 
 defineProps({
   show: Boolean,

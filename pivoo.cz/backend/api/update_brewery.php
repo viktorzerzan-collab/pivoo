@@ -75,15 +75,16 @@ if (!empty($data->id) && !empty($data->name)) {
         $website = !empty($data->website) ? $data->website : null;
         $lat = !empty($data->lat) ? $data->lat : null;
         $lng = !empty($data->lng) ? $data->lng : null;
+        $opening_hours = !empty($data->opening_hours) ? $data->opening_hours : null;
 
         if ($new_logo_filename) {
-            $query = "UPDATE breweries SET name=?, city=?, country_id=?, address=?, zip_code=?, email=?, phone=?, website=?, lat=?, lng=?, logo=? WHERE id=?";
+            $query = "UPDATE breweries SET name=?, city=?, country_id=?, address=?, zip_code=?, email=?, phone=?, website=?, lat=?, lng=?, opening_hours=?, logo=? WHERE id=?";
             $stmt = $db->prepare($query);
-            $params = [$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $new_logo_filename, $data->id];
+            $params = [$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $opening_hours, $new_logo_filename, $data->id];
         } else {
-            $query = "UPDATE breweries SET name=?, city=?, country_id=?, address=?, zip_code=?, email=?, phone=?, website=?, lat=?, lng=? WHERE id=?";
+            $query = "UPDATE breweries SET name=?, city=?, country_id=?, address=?, zip_code=?, email=?, phone=?, website=?, lat=?, lng=?, opening_hours=? WHERE id=?";
             $stmt = $db->prepare($query);
-            $params = [$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $data->id];
+            $params = [$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $opening_hours, $data->id];
         }
 
         if ($stmt->execute($params)) {

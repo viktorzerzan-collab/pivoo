@@ -104,6 +104,14 @@
       @submit="submitBeer" 
     />
 
+    <DetailModal 
+      :show="isDetailOpen" 
+      :item="selectedItem" 
+      type="beer" 
+      :reviews="beerReviews"
+      @close="isDetailOpen = false" 
+    />
+
     <transition name="toast-fade">
       <div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div>
     </transition>
@@ -125,6 +133,7 @@ import BeerCard from '../components/BeerCard.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePagination from '../components/BasePagination.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
+import DetailModal from '../components/modals/DetailModal.vue'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
@@ -138,6 +147,11 @@ onMounted(() => {
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
+
+// Stav pro detail piva
+const isDetailOpen = ref(false)
+const selectedItem = ref(null)
+const beerReviews = ref([])
 
 const beerForm = ref({ 
   name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', 
@@ -276,7 +290,21 @@ const paginatedBeers = computed(() => {
   return filteredAndSortedBeers.value.slice(start, start + itemsPerPage)
 })
 
-const openDetail = (beer) => { /* Detail emit */ }
+// Implementace funkce pro otevření detailu a načtení recenzí piva
+const openDetail = async (beer) => {
+  selectedItem.value = beer
+  isDetailOpen.value = true
+  beerReviews.value = [] // Resetujeme předchozí recenze
+  
+  try {
+    const res = await apiFetch(`/beer_reviews.php?beer_id=${beer.id}`)
+    if (res.status === 'success') {
+      beerReviews.value = res.data
+    }
+  } catch (error) {
+    console.error("Chyba při načítání recenzí piva", error)
+  }
+}
 </script>
 
 <style scoped>

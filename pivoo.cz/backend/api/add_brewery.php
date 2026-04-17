@@ -58,9 +58,9 @@ if (!empty($data->name)) {
             }
         }
 
-        // Přidány sloupce lat a lng do dotazu
-        $query = "INSERT INTO breweries (name, city, country_id, address, zip_code, email, phone, website, lat, lng, is_approved, logo) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+        // Přidány sloupce lat, lng a nově opening_hours do dotazu
+        $query = "INSERT INTO breweries (name, city, country_id, address, zip_code, email, phone, website, lat, lng, opening_hours, is_approved, logo) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
         $stmt = $db->prepare($query);
         
         $city = !empty($data->city) ? $data->city : null;
@@ -72,8 +72,9 @@ if (!empty($data->name)) {
         $website = !empty($data->website) ? $data->website : null;
         $lat = !empty($data->lat) ? $data->lat : null;
         $lng = !empty($data->lng) ? $data->lng : null;
+        $opening_hours = !empty($data->opening_hours) ? $data->opening_hours : null;
 
-        if ($stmt->execute([$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $logo_filename])) {
+        if ($stmt->execute([$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $opening_hours, $logo_filename])) {
             echo json_encode(["status" => "success", "message" => "Pivovar byl úspěšně přidán do katalogu."]);
         } else {
             http_response_code(500);

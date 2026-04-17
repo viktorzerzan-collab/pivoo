@@ -169,7 +169,7 @@
             <ClockIcon :size="18" class="icon-muted" />
             <div class="info-text">
               <strong>Otevírací doba:</strong><br>
-              <span style="white-space: pre-line;">{{ item.opening_hours }}</span>
+              <OpeningHoursDisplay :openingHours="item.opening_hours" />
             </div>
           </div>
           
@@ -211,6 +211,7 @@ import {
   FlaskConicalIcon, TagIcon, MapIcon, ExternalLinkIcon 
 } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
+import OpeningHoursDisplay from '../OpeningHoursDisplay.vue' // PŘIDÁNO
 
 defineProps({
   show: Boolean,
@@ -261,14 +262,12 @@ const formatLocationType = (type) => {
 
 .ui-divider { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 
-/* MATICE PARAMETRŮ PRO PIVO */
 .stats-grid-complex { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
 .stat-box { background: var(--bg-app); border: 1px solid var(--border); padding: 0.75rem 0.5rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; text-align: center; color: var(--text-muted); }
 .stat-val { display: flex; flex-direction: column; line-height: 1.2; }
 .stat-val small { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; }
 .stat-val strong { font-size: 0.95rem; color: var(--text-main); }
 
-/* SEKCE S TEXTY PRO PIVO */
 .info-sections-stack { display: flex; flex-direction: column; gap: 0.75rem; }
 .info-row { display: flex; align-items: flex-start; gap: 0.75rem; background: var(--bg-app); padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--border); font-size: 0.95rem; }
 .row-icon { color: var(--text-muted); margin-top: 2px; }
@@ -287,7 +286,6 @@ const formatLocationType = (type) => {
 .rev-date { font-size: 0.75rem; color: var(--text-muted); }
 .empty-reviews { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 2rem; border: 1px dashed var(--border); border-radius: 12px; }
 
-/* KONTAKTY PRO PIVOVAR/PODNIK */
 .contact-list { display: flex; flex-direction: column; gap: 1.25rem; }
 .info-item { display: flex; align-items: flex-start; gap: 0.85rem; font-size: 0.95rem; color: var(--text-main); background: var(--bg-app); padding: 1rem; border-radius: 10px; border: 1px solid var(--border); }
 .info-text { line-height: 1.4; }

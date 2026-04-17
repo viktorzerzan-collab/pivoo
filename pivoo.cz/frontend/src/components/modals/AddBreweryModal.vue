@@ -43,6 +43,8 @@
 
         <BaseInput v-model="form.website" type="url" label="Web" />
 
+        <OpeningHoursInput v-model="form.opening_hours" label="Otevírací doba" />
+
         <BaseButton type="submit" variant="add" style="margin-top: 0.5rem; width: 100%;">
           <template #icon><SaveIcon :size="18" /></template>Uložit pivovar
         </BaseButton>
@@ -59,6 +61,7 @@ import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseFileUpload from '../BaseFileUpload.vue'
 import BaseSelect from '../BaseSelect.vue'
+import OpeningHoursInput from '../OpeningHoursInput.vue' // PŘIDÁNO
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -122,7 +125,6 @@ watch(() => props.show, (isVisible) => {
   }
 })
 
-// Sledujeme změnu ID pivovaru, aby se mapa překreslila při přepnutí bez zavření modalu
 watch(() => props.form.id, () => {
   if (props.show) {
     nextTick(() => initMap())

@@ -32,6 +32,10 @@
               <MapPinIcon :size="12" /> {{ location.address }}
             </div>
           </div>
+
+          <div class="card-meta" style="margin-top: 0.5rem;" @click.stop>
+            <OpeningHoursDisplay :openingHours="location.opening_hours" />
+          </div>
           
           <div v-if="location.avg_rating" class="card-rating">
             <StarIcon :size="14" fill="#0ea5e9" color="#0ea5e9" />
@@ -58,6 +62,7 @@ import { MapPinIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
+import OpeningHoursDisplay from './OpeningHoursDisplay.vue'
 
 const props = defineProps({ location: Object })
 defineEmits(['showDetail'])
@@ -78,15 +83,16 @@ const formatType = (type) => {
 <style scoped>
 .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; height: 100%; position: relative; }
 .card.is-fav { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
-.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); background-color: var(--card-hover-bg); }
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); background-color: var(--card-hover-bg); z-index: 10; }
 .card-body { padding: 1.25rem; flex-grow: 1; }
 .card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 
 .icon-wrapper { padding: 0.75rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-/* ZMĚNA: Tmavé pozadí pro ikonu */
 .location-bg { background: #1e293b; }
 
-.text-content { display: flex; flex-direction: column; gap: 0.35rem; overflow: hidden; flex: 1; }
+/* OPRAVA: Odstraněno overflow: hidden, nahrazeno min-width: 0 */
+.text-content { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; flex: 1; }
+
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .action-wrap { display: flex; align-items: center; gap: 0.5rem; }
