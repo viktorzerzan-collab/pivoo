@@ -66,11 +66,9 @@
                           </span>
                           <span v-if="u.is_banned" class="badge banned-badge">BANNED</span>
                         </div>
-                        <small style="display: block; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <small class="user-meta-row">
                           {{ u.first_name }} {{ u.last_name }}
-                          <span class="mobile-only" style="color: var(--text-muted); opacity: 0.7; margin-left: 4px;">
-                            • {{ u.email }}
-                          </span>
+                          <span class="mobile-only meta-sep">• {{ u.email }}</span>
                         </small>
                       </div>
                     </div>
@@ -121,8 +119,8 @@
                         
                         <small v-if="activeTab === 'beers'" class="mobile-only">{{ item.brewery_name }} • {{ item.style }}</small>
                         
-                        <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only" style="display: flex; align-items: center; gap: 5px;">
-                          <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" style="width: 16px; height: auto; border-radius: 1px;" />
+                        <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only combined-meta">
+                          <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" class="mobile-flag" />
                           {{ item.city || 'Lokalita neuvedena' }}{{ item.city && item.country ? ', ' : '' }}{{ item.country }}
                         </small>
 
@@ -562,6 +560,12 @@ const handleDelete = async () => {
 /* FIX: Udržení jména a odznaku v jedné linii */
 .info-top-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 
+.user-meta-row { display: block; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta-sep { color: var(--text-muted); opacity: 0.7; margin-left: 4px; }
+
+.combined-meta { display: none; align-items: center; gap: 5px; }
+.mobile-flag { width: 16px; height: auto; border-radius: 1px; }
+
 .action-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .admin-action-btn { color: white; border: none; transition: transform 0.2s; }
 .admin-action-btn:hover { transform: scale(1.05); }
@@ -587,6 +591,7 @@ const handleDelete = async () => {
   .section-header .btn-add { width: 100%; padding: 1rem; order: -1; }
   .admin-section { padding: 1.25rem; }
   .mobile-only { display: block; }
+  .combined-meta { display: flex !important; }
   .desktop-only { display: none !important; }
 
   .admin-table thead { display: none; }
