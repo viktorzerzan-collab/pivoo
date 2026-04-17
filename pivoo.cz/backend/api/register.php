@@ -20,21 +20,44 @@ try {
     $birthdate = $_POST['birthdate'] ?? '';
 
     if (empty($username) || empty($first_name) || empty($last_name) || empty($email) || empty($password) || empty($birthdate)) {
+        http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Vyplňte všechny povinné údaje."]);
         exit();
     }
 
-    $bday = new DateTime($birthdate);
-    $today = new DateTime('today');
-    if ($bday->diff($today)->y < 18) {
-        echo json_encode(["status" => "error", "message" => "Musí vám být 18+."]);
+    // OPRAVA 1: Validace správného formátu e-mailu
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Neplatný formát e-mailové adresy."]);
+        exit();
+    }
+
+    // OPRAVA 2: Backendová validace délky hesla
+    if (strlen($password) < 8) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Heslo musí mít alespoň 8 znaků."]);
+        exit();
+    }
+
+    // OPRAVA 3: Bezpečné parsování data narození
+    try {
+        $bday = new DateTime($birthdate);
+        $today = new DateTime('today');
+        if ($bday->diff($today)->y < 18) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Musí vám být 18+."]);
+            exit();
+        }
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Neplatný formát data narození."]);
         exit();
     }
 
     $avatar_filename = null;
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         
-        // ZMĚNA: Backendová validace velikosti souboru (max 5 MB)
+        // Backendová validace velikosti souboru (max 5 MB)
         if ($_FILES['avatar']['size'] > 5 * 1024 * 1024) {
             http_response_code(400);
             echo json_encode(["status" => "error", "message" => "Soubor profilové fotky je příliš velký. Maximum je 5 MB."]);
@@ -88,7 +111,7 @@ try {
     echo json_encode(["status" => "success", "message" => "Registrace úspěšná."]);
 
 } catch (Throwable $e) {
-    // ZMĚNA: Zalognutí chyb a zobrazení bezpečné zprávy pro případ duplicitních mailů atd.
+    // Zalognutí chyb a zobrazení bezpečné zprávy pro případ duplicitních mailů atd.
     error_log("DB Error (register): " . $e->getMessage());
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Chyba při registraci (uživatelské jméno nebo e-mail už možná existuje)."]);

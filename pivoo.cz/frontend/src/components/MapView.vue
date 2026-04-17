@@ -23,6 +23,20 @@ const mapElement = ref(null)
 let map = null
 let markersGroup = null
 
+// Pomocná funkce pro ochranu proti XSS
+const escapeHTML = (str) => {
+  if (!str) return '';
+  return str.toString().replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
+}
+
 const initMap = () => {
   // Inicializace mapy (střed ČR)
   map = L.map('map').setView([49.8175, 15.4730], 7)
@@ -52,11 +66,11 @@ const updateMarkers = () => {
     if (item.lat && item.lng) {
       const marker = L.marker([item.lat, item.lng], { icon: customIcon })
       
-      // Bublina po kliknutí
+      // Bublina po kliknutí s využitím escapeHTML
       const popupContent = `
         <div class="map-popup">
-          <strong>${item.name}</strong><br>
-          ${item.city || ''}<br>
+          <strong>${escapeHTML(item.name)}</strong><br>
+          ${escapeHTML(item.city || '')}<br>
           <button class="popup-btn" id="btn-${item.id}">Zobrazit detail</button>
         </div>
       `
