@@ -59,7 +59,7 @@
           </BaseSelect>
         </div>
 
-        <span class="results-count">Nalezeno piv: <strong>{{ filteredAndSortedBeers.length }}</strong></span>
+        <span class="results-count">Nalezeno piv: <strong>{{ totalItems }}</strong></span>
         
         <div class="desktop-action-bar">
           <button v-if="authStore.user" class="btn-add" @click="openAddModal">
@@ -70,10 +70,10 @@
     </div>
 
     <div class="catalog-container">
-      <template v-if="filteredAndSortedBeers.length > 0">
+      <template v-if="beers.length > 0">
         <div class="beers-grid">
           <BeerCard 
-            v-for="beer in paginatedBeers" 
+            v-for="beer in beers" 
             :key="beer.id" 
             :beer="beer" 
             @showDetail="openDetail"
@@ -138,17 +138,97 @@ import DetailModal from '../components/modals/DetailModal.vue'
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
 
-const { beers, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
+// Vytáhneme potřebná data včetně beersPagination pro stránkovač
+const { beers, beersPagination, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
-onMounted(() => {
-  catalogStore.fetchAllData()
+const currentPage = ref(1)
+const itemsPerPage = 12
+const sortBy = ref('name_asc')
+
+const initialFilters = {
+  search: '', brewery: '', style: '', country: '',
+  epm: { min: '', max: '' }, abv: { min: '', max: '' }, ibu: { min: '', max: '' }
+}
+const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
+
+// Dynamicky získané hodnoty z backendového stránkovače
+const totalPages = computed(() => beersPagination.value?.total_pages || 1)
+const totalItems = computed(() => beersPagination.value?.total || 0)
+
+// Funkce, která pošle parametry z filtrů do API
+const loadBeers = async () => {
+  const params = {
+    page: currentPage.value,
+    limit: itemsPerPage,
+    search: filters.value.search,
+    brewery: filters.value.brewery,
+    style: filters.value.style,
+    country: filters.value.country,
+    epm_min: filters.value.epm.min,
+    epm_max: filters.value.epm.max,
+    abv_min: filters.value.abv.min,
+    abv_max: filters.value.abv.max,
+    ibu_min: filters.value.ibu.min,
+    ibu_max: filters.value.ibu.max,
+    sort: sortBy.value
+  }
+  await catalogStore.fetchBeers(params)
+}
+
+// Sledování změn (pokud změníme filtr, jdeme na stranu 1)
+watch([filters, sortBy], () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1 // Spustí watcher pro currentPage
+  } else {
+    loadBeers()
+  }
+}, { deep: true })
+
+watch(currentPage, () => {
+  loadBeers()
 })
 
+onMounted(async () => {
+  // Stáhneme číselníky (pivovary, styly) pro formulář a filtry
+  await catalogStore.fetchAllData()
+  // Stáhneme paginovaná piva
+  loadBeers()
+})
+
+const resetFilters = () => {
+  filters.value = JSON.parse(JSON.stringify(initialFilters))
+  sortBy.value = 'name_asc'
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+  } else {
+    loadBeers()
+  }
+}
+
+const sortOptions = [
+  { value: 'name_asc', label: 'Název (A-Z)' },
+  { value: 'name_desc', label: 'Název (Z-A)' },
+  { value: 'brewery_asc', label: 'Pivovar (A-Z)' },
+  { value: 'brewery_desc', label: 'Pivovar (Z-A)' },
+  { value: 'style_asc', label: 'Styl (A-Z)' },
+  { value: 'style_desc', label: 'Styl (Z-A)' },
+  { value: 'rating_desc', label: 'Hodnocení (Nejlepší)' },
+  { value: 'rating_asc', label: 'Hodnocení (Nejhorší)' },
+  { value: 'abv_desc', label: 'Alkohol (Nejsilnější)' },
+  { value: 'abv_asc', label: 'Alkohol (Nejslabší)' },
+  { value: 'epm_desc', label: 'Stupňovitost (Nejvyšší)' },
+  { value: 'epm_asc', label: 'Stupňovitost (Nejnižší)' },
+  { value: 'ibu_desc', label: 'Hořkost (Nejvyšší)' },
+  { value: 'ibu_asc', label: 'Hořkost (Nejnižší)' },
+  { value: 'newest', label: 'Datum přidání (Od nejnovějšího)' },
+  { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' }
+]
+
+// --- Logika Modálů ---
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 
-// Stav pro detail piva
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
 const beerReviews = ref([])
@@ -181,7 +261,7 @@ const submitBeer = async () => {
     })
     if (res.status === 'success') { 
       isAddModalOpen.value = false
-      await catalogStore.fetchAllData()
+      await loadBeers() // Refresh gridu po přidání piva
       showToast("Pivo bylo úspěšně přidáno") 
     } else {
       showToast(res.message || "Chyba při ukládání", "toast-error")
@@ -191,110 +271,10 @@ const submitBeer = async () => {
   }
 }
 
-const currentPage = ref(1)
-const itemsPerPage = 12
-
-const initialFilters = {
-  search: '', brewery: '', style: '', country: '',
-  epm: { min: '', max: '' }, abv: { min: '', max: '' }, ibu: { min: '', max: '' }
-}
-
-const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
-const sortBy = ref('name_asc')
-
-const resetFilters = () => {
-  filters.value = JSON.parse(JSON.stringify(initialFilters))
-  sortBy.value = 'name_asc'
-  currentPage.value = 1
-}
-
-watch([filters, sortBy], () => { currentPage.value = 1 }, { deep: true })
-
-const sortOptions = [
-  { value: 'name_asc', label: 'Název (A-Z)' },
-  { value: 'name_desc', label: 'Název (Z-A)' },
-  { value: 'brewery_asc', label: 'Pivovar (A-Z)' },
-  { value: 'brewery_desc', label: 'Pivovar (Z-A)' },
-  { value: 'style_asc', label: 'Styl (A-Z)' },
-  { value: 'style_desc', label: 'Styl (Z-A)' },
-  { value: 'rating_desc', label: 'Hodnocení (Nejlepší)' },
-  { value: 'rating_asc', label: 'Hodnocení (Nejhorší)' },
-  { value: 'abv_desc', label: 'Alkohol (Nejsilnější)' },
-  { value: 'abv_asc', label: 'Alkohol (Nejslabší)' },
-  { value: 'epm_desc', label: 'Stupňovitost (Nejvyšší)' },
-  { value: 'epm_asc', label: 'Stupňovitost (Nejnižší)' },
-  { value: 'ibu_desc', label: 'Hořkost (Nejvyšší)' },
-  { value: 'ibu_asc', label: 'Hořkost (Nejnižší)' },
-  { value: 'newest', label: 'Datum přidání (Od nejnovějšího)' },
-  { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' }
-]
-
-const filteredAndSortedBeers = computed(() => {
-  let result = [...beers.value]
-
-  if (filters.value.search) {
-    const q = filters.value.search.toLowerCase()
-    result = result.filter(b => b.name.toLowerCase().includes(q))
-  }
-  if (filters.value.brewery) result = result.filter(b => b.brewery_id == filters.value.brewery)
-  if (filters.value.style) result = result.filter(b => b.style_id == filters.value.style)
-  if (filters.value.country) {
-    result = result.filter(b => {
-      const br = breweries.value.find(brew => brew.id == b.brewery_id)
-      return br && br.country_id == filters.value.country
-    })
-  }
-
-  const applyRange = (val, range) => {
-    if (val == null || val === '') return true
-    const n = Number(val)
-    if (range.min !== '' && n < Number(range.min)) return false
-    if (range.max !== '' && n > Number(range.max)) return false
-    return true
-  }
-  result = result.filter(b => applyRange(b.epm, filters.value.epm))
-  result = result.filter(b => applyRange(b.abv, filters.value.abv))
-  result = result.filter(b => applyRange(b.ibu, filters.value.ibu))
-
-  result.sort((a, b) => {
-    if (a.is_favorite !== b.is_favorite) {
-      return (b.is_favorite || 0) - (a.is_favorite || 0)
-    }
-    const getNum = (obj, prop) => (obj[prop] != null && obj[prop] !== '') ? Number(obj[prop]) : null
-    switch (sortBy.value) {
-      case 'name_asc': return a.name.localeCompare(b.name)
-      case 'name_desc': return b.name.localeCompare(a.name)
-      case 'brewery_asc': return (a.brewery_name || '').localeCompare(b.brewery_name || '')
-      case 'brewery_desc': return (b.brewery_name || '').localeCompare(a.brewery_name || '')
-      case 'style_asc': return (a.style || '').localeCompare(b.style || '')
-      case 'style_desc': return (b.style || '').localeCompare(a.style || '')
-      case 'rating_desc': return (getNum(b, 'avg_rating') || 0) - (getNum(a, 'avg_rating') || 0)
-      case 'rating_asc': return (getNum(a, 'avg_rating') || 0) - (getNum(b, 'avg_rating') || 0)
-      case 'abv_desc': return (getNum(b, 'abv') || 0) - (getNum(a, 'abv') || 0)
-      case 'abv_asc': return (getNum(a, 'abv') || 0) - (getNum(b, 'abv') || 0)
-      case 'epm_desc': return (getNum(b, 'epm') || 0) - (getNum(a, 'epm') || 0)
-      case 'epm_asc': return (getNum(a, 'epm') || 0) - (getNum(b, 'epm') || 0)
-      case 'ibu_desc': return (getNum(b, 'ibu') || 0) - (getNum(a, 'ibu') || 0)
-      case 'ibu_asc': return (getNum(a, 'ibu') || 0) - (getNum(b, 'ibu') || 0)
-      case 'newest': return new Date(b.created_at) - new Date(a.created_at)
-      case 'oldest': return new Date(a.created_at) - new Date(b.created_at)
-      default: return 0
-    }
-  })
-  return result
-})
-
-const totalPages = computed(() => Math.ceil(filteredAndSortedBeers.value.length / itemsPerPage))
-const paginatedBeers = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredAndSortedBeers.value.slice(start, start + itemsPerPage)
-})
-
-// Implementace funkce pro otevření detailu a načtení recenzí piva
 const openDetail = async (beer) => {
   selectedItem.value = beer
   isDetailOpen.value = true
-  beerReviews.value = [] // Resetujeme předchozí recenze
+  beerReviews.value = [] 
   
   try {
     const res = await apiFetch(`/beer_reviews.php?beer_id=${beer.id}`)
@@ -308,6 +288,7 @@ const openDetail = async (beer) => {
 </script>
 
 <style scoped>
+/* Původní styly zůstávají zachovány, zaručuje, že design nedozná škod */
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
@@ -353,7 +334,7 @@ const openDetail = async (beer) => {
   .desktop-action-bar { display: none; }
   
   .results-bar { 
-    flex-direction: column; /* Změněno z column-reverse na column */
+    flex-direction: column; 
     align-items: stretch; 
     gap: 1rem; 
     border-bottom: none;

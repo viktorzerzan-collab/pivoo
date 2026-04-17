@@ -48,7 +48,7 @@
           </BaseSelect>
         </div>
 
-        <span class="results-count">Nalezeno pivovarů: <strong>{{ filteredBreweries.length }}</strong></span>
+        <span class="results-count">Nalezeno pivovarů: <strong>{{ totalItems }}</strong></span>
         
         <div class="desktop-action-bar">
           <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
@@ -59,10 +59,10 @@
     </div>
 
     <div class="catalog-container">
-      <div v-if="filteredBreweries.length > 0" class="list-wrapper">
+      <div v-if="breweries.length > 0" class="list-wrapper">
         <div class="breweries-grid">
           <BreweryCard 
-            v-for="brewery in paginatedBreweries" 
+            v-for="brewery in breweries" 
             :key="brewery.id" 
             :brewery="brewery" 
             @showDetail="openDetail" 
@@ -110,7 +110,9 @@ import BasePagination from '../components/BasePagination.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore)
-const { breweries, countries, isLoading } = storeToRefs(catalogStore)
+
+// Přidáno breweriesPagination pro stránkování
+const { breweries, breweriesPagination, countries, isLoading } = storeToRefs(catalogStore)
 const isAdmin = computed(() => user.value?.role === 'admin')
 
 const isAddModalOpen = ref(false)
@@ -126,19 +128,49 @@ const form = ref({
 
 const currentPage = ref(1)
 const itemsPerPage = 30
-// VÝCHOZÍ ŘAZENÍ NASTAVENO NA NÁZEV
 const sortBy = ref('name_asc')
 
 const initialFilters = { search: '', city: '', country: '' }
 const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 
+// Nová data pro počty z backendu
+const totalPages = computed(() => breweriesPagination.value?.total_pages || 1)
+const totalItems = computed(() => breweriesPagination.value?.total || 0)
+
+// Odeslání filtrů na API
+const loadBreweries = async () => {
+  const params = {
+    page: currentPage.value,
+    limit: itemsPerPage,
+    search: filters.value.search,
+    city: filters.value.city,
+    country: filters.value.country,
+    sort: sortBy.value
+  }
+  await catalogStore.fetchBreweries(params)
+}
+
 const resetFilters = () => {
   filters.value = JSON.parse(JSON.stringify(initialFilters))
   sortBy.value = 'name_asc'
-  currentPage.value = 1
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+  } else {
+    loadBreweries()
+  }
 }
 
-watch([filters, sortBy], () => { currentPage.value = 1 }, { deep: true })
+watch([filters, sortBy], () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+  } else {
+    loadBreweries()
+  }
+}, { deep: true })
+
+watch(currentPage, () => {
+  loadBreweries()
+})
 
 const sortOptions = [
   { value: 'name_asc', label: 'Název (A-Z)' },
@@ -161,45 +193,6 @@ const uniqueCities = computed(() => {
     })
   }
   return Array.from(cities).sort((a, b) => a.localeCompare(b))
-})
-
-const filteredBreweries = computed(() => {
-  let result = [...(breweries.value || [])]
-
-  if (filters.value.search) {
-    const q = filters.value.search.toLowerCase()
-    result = result.filter(b => b.name.toLowerCase().includes(q))
-  }
-  if (filters.value.city) result = result.filter(b => b.city === filters.value.city)
-  if (filters.value.country) result = result.filter(b => b.country_id == filters.value.country)
-
-  result.sort((a, b) => {
-    if (a.is_favorite !== b.is_favorite) {
-      return (b.is_favorite || 0) - (a.is_favorite || 0)
-    }
-
-    const getRating = (obj) => parseFloat(obj.avg_rating) || 0
-
-    switch (sortBy.value) {
-      case 'name_asc': return a.name.localeCompare(b.name)
-      case 'name_desc': return b.name.localeCompare(a.name)
-      case 'city_asc': return (a.city || '').localeCompare(b.city || '')
-      case 'city_desc': return (b.city || '').localeCompare(a.city || '')
-      case 'rating_desc': return getRating(b) - getRating(a)
-      case 'rating_asc': return getRating(a) - getRating(b)
-      case 'newest': return new Date(b.created_at) - new Date(a.created_at)
-      case 'oldest': return new Date(a.created_at) - new Date(b.created_at)
-      default: return 0
-    }
-  })
-
-  return result
-})
-
-const totalPages = computed(() => Math.ceil(filteredBreweries.value.length / itemsPerPage))
-const paginatedBreweries = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredBreweries.value.slice(start, start + itemsPerPage)
 })
 
 const openDetail = (item) => { 
@@ -225,16 +218,22 @@ const submitBrewery = async () => {
     if (result.status === 'success') { 
       isAddModalOpen.value = false
       form.value = { name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null }
-      await catalogStore.fetchAllData()
+      await loadBreweries() // Obnovení aktuálního gridu z backendu
       showToast("Pivovar přidán") 
     }
   } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
-onMounted(() => { catalogStore.fetchAllData() })
+onMounted(async () => {
+  // Inicializace číselníků
+  await catalogStore.fetchAllData()
+  // Načtení dat pro aktuální view
+  loadBreweries()
+})
 </script>
 
 <style scoped>
+/* Původní styly zachovány */
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
@@ -270,7 +269,7 @@ onMounted(() => { catalogStore.fetchAllData() })
   .desktop-action-bar { display: none; }
   
   .results-bar { 
-    flex-direction: column; /* Změněno z column-reverse na column */
+    flex-direction: column;
     align-items: stretch; 
     gap: 1rem; 
     border-bottom: none;

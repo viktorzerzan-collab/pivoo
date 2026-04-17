@@ -70,16 +70,12 @@ class JwtHandler {
     public static function checkAdmin() {
         $token = self::getBearerToken();
         if (!$token) {
-            http_response_code(401);
-            echo json_encode(["status" => "error", "message" => "Chybí autorizační token."]);
-            exit();
+            self::sendError(401, "Chybí autorizační token.");
         }
 
         $decoded = self::decode($token);
         if (!$decoded || $decoded['role'] !== 'admin') {
-            http_response_code(401);
-            echo json_encode(["status" => "error", "message" => "Neautorizovaný přístup. Pouze pro administrátory."]);
-            exit();
+            self::sendError(401, "Neautorizovaný přístup. Pouze pro administrátory.");
         }
 
         // Dodatečná kontrola BANu přímo v databázi pro zajištění okamžitého odhlášení
@@ -92,16 +88,12 @@ class JwtHandler {
     public static function checkUser() {
         $token = self::getBearerToken();
         if (!$token) {
-            http_response_code(401);
-            echo json_encode(["status" => "error", "message" => "Chybí autorizační token. Přihlaste se."]);
-            exit();
+            self::sendError(401, "Chybí autorizační token. Přihlaste se.");
         }
 
         $decoded = self::decode($token);
         if (!$decoded) {
-            http_response_code(401);
-            echo json_encode(["status" => "error", "message" => "Neplatný nebo expirovaný token. Zkuste se přihlásit znovu."]);
-            exit();
+            self::sendError(401, "Neplatný nebo expirovaný token. Zkuste se přihlásit znovu.");
         }
 
         // Dodatečná kontrola BANu přímo v databázi pro zajištění okamžitého odhlášení
@@ -112,19 +104,37 @@ class JwtHandler {
 
     // Pomocná metoda pro ověření stavu účtu v DB (zda nedostal BAN)
     private static function verifyUserStatus($userId) {
-        $db = (new Database())->getConnection();
-        if ($db) {
+        try {
+            $db = (new Database())->getConnection();
+            if (!$db) {
+                // Fail-closed: Pokud se nelze spojit s DB, zamítneme požadavek.
+                self::sendError(500, "Nelze ověřit stav uživatele (chyba databáze).");
+            }
+
             $stmt = $db->prepare("SELECT is_banned FROM users WHERE id = ?");
             $stmt->execute([$userId]);
             $user = $stmt->fetch();
 
             if ($user && $user['is_banned'] == 1) {
-                // Kód 403 Forbidden se odešle na frontend
-                http_response_code(403);
-                echo json_encode(["status" => "error", "message" => "Váš účet byl zablokován administrátorem."]);
-                exit();
+                self::sendError(403, "Váš účet byl zablokován administrátorem.");
             }
+            
+            if (!$user) {
+                // Uživatel byl smazán z DB, ale token je stále platný
+                self::sendError(401, "Tento uživatelský účet již neexistuje.");
+            }
+        } catch (Exception $e) {
+            // Při jakékoliv chybě DB (např. spadení spojení během dotazu) zamítneme přístup
+            self::sendError(500, "Kritická chyba při ověřování zabezpečení.");
         }
+    }
+
+    // Sjednocená metoda pro odesílání chyb s hlavičkami
+    private static function sendError($code, $message) {
+        header("Content-Type: application/json; charset=UTF-8");
+        http_response_code($code);
+        echo json_encode(["status" => "error", "message" => $message]);
+        exit();
     }
 }
 ?>
