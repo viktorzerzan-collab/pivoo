@@ -61,16 +61,24 @@
                           <strong :style="u.is_banned ? 'text-decoration: line-through; color: var(--text-muted);' : ''">
                             {{ u.username }}
                           </strong>
+                          <span class="badge mobile-only" :class="u.role" style="font-size: 0.6rem; padding: 2px 6px;">
+                            {{ u.role }}
+                          </span>
                           <span v-if="u.is_banned" class="badge banned-badge">BANNED</span>
                         </div>
-                        <small>{{ u.first_name }} {{ u.last_name }}</small>
+                        <small style="display: block; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                          {{ u.first_name }} {{ u.last_name }}
+                          <span class="mobile-only" style="color: var(--text-muted); opacity: 0.7; margin-left: 4px;">
+                            • {{ u.email }}
+                          </span>
+                        </small>
                       </div>
                     </div>
                   </td>
-                  <td data-label="E-mail">
+                  <td data-label="E-mail" class="desktop-only">
                     <div class="td-content email-text">{{ u.email }}</div>
                   </td>
-                  <td data-label="Role">
+                  <td data-label="Role" class="desktop-only">
                     <div class="td-content">
                       <span class="badge" :class="u.role">{{ u.role }}</span>
                     </div>
@@ -107,13 +115,19 @@
                         <HopIcon v-else-if="activeTab === 'styles'" :size="20" color="var(--primary)" />
                       </div>
                       <div class="item-text">
-                        <strong>{{ item.name }}</strong>
+                        <div class="info-top-row">
+                          <strong>{{ item.name }}</strong>
+                        </div>
+                        
                         <small v-if="activeTab === 'beers'" class="mobile-only">{{ item.brewery_name }} • {{ item.style }}</small>
-                        <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only">{{ item.city || 'Lokalita neuvedena' }}</small>
-                        <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only">
-                          {{ item.country || 'Země neuvedena' }}
+                        
+                        <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only" style="display: flex; align-items: center; gap: 5px;">
+                          <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" style="width: 16px; height: auto; border-radius: 1px;" />
+                          {{ item.city || 'Lokalita neuvedena' }}{{ item.city && item.country ? ', ' : '' }}{{ item.country }}
                         </small>
+
                         <small v-if="activeTab === 'breweries'" class="mobile-only">Piv v katalogu: {{ item.total_beers_in_catalog || 0 }}</small>
+                        
                         <small v-if="activeTab === 'locations'" class="mobile-only">
                           Typ: {{ item.type === 'hospoda' ? 'Hospoda / Bar' : (item.type === 'jine' ? 'Jiné' : item.type) }}
                         </small>
@@ -187,8 +201,9 @@
           
           <div class="desktop-only">
             <BasePagination 
+              v-if="totalPages > 1"
               v-model:currentPage="currentPage" 
-              :totalPages="totalPages" 
+              :total-pages="totalPages" 
             />
           </div>
         </div>
@@ -340,7 +355,7 @@ const filteredCurrentItems = computed(() => {
 })
 
 const totalPages = computed(() => {
-  const total = activeTab.value === 'users' ? filteredUsers.length : filteredCurrentItems.length
+  const total = activeTab.value === 'users' ? filteredUsers.value.length : filteredCurrentItems.value.length
   return Math.ceil(total / itemsPerPage)
 })
 
@@ -544,6 +559,9 @@ const handleDelete = async () => {
 
 .user-cell, .main-item-cell { display: flex; align-items: center; gap: 1rem; }
 
+/* FIX: Udržení jména a odznaku v jedné linii */
+.info-top-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
 .action-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .admin-action-btn { color: white; border: none; transition: transform 0.2s; }
 .admin-action-btn:hover { transform: scale(1.05); }
@@ -569,7 +587,7 @@ const handleDelete = async () => {
   .section-header .btn-add { width: 100%; padding: 1rem; order: -1; }
   .admin-section { padding: 1.25rem; }
   .mobile-only { display: block; }
-  .desktop-only { display: none; }
+  .desktop-only { display: none !important; }
 
   .admin-table thead { display: none; }
   .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
@@ -584,7 +602,7 @@ const handleDelete = async () => {
   .admin-table td { border: none; padding: 0.4rem 0; display: flex; align-items: center; }
   
   .user-cell, .main-item-cell { width: 100%; align-items: flex-start; }
-  .user-info, .item-text { display: flex; flex-direction: column; gap: 0.1rem; }
+  .user-info, .item-text { display: flex; flex-direction: column; gap: 0.1rem; width: 100%; }
   .user-info strong, .item-text strong { font-size: 1.05rem; color: var(--text-main); }
   .user-info small, .item-text small { color: var(--text-muted); font-size: 0.85rem; }
   
