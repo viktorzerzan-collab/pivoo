@@ -144,16 +144,21 @@
             <SearchXIcon :size="40" color="var(--text-muted)" />
             <p>Žádné záznamy neodpovídají hledání.</p>
           </div>
+
+          <div ref="loadMoreTrigger" class="load-more-trigger"></div>
         </div>
         
         <div class="admin-section-footer">
           <div class="footer-info desktop-only">
             Zobrazeno <strong>{{ activeTab === 'users' ? paginatedUsers.length : paginatedCurrentItems.length }}</strong> z <strong>{{ activeTab === 'users' ? filteredUsers.length : filteredCurrentItems.length }}</strong> záznamů
           </div>
-          <BasePagination 
-            v-model:currentPage="currentPage" 
-            :totalPages="totalPages" 
-          />
+          
+          <div class="desktop-only">
+            <BasePagination 
+              v-model:currentPage="currentPage" 
+              :totalPages="totalPages" 
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -209,7 +214,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { 
   PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
@@ -248,9 +253,23 @@ const selectedUserForPassword = ref(null)
 const selectedUserForBan = ref(null)
 const selectedUserForAvatarRemove = ref(null)
 
+// DEFINICE FORM DATA PRO VŠECHNY MODÁLY
+const formData = ref({
+  beer: { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false },
+  brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null },
+  location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' },
+  style: { id: null, name: '' },
+  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
+})
+
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 30
+const isMobileMode = ref(window.innerWidth <= 768)
+
+const handleResize = () => {
+  isMobileMode.value = window.innerWidth <= 768
+}
 
 watch(activeTab, () => { searchQuery.value = ''; currentPage.value = 1 })
 watch(searchQuery, () => { currentPage.value = 1 })
@@ -289,21 +308,37 @@ const totalPages = computed(() => {
 })
 
 const paginatedUsers = computed(() => {
+  if (isMobileMode.value) {
+    return filteredUsers.value.slice(0, currentPage.value * itemsPerPage)
+  }
   const start = (currentPage.value - 1) * itemsPerPage
   return filteredUsers.value.slice(start, start + itemsPerPage)
 })
 
 const paginatedCurrentItems = computed(() => {
+  if (isMobileMode.value) {
+    return filteredCurrentItems.value.slice(0, currentPage.value * itemsPerPage)
+  }
   const start = (currentPage.value - 1) * itemsPerPage
   return filteredCurrentItems.value.slice(start, start + itemsPerPage)
 })
 
-const formData = ref({
-  beer: { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false },
-  brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null },
-  location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' },
-  style: { id: null, name: '' },
-  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
+const loadMoreTrigger = ref(null)
+let observer = null
+
+watch(loadMoreTrigger, (el) => {
+  if (observer) observer.disconnect()
+  if (el) {
+    observer = new IntersectionObserver((entries) => {
+      // Aktivujeme scrollování jen v mobilním režimu
+      if (entries[0].isIntersecting && isMobileMode.value) {
+        if (currentPage.value < totalPages.value) {
+          currentPage.value++
+        }
+      }
+    }, { rootMargin: '200px' })
+    observer.observe(el)
+  }
 })
 
 const showToast = (message, type = 'toast-success') => { 
@@ -321,6 +356,12 @@ const fetchUsers = async () => {
 onMounted(() => { 
   catalogStore.fetchAllData()
   fetchUsers() 
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (observer) observer.disconnect()
 })
 
 const openAddModal = (t) => { 
@@ -453,18 +494,16 @@ const handleDelete = async () => {
 .admin-table td { padding: 1.25rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-main); }
 .admin-table tr:hover td { background-color: var(--card-hover-bg); }
 
-/* IKONY: Sjednocení na tmavé pozadí pro všechny podsekce */
 .section-icon { 
   width: 42px; height: 42px; border-radius: 10px; display: flex; 
   align-items: center; justify-content: center; flex-shrink: 0;
   overflow: hidden;
   transition: all 0.3s ease;
-  background: #1e293b; /* Tmavé pozadí jako v hlavičce */
+  background: #1e293b; 
 }
 .section-icon img { width: 100%; height: 100%; object-fit: cover; }
 .section-icon.has-image { padding: 0; background: transparent; border: 1px solid var(--border); }
 
-/* Odstranění individuálních barev pozadí pro ikony */
 .beers-bg, .breweries-bg, .locations-bg, .users-bg, .styles-bg { background: #1e293b; }
 
 .user-cell, .main-item-cell { display: flex; align-items: center; gap: 1rem; }
@@ -483,6 +522,7 @@ const handleDelete = async () => {
 :deep(.pagination-wrapper) { margin-top: 0; padding: 0; }
 
 .mobile-only { display: none; }
+.load-more-trigger { height: 20px; width: 100%; }
 
 @media (max-width: 768px) {
   .section-header { flex-direction: column; align-items: stretch; gap: 1rem; margin-bottom: 1.5rem; }

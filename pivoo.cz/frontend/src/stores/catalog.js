@@ -60,8 +60,8 @@ export const useCatalogStore = defineStore('catalog', {
 
     // --- NOVÉ AKCE PRO STRÁNKOVÁNÍ A FILTROVÁNÍ NA SERVERU ---
 
-    async fetchBeers(params = {}) {
-      this.isLoading = true
+    async fetchBeers(params = {}, append = false) {
+      this.isLoading = !append // Zobrazíme hlavní loader jen při prvním načtení (ne při scrollu)
       try {
         // Odstraníme prázdné parametry (null, undefined, prázdný řetězec)
         const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== '' && v !== null))
@@ -69,7 +69,7 @@ export const useCatalogStore = defineStore('catalog', {
         
         const res = await apiFetch(`/beers.php?${query}`)
         if (res.status === 'success') {
-          this.beers = res.data
+          this.beers = append ? [...this.beers, ...res.data] : res.data
           this.beersPagination = res.pagination
         }
       } catch (error) {
@@ -79,15 +79,15 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    async fetchBreweries(params = {}) {
-      this.isLoading = true
+    async fetchBreweries(params = {}, append = false) {
+      this.isLoading = !append
       try {
         const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== '' && v !== null))
         const query = new URLSearchParams(cleanParams).toString()
         
         const res = await apiFetch(`/breweries.php?${query}`)
         if (res.status === 'success') {
-          this.breweries = res.data
+          this.breweries = append ? [...this.breweries, ...res.data] : res.data
           this.breweriesPagination = res.pagination
         }
       } catch (error) {
@@ -97,15 +97,15 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    async fetchLocations(params = {}) {
-      this.isLoading = true
+    async fetchLocations(params = {}, append = false) {
+      this.isLoading = !append
       try {
         const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== '' && v !== null))
         const query = new URLSearchParams(cleanParams).toString()
         
         const res = await apiFetch(`/locations.php?${query}`)
         if (res.status === 'success') {
-          this.locations = res.data
+          this.locations = append ? [...this.locations, ...res.data] : res.data
           this.locationsPagination = res.pagination
         }
       } catch (error) {

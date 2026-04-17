@@ -80,11 +80,19 @@
           />
         </div>
         
-        <BasePagination 
-          v-if="totalPages > 1"
-          v-model:currentPage="currentPage" 
-          :total-pages="totalPages"
-        />
+        <div class="desktop-pagination">
+          <BasePagination 
+            v-if="totalPages > 1"
+            v-model:currentPage="currentPage" 
+            :total-pages="totalPages"
+          />
+        </div>
+
+        <div ref="loadMoreTrigger" class="load-more-trigger">
+          <div v-if="isAppending" class="mobile-loader">
+            Načítám další piva...
+          </div>
+        </div>
       </template>
       
       <div v-else-if="!isLoading" class="empty-state">
@@ -119,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
@@ -138,7 +146,6 @@ import DetailModal from '../components/modals/DetailModal.vue'
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
 
-// Vytáhneme potřebná data včetně beersPagination pro stránkovač
 const { beers, beersPagination, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
 const currentPage = ref(1)
@@ -151,12 +158,15 @@ const initialFilters = {
 }
 const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 
-// Dynamicky získané hodnoty z backendového stránkovače
 const totalPages = computed(() => beersPagination.value?.total_pages || 1)
 const totalItems = computed(() => beersPagination.value?.total || 0)
 
-// Funkce, která pošle parametry z filtrů do API
-const loadBeers = async () => {
+// --- Nekonečné scrollování ---
+const loadMoreTrigger = ref(null)
+const isAppending = ref(false)
+let observer = null
+
+const loadBeers = async (append = false) => {
   const params = {
     page: currentPage.value,
     limit: itemsPerPage,
@@ -172,36 +182,69 @@ const loadBeers = async () => {
     ibu_max: filters.value.ibu.max,
     sort: sortBy.value
   }
-  await catalogStore.fetchBeers(params)
+  await catalogStore.fetchBeers(params, append)
 }
 
-// Sledování změn (pokud změníme filtr, jdeme na stranu 1)
+const loadNextPage = async () => {
+  if (currentPage.value < totalPages.value && !isLoading.value && !isAppending.value) {
+    isAppending.value = true
+    currentPage.value++
+    await loadBeers(true)
+    isAppending.value = false
+  }
+}
+
+// Nastavení Intersection Observeru pro mobilní zobrazení
+watch(loadMoreTrigger, (el) => {
+  if (observer) observer.disconnect()
+  if (el) {
+    observer = new IntersectionObserver((entries) => {
+      // Aktivujeme nekonečné scrollování pouze pro obrazovky menší než 768px
+      if (entries[0].isIntersecting && window.innerWidth <= 768) {
+        loadNextPage()
+      }
+    }, { rootMargin: '200px' })
+    observer.observe(el)
+  }
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
+})
+
+// Sledování filtrů (pokud se změní, začínáme od začátku na str. 1 a NEPŘIPOJUJEME)
 watch([filters, sortBy], () => {
   if (currentPage.value !== 1) {
-    currentPage.value = 1 // Spustí watcher pro currentPage
+    // Tímto nastavíme stránku na 1, což odpálí watcher na currentPage. 
+    // Musíme ale zajistit, že append bude false.
+    isAppending.value = false 
+    currentPage.value = 1
   } else {
-    loadBeers()
+    loadBeers(false)
   }
 }, { deep: true })
 
 watch(currentPage, () => {
-  loadBeers()
+  // Pokud jsme stránku změnili přes BasePagination (isAppending je false), 
+  // uděláme klasický loadBeers(false). Jinak se o fetch postaral loadNextPage.
+  if (!isAppending.value) {
+    loadBeers(false)
+  }
 })
 
 onMounted(async () => {
-  // Stáhneme číselníky (pivovary, styly) pro formulář a filtry
   await catalogStore.fetchAllData()
-  // Stáhneme paginovaná piva
-  loadBeers()
+  loadBeers(false)
 })
 
 const resetFilters = () => {
   filters.value = JSON.parse(JSON.stringify(initialFilters))
   sortBy.value = 'name_asc'
+  isAppending.value = false
   if (currentPage.value !== 1) {
     currentPage.value = 1
   } else {
-    loadBeers()
+    loadBeers(false)
   }
 }
 
@@ -261,7 +304,9 @@ const submitBeer = async () => {
     })
     if (res.status === 'success') { 
       isAddModalOpen.value = false
-      await loadBeers() // Refresh gridu po přidání piva
+      isAppending.value = false
+      currentPage.value = 1
+      await loadBeers(false) 
       showToast("Pivo bylo úspěšně přidáno") 
     } else {
       showToast(res.message || "Chyba při ukládání", "toast-error")
@@ -288,7 +333,7 @@ const openDetail = async (beer) => {
 </script>
 
 <style scoped>
-/* Původní styly zůstávají zachovány, zaručuje, že design nedozná škod */
+/* Původní styly zůstávají zachovány */
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
@@ -328,6 +373,11 @@ const openDetail = async (beer) => {
 .slide-fade-leave-active { transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1); }
 .slide-fade-enter-from, .slide-fade-leave-to { transform: translateY(-10px); opacity: 0; }
 
+/* Styly pro stránkování a nekonečné scrollování */
+.desktop-pagination { display: block; }
+.load-more-trigger { height: 20px; width: 100%; }
+.mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+
 @media (max-width: 768px) {
   .mobile-action-bar { display: block; margin-bottom: 1.5rem; }
   .mobile-action-bar .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
@@ -341,5 +391,8 @@ const openDetail = async (beer) => {
   }
   .sort-control-wrapper { width: 100%; }
   .results-count { text-align: center; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+
+  .desktop-pagination { display: none; }
+  .mobile-loader { display: block; }
 }
 </style>

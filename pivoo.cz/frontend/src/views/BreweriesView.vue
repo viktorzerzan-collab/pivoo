@@ -69,11 +69,19 @@
           />
         </div>
         
-        <BasePagination 
-          v-if="totalPages > 1"
-          v-model:currentPage="currentPage" 
-          :total-pages="totalPages"
-        />
+        <div class="desktop-pagination">
+          <BasePagination 
+            v-if="totalPages > 1"
+            v-model:currentPage="currentPage" 
+            :total-pages="totalPages"
+          />
+        </div>
+
+        <div ref="loadMoreTrigger" class="load-more-trigger">
+          <div v-if="isAppending" class="mobile-loader">
+            Načítám další pivovary...
+          </div>
+        </div>
       </div>
       
       <div v-else-if="!isLoading" class="empty-state">
@@ -93,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PlusIcon, FactoryIcon, FilterIcon, ChevronDownIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
@@ -111,7 +119,6 @@ const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore)
 
-// Přidáno breweriesPagination pro stránkování
 const { breweries, breweriesPagination, countries, isLoading } = storeToRefs(catalogStore)
 const isAdmin = computed(() => user.value?.role === 'admin')
 
@@ -133,12 +140,15 @@ const sortBy = ref('name_asc')
 const initialFilters = { search: '', city: '', country: '' }
 const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 
-// Nová data pro počty z backendu
 const totalPages = computed(() => breweriesPagination.value?.total_pages || 1)
 const totalItems = computed(() => breweriesPagination.value?.total || 0)
 
-// Odeslání filtrů na API
-const loadBreweries = async () => {
+// --- Nekonečné scrollování ---
+const loadMoreTrigger = ref(null)
+const isAppending = ref(false)
+let observer = null
+
+const loadBreweries = async (append = false) => {
   const params = {
     page: currentPage.value,
     limit: itemsPerPage,
@@ -147,29 +157,58 @@ const loadBreweries = async () => {
     country: filters.value.country,
     sort: sortBy.value
   }
-  await catalogStore.fetchBreweries(params)
+  await catalogStore.fetchBreweries(params, append)
 }
+
+const loadNextPage = async () => {
+  if (currentPage.value < totalPages.value && !isLoading.value && !isAppending.value) {
+    isAppending.value = true
+    currentPage.value++
+    await loadBreweries(true)
+    isAppending.value = false
+  }
+}
+
+watch(loadMoreTrigger, (el) => {
+  if (observer) observer.disconnect()
+  if (el) {
+    observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && window.innerWidth <= 800) {
+        loadNextPage()
+      }
+    }, { rootMargin: '200px' })
+    observer.observe(el)
+  }
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
+})
 
 const resetFilters = () => {
   filters.value = JSON.parse(JSON.stringify(initialFilters))
   sortBy.value = 'name_asc'
+  isAppending.value = false
   if (currentPage.value !== 1) {
     currentPage.value = 1
   } else {
-    loadBreweries()
+    loadBreweries(false)
   }
 }
 
 watch([filters, sortBy], () => {
   if (currentPage.value !== 1) {
+    isAppending.value = false
     currentPage.value = 1
   } else {
-    loadBreweries()
+    loadBreweries(false)
   }
 }, { deep: true })
 
 watch(currentPage, () => {
-  loadBreweries()
+  if (!isAppending.value) {
+    loadBreweries(false)
+  }
 })
 
 const sortOptions = [
@@ -218,22 +257,21 @@ const submitBrewery = async () => {
     if (result.status === 'success') { 
       isAddModalOpen.value = false
       form.value = { name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null }
-      await loadBreweries() // Obnovení aktuálního gridu z backendu
+      isAppending.value = false
+      currentPage.value = 1
+      await loadBreweries(false)
       showToast("Pivovar přidán") 
     }
   } catch (e) { showToast('Chyba serveru.', 'toast-error') }
 }
 
 onMounted(async () => {
-  // Inicializace číselníků
   await catalogStore.fetchAllData()
-  // Načtení dat pro aktuální view
-  loadBreweries()
+  loadBreweries(false)
 })
 </script>
 
 <style scoped>
-/* Původní styly zachovány */
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
@@ -263,6 +301,11 @@ onMounted(async () => {
 .breweries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 .empty-state { text-align: center; padding: 4rem; color: var(--text-muted); }
 
+/* Styly pro stránkování a nekonečné scrollování */
+.desktop-pagination { display: block; }
+.load-more-trigger { height: 20px; width: 100%; }
+.mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+
 @media (max-width: 800px) {
   .mobile-action-bar { display: block; margin-bottom: 1.5rem; }
   .mobile-action-bar .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
@@ -276,5 +319,8 @@ onMounted(async () => {
   }
   .sort-control-wrapper { width: 100%; }
   .results-count { text-align: center; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+
+  .desktop-pagination { display: none; }
+  .mobile-loader { display: block; }
 }
 </style>

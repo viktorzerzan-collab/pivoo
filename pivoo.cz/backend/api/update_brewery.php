@@ -41,24 +41,24 @@ if (!empty($data->id) && !empty($data->name)) {
                     $min_side = min($w, $h);
                     $dst = imagecreatetruecolor($target_size, $target_size);
                     
-                    if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_WEBP) {
-                        imagealphablending($dst, false);
-                        imagesavealpha($dst, true);
-                        $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
-                        imagefilledrectangle($dst, 0, 0, $target_size, $target_size, $transparent);
-                    }
+                    // Vždy zachováme průhlednost (pro WebP)
+                    imagealphablending($dst, false);
+                    imagesavealpha($dst, true);
+                    $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+                    imagefilledrectangle($dst, 0, 0, $target_size, $target_size, $transparent);
 
                     imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
                     
-                    $ext = ($type == IMAGETYPE_PNG) ? '.png' : '.jpg';
-                    $new_logo_filename = uniqid('logo_') . $ext;
+                    // Změna přípony na .webp
+                    $new_logo_filename = uniqid('logo_') . '.webp';
                     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
                     
-                    if ($type == IMAGETYPE_PNG) imagepng($dst, $upload_dir . $new_logo_filename);
-                    else imagejpeg($dst, $upload_dir . $new_logo_filename, 85);
+                    // Uložení jako WebP s kvalitou 80
+                    imagewebp($dst, $upload_dir . $new_logo_filename, 80);
                     
                     imagedestroy($src); imagedestroy($dst);
 
+                    // Smazání původního loga
                     if ($oldBrewery && $oldBrewery['logo'] && file_exists($upload_dir . $oldBrewery['logo'])) {
                         unlink($upload_dir . $oldBrewery['logo']);
                     }

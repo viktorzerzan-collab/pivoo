@@ -34,29 +34,44 @@ try {
     $avatar_filename = null;
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         $file_tmp = $_FILES['avatar']['tmp_name'];
-        list($w, $h, $type) = getimagesize($file_tmp);
+        $image_info = getimagesize($file_tmp);
         
-        $src = null;
-        if($type == IMAGETYPE_JPEG) $src = imagecreatefromjpeg($file_tmp);
-        elseif($type == IMAGETYPE_PNG) $src = imagecreatefrompng($file_tmp);
-        elseif($type == IMAGETYPE_WEBP) $src = imagecreatefromwebp($file_tmp);
-
-        if ($src) {
-            $target_size = 400;
-            $min_side = min($w, $h);
-            $dst = imagecreatetruecolor($target_size, $target_size);
-            imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
+        if ($image_info) {
+            $w = $image_info[0];
+            $h = $image_info[1];
+            $type = $image_info[2];
             
-            $avatar_filename = uniqid('avatar_') . '.jpg';
-            $upload_dir = '../uploads/avatars/';
-            if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
-            imagejpeg($dst, $upload_dir . $avatar_filename, 85);
-            imagedestroy($src); imagedestroy($dst);
+            $src = null;
+            if($type == IMAGETYPE_JPEG) $src = imagecreatefromjpeg($file_tmp);
+            elseif($type == IMAGETYPE_PNG) $src = imagecreatefrompng($file_tmp);
+            elseif($type == IMAGETYPE_WEBP) $src = imagecreatefromwebp($file_tmp);
+
+            if ($src) {
+                $target_size = 400;
+                $min_side = min($w, $h);
+                $dst = imagecreatetruecolor($target_size, $target_size);
+                
+                // Zachování průhlednosti pro WebP
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                
+                imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
+                
+                // Změna přípony na .webp
+                $avatar_filename = uniqid('avatar_') . '.webp';
+                $upload_dir = '../uploads/avatars/';
+                if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+                
+                // Uložení jako WebP s kvalitou 80
+                imagewebp($dst, $upload_dir . $avatar_filename, 80);
+                
+                imagedestroy($src); 
+                imagedestroy($dst);
+            }
         }
     }
 
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
-    // Přidáno nastavení výchozího tématu do SQL INSERTu
     $query = "INSERT INTO users (username, first_name, last_name, email, birthdate, password_hash, role, avatar, theme_mode, theme_preference) 
               VALUES (?, ?, ?, ?, ?, ?, 'user', ?, 'manual', 'light')";
     $insert = $db_connection->prepare($query);

@@ -23,7 +23,8 @@ if (!empty($data->name)) {
             $image_info = getimagesize($file_tmp);
             
             if ($image_info) {
-                $w = $image_info[0]; $h = $image_info[1];
+                $w = $image_info[0]; 
+                $h = $image_info[1];
                 $type = $image_info[2];
                 $src = null;
 
@@ -36,24 +37,26 @@ if (!empty($data->name)) {
                     $min_side = min($w, $h);
                     $dst = imagecreatetruecolor($target_size, $target_size);
                     
-                    if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_WEBP) {
-                        imagealphablending($dst, false);
-                        imagesavealpha($dst, true);
-                        $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
-                        imagefilledrectangle($dst, 0, 0, $target_size, $target_size, $transparent);
-                    }
+                    // Vždy zachováme průhlednost (pro WebP)
+                    imagealphablending($dst, false);
+                    imagesavealpha($dst, true);
+                    
+                    // Průhledné pozadí místo černého, pokud by zdrojový obrázek nedosahoval okrajů
+                    $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+                    imagefilledrectangle($dst, 0, 0, $target_size, $target_size, $transparent);
 
                     imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
                     
-                    $ext = ($type == IMAGETYPE_PNG) ? '.png' : '.jpg';
-                    $logo_filename = uniqid('logo_') . $ext;
+                    // Změna přípony na .webp
+                    $logo_filename = uniqid('logo_') . '.webp';
                     $upload_dir = '../uploads/logos/';
                     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
                     
-                    if ($type == IMAGETYPE_PNG) imagepng($dst, $upload_dir . $logo_filename);
-                    else imagejpeg($dst, $upload_dir . $logo_filename, 85);
+                    // Uložení jako WebP s kvalitou 80
+                    imagewebp($dst, $upload_dir . $logo_filename, 80);
                     
-                    imagedestroy($src); imagedestroy($dst);
+                    imagedestroy($src); 
+                    imagedestroy($dst);
                 }
             }
         }

@@ -26,7 +26,7 @@ try {
     // --- AKCE: ODEBRAT FOTKU ---
     if ($action === 'remove') {
         if ($old_avatar && file_exists($upload_dir . $old_avatar)) {
-            unlink($upload_dir . $old_avatar); // Smazání z FTP
+            unlink($upload_dir . $old_avatar); // Smazání z disku
         }
         $db->prepare("UPDATE users SET avatar = NULL WHERE id = ?")->execute([$user['user_id']]);
         echo json_encode(["status" => "success", "message" => "Fotka byla odebrána.", "avatar" => null]);
@@ -52,14 +52,20 @@ try {
         $w = $image_info[0]; $h = $image_info[1];
         $min_side = min($w, $h);
         $dst = imagecreatetruecolor($target_size, $target_size);
+        
+        // Zachování průhlednosti pro WebP (pokud by někdo nahrál PNG s průhledností)
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        
         imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
 
-        $new_filename = uniqid('avatar_') . '.jpg';
+        // Generujeme název s příponou .webp
+        $new_filename = uniqid('avatar_') . '.webp';
         
-        // Pokud se nahrání podaří, smažeme starou fotku
-        if (imagejpeg($dst, $upload_dir . $new_filename, 85)) {
+        // Uložení ve formátu WebP (kvalita 80 je ideální poměr mezi velikostí a kvalitou)
+        if (imagewebp($dst, $upload_dir . $new_filename, 80)) {
             
-            // DŮLEŽITÉ: Smazání starého souboru z disku, pokud existuje
+            // Smazání starého souboru z disku, pokud existuje
             if ($old_avatar && file_exists($upload_dir . $old_avatar)) {
                 unlink($upload_dir . $old_avatar);
             }

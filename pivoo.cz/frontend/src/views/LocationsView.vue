@@ -73,11 +73,19 @@
           />
         </div>
         
-        <BasePagination 
-          v-if="totalPages > 1"
-          v-model:currentPage="currentPage" 
-          :total-pages="totalPages"
-        />
+        <div class="desktop-pagination">
+          <BasePagination 
+            v-if="totalPages > 1"
+            v-model:currentPage="currentPage" 
+            :total-pages="totalPages"
+          />
+        </div>
+
+        <div ref="loadMoreTrigger" class="load-more-trigger">
+          <div v-if="isAppending" class="mobile-loader">
+            Načítám další podniky...
+          </div>
+        </div>
       </template>
       
       <div v-else-if="!isLoading" class="empty-state">
@@ -93,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
@@ -111,7 +119,6 @@ const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore)
 
-// Přidáno locationsPagination pro správu stránkování z backendu
 const { locations, locationsPagination, countries, isLoading } = storeToRefs(catalogStore)
 const isAdmin = computed(() => user.value?.role === 'admin')
 
@@ -129,12 +136,15 @@ const sortBy = ref('name_asc')
 const initialFilters = { search: '', city: '', country: '' }
 const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 
-// Dynamické hodnoty pro stránkovač a výsledky
 const totalPages = computed(() => locationsPagination.value?.total_pages || 1)
 const totalItems = computed(() => locationsPagination.value?.total || 0)
 
-// Funkce pro načtení paginovaných dat ze serveru
-const loadLocations = async () => {
+// --- Nekonečné scrollování ---
+const loadMoreTrigger = ref(null)
+const isAppending = ref(false)
+let observer = null
+
+const loadLocations = async (append = false) => {
   const params = {
     page: currentPage.value,
     limit: itemsPerPage,
@@ -143,30 +153,58 @@ const loadLocations = async () => {
     country: filters.value.country,
     sort: sortBy.value
   }
-  await catalogStore.fetchLocations(params)
+  await catalogStore.fetchLocations(params, append)
 }
+
+const loadNextPage = async () => {
+  if (currentPage.value < totalPages.value && !isLoading.value && !isAppending.value) {
+    isAppending.value = true
+    currentPage.value++
+    await loadLocations(true)
+    isAppending.value = false
+  }
+}
+
+watch(loadMoreTrigger, (el) => {
+  if (observer) observer.disconnect()
+  if (el) {
+    observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && window.innerWidth <= 800) {
+        loadNextPage()
+      }
+    }, { rootMargin: '200px' })
+    observer.observe(el)
+  }
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
+})
 
 const resetFilters = () => {
   filters.value = JSON.parse(JSON.stringify(initialFilters))
   sortBy.value = 'name_asc'
+  isAppending.value = false
   if (currentPage.value !== 1) {
     currentPage.value = 1
   } else {
-    loadLocations()
+    loadLocations(false)
   }
 }
 
-// Watchery pro automatické načítání při změně filtrů nebo stránky
 watch([filters, sortBy], () => {
   if (currentPage.value !== 1) {
+    isAppending.value = false
     currentPage.value = 1
   } else {
-    loadLocations()
+    loadLocations(false)
   }
 }, { deep: true })
 
 watch(currentPage, () => {
-  loadLocations()
+  if (!isAppending.value) {
+    loadLocations(false)
+  }
 })
 
 const sortOptions = [
@@ -182,7 +220,6 @@ const sortOptions = [
 
 const uniqueCities = computed(() => {
   const cities = new Set()
-  // Používáme data ze storu pro zobrazení dostupných měst
   if (locations.value) {
     locations.value.forEach(l => {
       if (l.city && l.city.trim() !== '') {
@@ -213,7 +250,9 @@ const submitLocation = async () => {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
-      await loadLocations() // Refresh dat
+      isAppending.value = false
+      currentPage.value = 1
+      await loadLocations(false) // Refresh dat
       showToast("Podnik uložen") 
     } else {
       showToast(result.message || "Chyba při ukládání", "toast-error")
@@ -224,15 +263,12 @@ const submitLocation = async () => {
 }
 
 onMounted(async () => { 
-  // Načtení číselníků
   await catalogStore.fetchAllData()
-  // Načtení dat pro aktuální stránku
-  loadLocations()
+  loadLocations(false)
 })
 </script>
 
 <style scoped>
-/* Styly zůstávají beze změny */
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
@@ -265,6 +301,11 @@ onMounted(async () => {
 .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 .empty-state { text-align: center; padding: 4rem; color: var(--text-muted); }
 
+/* Styly pro stránkování a nekonečné scrollování */
+.desktop-pagination { display: block; }
+.load-more-trigger { height: 20px; width: 100%; }
+.mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+
 @media (max-width: 800px) {
   .mobile-action-bar { display: block; margin-bottom: 1.5rem; }
   .mobile-action-bar .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
@@ -278,5 +319,8 @@ onMounted(async () => {
   }
   .sort-control-wrapper { width: 100%; }
   .results-count { text-align: center; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+
+  .desktop-pagination { display: none; }
+  .mobile-loader { display: block; }
 }
 </style>
