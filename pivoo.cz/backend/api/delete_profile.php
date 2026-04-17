@@ -1,6 +1,6 @@
 <?php
-// backend/api/delete_profile.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -38,11 +38,16 @@ if (!empty($data->password)) {
             echo json_encode(["status" => "success", "message" => "Účet i data byla smazána."]);
         } catch (Exception $e) {
             $db->rollBack();
+            // ZMĚNA: Tiché logování chyby
+            error_log("DB Error (delete_profile): " . $e->getMessage());
             http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Chyba při mazání."]);
+            echo json_encode(["status" => "error", "message" => "Vnitřní chyba při mazání profilu."]);
         }
     } else {
         echo json_encode(["status" => "error", "message" => "Nesprávné heslo."]);
     }
+} else {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Zadejte heslo pro potvrzení."]);
 }
 ?>

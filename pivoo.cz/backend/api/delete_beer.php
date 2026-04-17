@@ -1,5 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -33,8 +34,10 @@ if (!empty($data->id)) {
             echo json_encode(["status" => "error", "message" => "Chyba při mazání."]);
         }
     } catch (Exception $e) {
+        // ZMĚNA: Úprava zranitelnosti Information Disclosure
+        error_log("DB Error (delete_beer): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při mazání piva."]);
     }
 } else {
     http_response_code(400);

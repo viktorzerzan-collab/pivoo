@@ -1,5 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Přísnější CORS politika, povolen pouze přístup z vlastní domény
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -50,8 +51,10 @@ if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style_id))
             echo json_encode(["status" => "error", "message" => "Pivo se nepodařilo uložit."]);
         }
     } catch (PDOException $e) {
+        // ZMĚNA: Chybu zalogujeme pro správce serveru, ale útočníkovi vrátíme jen obecný text!
+        error_log("DB Error (add_beer): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba databáze: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při komunikaci s databází."]);
     }
 } else {
     http_response_code(400);

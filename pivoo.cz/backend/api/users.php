@@ -1,6 +1,6 @@
 <?php
-// backend/api/users.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -21,17 +21,19 @@ $db = $database->getConnection();
 
 if ($db) {
     try {
-        // PŘIDÁNO: Načítáme i sloupec 'is_banned'
         $query = "SELECT id, username, first_name, last_name, email, role, avatar, is_banned FROM users ORDER BY id DESC";
         $stmt = $db->query($query);
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(["status" => "success", "data" => $users]);
     } catch (Exception $e) {
+        // ZMĚNA: Zalogování chyby na server
+        error_log("DB Error (users): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba při načítání uživatelů."]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba při načítání uživatelů."]);
     }
 } else {
-    echo json_encode(["status" => "error", "message" => "Chyba DB."]);
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Chyba spojení s databází."]);
 }
 ?>

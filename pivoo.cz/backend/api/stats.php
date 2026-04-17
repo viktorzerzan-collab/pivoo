@@ -1,6 +1,6 @@
 <?php
-// backend/api/stats.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -17,7 +17,7 @@ $user_id = $user['user_id'];
 $database = new Database();
 $db = $database->getConnection();
 
-// Zjištění období (na Dashboardu budeme posílat ?period=month)
+// Zjištění období
 $period = isset($_GET['period']) ? $_GET['period'] : 'all';
 $dateCondition = "";
 
@@ -28,7 +28,7 @@ if ($period === 'month') {
 
 if ($db) {
     try {
-        // 1. Součty (Upraveno pro potřeby frontendu)
+        // 1. Součty
         $query = "SELECT 
                     SUM(quantity) as total_beers,
                     COUNT(DISTINCT beer_id) as unique_beers,
@@ -68,8 +68,10 @@ if ($db) {
             ]
         ]);
     } catch (Exception $e) {
+        // ZMĚNA: Skrytí SQL chyby
+        error_log("DB Error (stats): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba při výpočtu statistik."]);
     }
 } else {
     http_response_code(500);

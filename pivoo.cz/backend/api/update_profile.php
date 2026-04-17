@@ -1,6 +1,6 @@
 <?php
-// backend/api/update_profile.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -45,8 +45,10 @@ if ($action === 'update_theme') {
                 echo json_encode(["status" => "error", "message" => "Chyba při ukládání do databáze."]);
             }
         } catch (Exception $e) {
+            // ZMĚNA: Skrytí chyby
+            error_log("DB Error (update_profile theme): " . $e->getMessage());
             http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Chyba serveru."]);
+            echo json_encode(["status" => "error", "message" => "Interní chyba serveru."]);
         }
     } else {
         http_response_code(400);
@@ -67,14 +69,21 @@ if ($action === 'change_password' && !empty($data->old_password) && !empty($data
             exit();
         }
 
-        $new_hash = password_hash($data->new_password, PASSWORD_DEFAULT);
-        $update = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
-        
-        if ($update->execute([$new_hash, $user['user_id']])) {
-            echo json_encode(["status" => "success", "message" => "Heslo bylo úspěšně změněno."]);
-        } else {
+        try {
+            $new_hash = password_hash($data->new_password, PASSWORD_DEFAULT);
+            $update = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+            
+            if ($update->execute([$new_hash, $user['user_id']])) {
+                echo json_encode(["status" => "success", "message" => "Heslo bylo úspěšně změněno."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["status" => "error", "message" => "Chyba při ukládání do databáze."]);
+            }
+        } catch (Exception $e) {
+            // ZMĚNA: Skrytí chyby
+            error_log("DB Error (update_profile password): " . $e->getMessage());
             http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Chyba při ukládání do databáze."]);
+            echo json_encode(["status" => "error", "message" => "Interní chyba serveru."]);
         }
     } else {
         echo json_encode(["status" => "error", "message" => "Původní heslo není správné."]);

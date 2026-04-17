@@ -1,6 +1,6 @@
 <?php
-// backend/api/update_user.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -46,9 +46,11 @@ if (!empty($data->id) && !empty($data->username) && !empty($data->email)) {
             echo json_encode(["status" => "error", "message" => "Chyba při ukládání do databáze."]);
         }
     } catch (PDOException $e) {
+        // ZMĚNA: Skrytí chyby
+        error_log("DB Error (update_user): " . $e->getMessage());
         http_response_code(500);
-        // Ošetření unikátních klíčů (např. pokud už e-mail nebo username existuje u jiného uživatele)
-        echo json_encode(["status" => "error", "message" => "Uživatelské jméno nebo e-mail již používá někdo jiný."]);
+        // Ošetření unikátních klíčů
+        echo json_encode(["status" => "error", "message" => "Uživatelské jméno nebo e-mail již používá někdo jiný, nebo nastala interní chyba."]);
     }
 } else {
     http_response_code(400);

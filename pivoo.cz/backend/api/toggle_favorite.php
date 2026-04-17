@@ -1,6 +1,6 @@
 <?php
-// backend/api/toggle_favorite.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -40,8 +40,10 @@ if (!empty($data->entity_id) && !empty($data->entity_type)) {
             echo json_encode(["status" => "success", "message" => "Přidáno do oblíbených.", "is_favorite" => true]);
         }
     } catch (PDOException $e) {
+        // ZMĚNA: Skrytí SQL chyby z výstupu
+        error_log("DB Error (toggle_favorite): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba databáze: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba při ukládání do oblíbených."]);
     }
 } else {
     http_response_code(400);

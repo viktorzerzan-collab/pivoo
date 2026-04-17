@@ -1,5 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -21,8 +22,10 @@ if (!empty($data->id)) {
         $stmt->execute([$data->id]);
         echo json_encode(["status" => "success", "message" => "Styl byl smazán."]);
     } catch (Exception $e) {
+        // ZMĚNA: Logujeme chybu na serveru, uživateli necháváme lidskou zprávu, proč to nejspíš selhalo.
+        error_log("DB Error (delete_style): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Styl nelze smazat, protože je přiřazen k pivu v katalogu."]);
+        echo json_encode(["status" => "error", "message" => "Styl nelze smazat, pravděpodobně je přiřazen k pivu v katalogu."]);
     }
 } else {
     http_response_code(400);

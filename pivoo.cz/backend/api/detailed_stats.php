@@ -1,6 +1,6 @@
 <?php
-// backend/api/detailed_stats.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -38,6 +38,8 @@ $response = [
 ];
 
 if ($db) {
+    // ZMĚNA: U všech try-catch bloků přidáno logování chyb místo tichého ignorování, které by ztížilo ladění na serveru.
+    
     // 1. TOP PIVA
     try {
         $beers_query = "SELECT b.name, br.name as brewery, SUM(c.quantity) as count
@@ -49,7 +51,7 @@ if ($db) {
         $stmt = $db->prepare($beers_query);
         $stmt->execute($params);
         $response["beers"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("DB Error detailed_stats (beers): " . $e->getMessage()); }
 
     // 2. TOP PIVOVARY
     try {
@@ -62,7 +64,7 @@ if ($db) {
         $stmt = $db->prepare($brew_query);
         $stmt->execute($params);
         $response["breweries"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("DB Error detailed_stats (breweries): " . $e->getMessage()); }
 
     // 3. TOP MÍSTA
     try {
@@ -74,7 +76,7 @@ if ($db) {
         $stmt = $db->prepare($loc_query);
         $stmt->execute($params);
         $response["locations"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("DB Error detailed_stats (locations): " . $e->getMessage()); }
 
     // 4. AKTIVITA PODLE DNŮ
     try {
@@ -85,7 +87,7 @@ if ($db) {
         $stmt = $db->prepare($days_query);
         $stmt->execute($params);
         $response["days"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("DB Error detailed_stats (days): " . $e->getMessage()); }
 
     // 5. SBĚRATEL
     try {
@@ -96,9 +98,9 @@ if ($db) {
         $stmt->execute($params);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($res) $response["collector"] = $res;
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("DB Error detailed_stats (collector): " . $e->getMessage()); }
 
-    // 6. PIVNÍ STYLY - OPRAVENO na beer_styles
+    // 6. PIVNÍ STYLY
     try {
         $styles_query = "SELECT s.name, SUM(c.quantity) as count
                          FROM consumptions c
@@ -109,7 +111,7 @@ if ($db) {
         $stmt = $db->prepare($styles_query);
         $stmt->execute($params);
         $response["styles"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("DB Error detailed_stats (styles): " . $e->getMessage()); }
 
     // 7. CENY
     try {
@@ -123,7 +125,7 @@ if ($db) {
         $stmt->execute($params);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($res) $response["prices"] = $res;
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("DB Error detailed_stats (prices): " . $e->getMessage()); }
 
     echo json_encode([
         "status" => "success",

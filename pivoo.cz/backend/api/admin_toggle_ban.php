@@ -1,6 +1,6 @@
 <?php
-// backend/api/admin_toggle_ban.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -32,8 +32,10 @@ if (!empty($data->user_id) && isset($data->is_banned)) {
             echo json_encode(["status" => "error", "message" => "Chyba při aktualizaci databáze."]);
         }
     } catch (Exception $e) {
+        // ZMĚNA: Skrytí konkrétní chybové hlášky
+        error_log("DB Error (admin_toggle_ban): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba serveru: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při úpravě stavu blokace."]);
     }
 } else {
     http_response_code(400);

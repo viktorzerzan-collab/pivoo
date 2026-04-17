@@ -1,9 +1,10 @@
 <?php
-// backend/api/login.php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// ZMĚNA: Skryto vypisování varování (v produkci nezapínat zobrazení chyb)
+// ini_set('display_errors', 1);
+// error_reporting(E_ALL);
 
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -30,7 +31,6 @@ try {
     $username = trim($data->username);
     $password = $data->password;
 
-    // PŘIDÁNO: Načtení sloupce is_banned
     $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference, is_banned 
               FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $db->prepare($query);
@@ -39,7 +39,7 @@ try {
 
     if ($user && password_verify($password, $user['password_hash'])) {
         
-        // KONTROLA BANU: Pokud je uživatel zablokován, nepustíme ho dál
+        // KONTROLA BANU
         if (isset($user['is_banned']) && $user['is_banned'] == 1) {
             echo json_encode(["status" => "error", "message" => "Váš účet byl zablokován administrátorem."]);
             exit();
@@ -71,6 +71,9 @@ try {
         echo json_encode(["status" => "error", "message" => "Neplatné přihlašovací údaje."]);
     }
 } catch (Throwable $e) {
-    echo json_encode(["status" => "error", "message" => "Chyba serveru: " . $e->getMessage()]);
+    // ZMĚNA: Skrytí skutečné chyby
+    error_log("DB Error (login): " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při přihlášení."]);
 }
 ?>

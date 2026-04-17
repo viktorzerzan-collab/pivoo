@@ -1,5 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -29,7 +30,7 @@ if (!empty($data->id)) {
         $quantity = !empty($data->quantity) ? (int)$data->quantity : 1;
         $price = (!empty($data->price) && $data->price !== '') ? $data->price : null;
         
-        // OPRAVA ZDE: Stejné ošetření nulových hodnocení jako u přidávání
+        // Stejné ošetření nulových hodnocení jako u přidávání
         $rating_beer = (!empty($data->rating_beer) && $data->rating_beer > 0) ? (int)$data->rating_beer : null;
         $rating_care = (!empty($data->rating_care) && $data->rating_care > 0) ? (int)$data->rating_care : null;
         
@@ -47,8 +48,10 @@ if (!empty($data->id)) {
             echo json_encode(["status" => "error", "message" => "Nepodařilo se upravit záznam."]);
         }
     } catch (PDOException $e) {
+        // ZMĚNA: Skrytí chyby
+        error_log("DB Error (update_checkin): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba databáze: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze."]);
     }
 } else {
     http_response_code(400);

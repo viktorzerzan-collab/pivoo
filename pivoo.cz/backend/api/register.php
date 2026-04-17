@@ -1,6 +1,6 @@
 <?php
-// backend/api/register.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
@@ -33,6 +33,14 @@ try {
 
     $avatar_filename = null;
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        
+        // ZMĚNA: Backendová validace velikosti souboru (max 5 MB)
+        if ($_FILES['avatar']['size'] > 5 * 1024 * 1024) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Soubor profilové fotky je příliš velký. Maximum je 5 MB."]);
+            exit();
+        }
+
         $file_tmp = $_FILES['avatar']['tmp_name'];
         $image_info = getimagesize($file_tmp);
         
@@ -80,6 +88,9 @@ try {
     echo json_encode(["status" => "success", "message" => "Registrace úspěšná."]);
 
 } catch (Throwable $e) {
-    echo json_encode(["status" => "error", "message" => "Chyba serveru."]);
+    // ZMĚNA: Zalognutí chyb a zobrazení bezpečné zprávy pro případ duplicitních mailů atd.
+    error_log("DB Error (register): " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Chyba při registraci (uživatelské jméno nebo e-mail už možná existuje)."]);
 }
 ?>

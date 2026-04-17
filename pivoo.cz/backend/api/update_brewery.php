@@ -1,5 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -20,6 +21,14 @@ if (!empty($data->id) && !empty($data->name)) {
         $upload_dir = '../uploads/logos/';
 
         if (isset($_FILES['logoFile']) && $_FILES['logoFile']['error'] === UPLOAD_ERR_OK) {
+            
+            // ZMĚNA: Backendová validace velikosti souboru (max 5 MB)
+            if ($_FILES['logoFile']['size'] > 5 * 1024 * 1024) {
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "Soubor loga je příliš velký. Maximum je 5 MB."]);
+                exit();
+            }
+
             $stmt_old = $db->prepare("SELECT logo FROM breweries WHERE id = ?");
             $stmt_old->execute([$data->id]);
             $oldBrewery = $stmt_old->fetch();
@@ -94,8 +103,10 @@ if (!empty($data->id) && !empty($data->name)) {
             echo json_encode(["status" => "error", "message" => "Chyba při aktualizaci pivovaru."]);
         }
     } catch (PDOException $e) {
+        // ZMĚNA: Skrytí chybové hlášky
+        error_log("DB Error (update_brewery): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba DB: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze."]);
     }
 } else {
     http_response_code(400);

@@ -1,6 +1,6 @@
 <?php
-// backend/api/delete_user.php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -37,8 +37,10 @@ if (!empty($data->id)) {
         echo json_encode(["status" => "success", "message" => "Uživatel smazán."]);
     } catch (Exception $e) {
         $db->rollBack();
+        // ZMĚNA: Skrytí chybové hlášky
+        error_log("DB Error (delete_user): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Chyba: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba při mazání uživatele."]);
     }
 }
 ?>

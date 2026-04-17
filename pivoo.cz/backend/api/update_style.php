@@ -1,5 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// ZMĚNA: Omezení CORS
+header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
@@ -29,8 +30,10 @@ if (!empty($data->id) && !empty($data->name)) {
             echo json_encode(["status" => "error", "message" => "Chyba při ukládání úpravy."]);
         }
     } catch (PDOException $e) {
+        // ZMĚNA: Skrytí chyby
+        error_log("DB Error (update_style): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Název už existuje nebo nastala chyba."]);
+        echo json_encode(["status" => "error", "message" => "Název už existuje nebo nastala interní chyba serveru."]);
     }
 } else {
     http_response_code(400);
