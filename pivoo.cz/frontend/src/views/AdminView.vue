@@ -36,8 +36,14 @@
               </tr>
               <tr v-else>
                 <th>Název</th>
-                <th v-if="activeTab !== 'styles'">Info</th>
-                <th v-if="activeTab === 'locations'" class="desktop-only">Typ podniku</th>
+                <th v-if="activeTab === 'breweries'">Piva</th>
+                
+                <th v-if="activeTab === 'beers'">Pivovar</th>
+                <th v-if="activeTab === 'beers'">Styl</th>
+                
+                <th v-if="activeTab === 'locations'">Typ podniku</th>
+                <th v-if="['breweries', 'locations'].includes(activeTab)">Město</th>
+                <th v-if="['breweries', 'locations'].includes(activeTab)">Země</th>
                 <th class="w-100 text-right">Akce</th>
               </tr>
             </thead>
@@ -102,29 +108,55 @@
                       </div>
                       <div class="item-text">
                         <strong>{{ item.name }}</strong>
-                        <small v-if="activeTab === 'beers'" class="mobile-only">{{ item.brewery_name }}</small>
+                        <small v-if="activeTab === 'beers'" class="mobile-only">{{ item.brewery_name }} • {{ item.style }}</small>
                         <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only">{{ item.city || 'Lokalita neuvedena' }}</small>
+                        <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only">
+                          {{ item.country || 'Země neuvedena' }}
+                        </small>
+                        <small v-if="activeTab === 'breweries'" class="mobile-only">Piv v katalogu: {{ item.total_beers_in_catalog || 0 }}</small>
                         <small v-if="activeTab === 'locations'" class="mobile-only">
                           Typ: {{ item.type === 'hospoda' ? 'Hospoda / Bar' : (item.type === 'jine' ? 'Jiné' : item.type) }}
                         </small>
                       </div>
                     </div>
                   </td>
-                  <td v-if="activeTab === 'beers'" data-label="Info" class="desktop-only">
+
+                  <td v-if="activeTab === 'breweries'" data-label="Piva" class="desktop-only">
                     <div class="td-content">
-                      <small>{{ item.brewery_name }} • {{ item.style }}</small>
+                      <strong>{{ item.total_beers_in_catalog || 0 }}</strong>
                     </div>
                   </td>
-                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Město" class="desktop-only">
+
+                  <td v-if="activeTab === 'beers'" data-label="Pivovar" class="desktop-only">
                     <div class="td-content">
-                      {{ item.city || '-' }}
+                      {{ item.brewery_name }}
                     </div>
                   </td>
+                  <td v-if="activeTab === 'beers'" data-label="Styl" class="desktop-only">
+                    <div class="td-content">
+                      {{ item.style }}
+                    </div>
+                  </td>
+
                   <td v-if="activeTab === 'locations'" data-label="Typ podniku" class="desktop-only">
                     <div class="td-content">
                       {{ item.type === 'hospoda' ? 'Hospoda / Bar' : (item.type === 'jine' ? 'Jiné' : item.type) }}
                     </div>
                   </td>
+
+                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Město" class="desktop-only">
+                    <div class="td-content">
+                      {{ item.city || '-' }}
+                    </div>
+                  </td>
+
+                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Země" class="desktop-only">
+                    <div class="td-content country-cell">
+                      <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" class="admin-flag-icon" :alt="item.country" />
+                      <span>{{ item.country || '-' }}</span>
+                    </div>
+                  </td>
+
                   <td data-label="Akce">
                     <div class="td-content action-buttons">
                       <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
@@ -253,7 +285,6 @@ const selectedUserForPassword = ref(null)
 const selectedUserForBan = ref(null)
 const selectedUserForAvatarRemove = ref(null)
 
-// DEFINICE FORM DATA PRO VŠECHNY MODÁLY
 const formData = ref({
   beer: { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false },
   brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null },
@@ -285,25 +316,31 @@ const tabs = [
 const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl', users: 'uživatele' }[activeTab.value]))
 
 const filteredUsers = computed(() => {
-  if (!searchQuery.value) return allUsers.value
-  const query = searchQuery.value.toLowerCase()
-  return allUsers.value.filter(u => 
-    u.username.toLowerCase().includes(query) || 
-    u.email.toLowerCase().includes(query) ||
-    `${u.first_name} ${u.last_name}`.toLowerCase().includes(query)
-  )
+  let items = [...allUsers.value]
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    items = items.filter(u => 
+      u.username.toLowerCase().includes(query) || 
+      u.email.toLowerCase().includes(query) ||
+      `${u.first_name} ${u.last_name}`.toLowerCase().includes(query)
+    )
+  }
+  return items.sort((a, b) => (a.username || '').localeCompare(b.username || '', 'cs'))
 })
 
 const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value }[activeTab.value] || []))
 
 const filteredCurrentItems = computed(() => {
-  if (!searchQuery.value) return currentItems.value
-  const query = searchQuery.value.toLowerCase()
-  return currentItems.value.filter(item => item.name.toLowerCase().includes(query))
+  let items = [...currentItems.value]
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    items = items.filter(item => item.name.toLowerCase().includes(query))
+  }
+  return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
 })
 
 const totalPages = computed(() => {
-  const total = activeTab.value === 'users' ? filteredUsers.value.length : filteredCurrentItems.value.length
+  const total = activeTab.value === 'users' ? filteredUsers.length : filteredCurrentItems.length
   return Math.ceil(total / itemsPerPage)
 })
 
@@ -330,7 +367,6 @@ watch(loadMoreTrigger, (el) => {
   if (observer) observer.disconnect()
   if (el) {
     observer = new IntersectionObserver((entries) => {
-      // Aktivujeme scrollování jen v mobilním režimu
       if (entries[0].isIntersecting && isMobileMode.value) {
         if (currentPage.value < totalPages.value) {
           currentPage.value++
@@ -518,6 +554,9 @@ const handleDelete = async () => {
 .admin-section-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid var(--border); margin-top: auto; }
 .footer-info { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
 .footer-info strong { color: var(--text-main); }
+
+.country-cell { display: flex; align-items: center; gap: 0.5rem; }
+.admin-flag-icon { width: 18px; height: auto; border-radius: 2px; box-shadow: 0 0 1px rgba(0,0,0,0.3); }
 
 :deep(.pagination-wrapper) { margin-top: 0; padding: 0; }
 

@@ -149,7 +149,8 @@ const authStore = useAuthStore()
 const { beers, beersPagination, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
 const currentPage = ref(1)
-const itemsPerPage = 12
+// ZMĚNA: Standardizováno na 30 položek pro desktopovou paginaci i mobilní dávky
+const itemsPerPage = 30
 const sortBy = ref('name_asc')
 
 const initialFilters = {
@@ -215,8 +216,6 @@ onUnmounted(() => {
 // Sledování filtrů (pokud se změní, začínáme od začátku na str. 1 a NEPŘIPOJUJEME)
 watch([filters, sortBy], () => {
   if (currentPage.value !== 1) {
-    // Tímto nastavíme stránku na 1, což odpálí watcher na currentPage. 
-    // Musíme ale zajistit, že append bude false.
     isAppending.value = false 
     currentPage.value = 1
   } else {
@@ -225,8 +224,6 @@ watch([filters, sortBy], () => {
 }, { deep: true })
 
 watch(currentPage, () => {
-  // Pokud jsme stránku změnili přes BasePagination (isAppending je false), 
-  // uděláme klasický loadBeers(false). Jinak se o fetch postaral loadNextPage.
   if (!isAppending.value) {
     loadBeers(false)
   }
@@ -333,7 +330,6 @@ const openDetail = async (beer) => {
 </script>
 
 <style scoped>
-/* Původní styly zůstávají zachovány */
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
@@ -373,7 +369,6 @@ const openDetail = async (beer) => {
 .slide-fade-leave-active { transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1); }
 .slide-fade-enter-from, .slide-fade-leave-to { transform: translateY(-10px); opacity: 0; }
 
-/* Styly pro stránkování a nekonečné scrollování */
 .desktop-pagination { display: block; }
 .load-more-trigger { height: 20px; width: 100%; }
 .mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }

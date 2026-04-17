@@ -23,7 +23,8 @@ class Database {
             // Aby se data vracela jako asociativní pole
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         } catch(PDOException $exception) {
-            echo "Chyba připojení k databázi: " . $exception->getMessage();
+            // BEZPEČNOSTNÍ ÚPRAVA: Chyba se loguje interně, nevypisuje se uživateli
+            error_log("Chyba připojení k databázi: " . $exception->getMessage());
         }
 
         return $this->conn;

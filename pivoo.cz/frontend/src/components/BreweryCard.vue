@@ -27,12 +27,6 @@
             <span v-else class="flag" :title="brewery.country">🌍</span>
             {{ formatLocation(brewery) }}
           </p>
-          
-          <div class="card-meta" v-if="brewery.address">
-            <div class="meta-item">
-              <MapPinIcon :size="12" /> {{ brewery.address }}
-            </div>
-          </div>
 
           <div class="card-meta" style="margin-top: 0.5rem;" @click.stop>
             <OpeningHoursDisplay :openingHours="brewery.opening_hours" />
@@ -59,7 +53,7 @@
 </template>
 
 <script setup>
-import { FactoryIcon, StarIcon, InfoIcon, MapPinIcon } from 'lucide-vue-next'
+import { FactoryIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
@@ -70,9 +64,12 @@ defineEmits(['showDetail'])
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
 const toggleFav = () => { catalogStore.toggleFavorite(props.brewery.id, 'brewery') }
+
 const formatLocation = (brewery) => {
   let loc = brewery.city || '';
-  if (brewery.country && brewery.country !== 'Česká republika') { loc += loc ? ', ' + brewery.country : brewery.country; }
+  if (brewery.country) { 
+    loc += loc ? ', ' + brewery.country : brewery.country; 
+  }
   return loc || 'Lokalita neznámá';
 }
 </script>
@@ -89,7 +86,6 @@ const formatLocation = (brewery) => {
 .icon-wrapper.has-logo { padding: 0; background: transparent; border: 1px solid var(--border); overflow: hidden; }
 .brewery-logo-img { width: 100%; height: 100%; object-fit: contain; background: white; }
 
-/* OPRAVA: Odstraněno overflow: hidden, nahrazeno min-width: 0 */
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; flex: 1; }
 
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
@@ -100,7 +96,6 @@ const formatLocation = (brewery) => {
 .card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .flag-icon { width: 20px; height: auto; vertical-align: middle; margin-right: 0.3rem; border-radius: 2px; }
 .card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.1rem; }
-.meta-item { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
 .rating-value { font-size: 0.9rem; font-weight: 800; color: #d97706; }
 .count { font-size: 0.75rem; color: var(--text-muted); margin-left: 4px; }

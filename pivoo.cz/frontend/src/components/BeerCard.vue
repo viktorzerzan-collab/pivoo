@@ -18,19 +18,15 @@
               >
                 <StarIcon :size="20" :fill="beer.is_favorite ? 'var(--primary)' : 'none'" :color="beer.is_favorite ? 'var(--primary)' : 'var(--text-muted)'" />
               </button>
-              <div class="mini-badges">
-                <span v-if="beer.is_unfiltered" class="m-badge" title="Nefiltrované">N</span>
-                <span v-if="beer.is_unpasteurized" class="m-badge" title="Nepasterizované">P</span>
-              </div>
             </div>
           </div>
           
-          <p class="card-subtitle">
+          <div class="brewery-line">
             <img v-if="beer.brewery_country_code" :src="`https://flagcdn.com/w20/${beer.brewery_country_code}.png`" class="flag-icon" :title="beer.brewery_country" alt="flag" />
             <span v-else class="flag" :title="beer.brewery_country">🌍</span>
-            {{ beer.brewery_name }} • {{ beer.style || 'Bez stylu' }}
-          </p>
-          
+            <span class="brewery-name">{{ beer.brewery_name }}</span>
+          </div>
+
           <div class="card-meta">
             <div v-if="beer.epm" class="meta-item" title="Stupňovitost (EPM)">
               <ActivityIcon :size="12" /> {{ beer.epm }}°
@@ -46,8 +42,11 @@
             </div>
           </div>
 
-          <div class="tags-row" v-if="beer.fermentation">
-             <span class="tag-badge">{{ beer.fermentation }} kvašení</span>
+          <div class="tags-row">
+             <span class="tag-badge">{{ beer.style || 'Bez stylu' }}</span>
+             <span v-if="beer.fermentation" class="tag-badge">{{ beer.fermentation }} kvašení</span>
+             <span v-if="beer.is_unfiltered" class="tag-badge">Nefiltrované</span>
+             <span v-if="beer.is_unpasteurized" class="tag-badge">Nepasterizované</span>
           </div>
 
           <div v-if="beer.avg_rating" class="card-rating">
@@ -94,25 +93,42 @@ const toggleFav = () => { catalogStore.toggleFavorite(props.beer.id, 'beer') }
 .card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 
 .icon-wrapper { padding: 0.75rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
-/* ZMĚNA: Tmavé pozadí pro ikonu */
 .beer-bg { background: #1e293b; }
 
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; overflow: hidden; flex: 1; }
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
-.card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.card-title { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .fav-btn { background: none; border: none; padding: 4px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
 .fav-btn:hover { transform: scale(1.2); color: var(--primary); }
 .fav-btn.active { color: var(--primary); }
-.mini-badges { display: flex; gap: 2px; }
-.m-badge { font-size: 0.65rem; font-weight: 900; background: var(--border); color: var(--text-muted); width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: help; }
-.card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.flag-icon { width: 20px; height: auto; vertical-align: middle; margin-right: 0.3rem; border-radius: 2px; }
-.card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.25rem; }
+
+.brewery-line { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; }
+.brewery-name { font-size: 0.9rem; color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.flag-icon { width: 20px; height: auto; border-radius: 2px; flex-shrink: 0; }
+.flag { font-size: 1rem; flex-shrink: 0; }
+
+.card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.4rem; padding: 0.2rem 0; }
 .meta-item { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
-.tag-badge { background: var(--bg-app); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: lowercase; }
-.card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
-.rating-value { font-size: 0.9rem; font-weight: 800; color: #d97706; }
+
+.tags-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+
+/* Sjednocený styl pro všechny štítky */
+.tag-badge { 
+  background: var(--bg-app); 
+  border: 1px solid var(--border); 
+  padding: 3px 8px; 
+  border-radius: 6px; 
+  font-size: 0.7rem; 
+  font-weight: 700; 
+  color: var(--text-muted); 
+  transition: all 0.3s ease;
+}
+
+.card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.8rem; }
+.rating-value { font-size: 0.95rem; font-weight: 800; color: #d97706; }
 .count { font-size: 0.75rem; color: var(--text-muted); margin-left: 4px; }
+
 .card-footer { padding: 0 1.25rem 1.25rem; }
 .full-width-btn { width: 100%; justify-content: center; background-color: var(--bg-app); border: 1px solid var(--border); color: var(--text-main); }
 .full-width-btn:hover { background-color: var(--border); }

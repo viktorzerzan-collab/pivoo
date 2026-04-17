@@ -28,7 +28,7 @@
             <template v-else>
               <img v-if="item?.country_code" :src="`https://flagcdn.com/w20/${item?.country_code}.png`" class="flag-icon" :title="item?.country" alt="flag" />
               <span v-else-if="item?.country" class="flag" :title="item?.country">🌍</span>
-              {{ item?.city || 'Neznámé město' }}{{ item?.country && item?.country !== 'Česká republika' ? ', ' + item?.country : '' }}
+              {{ item?.city || 'Neznámé město' }}{{ item?.country ? ', ' + item?.country : '' }}
             </template>
           </p>
         </div>
@@ -149,7 +149,7 @@
               <strong>Adresa:</strong><br>
               <span v-if="item.address">{{ item.address }}<br></span>
               <span>{{ item.zip_code ? item.zip_code + ' ' : '' }}{{ item.city || 'Neznámé město' }}</span>
-              <span v-if="item.country && item.country !== 'Česká republika'"><br>{{ item.country }}</span>
+              <span v-if="item.country"><br>{{ item.country }}</span>
             </div>
           </div>
 
@@ -157,7 +157,7 @@
             <MapIcon :size="18" class="icon-muted" />
             <div class="info-text">
               <strong>Navigace:</strong><br>
-              <a :href="`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
+              <a :href="`https://www.google.com/maps?q=${item.lat},${item.lng}`" 
                  target="_blank" 
                  class="link" style="display: inline-flex; align-items: center; gap: 0.3rem;">
                  Otevřít v mapě <ExternalLinkIcon :size="14" />
@@ -211,7 +211,7 @@ import {
   FlaskConicalIcon, TagIcon, MapIcon, ExternalLinkIcon 
 } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
-import OpeningHoursDisplay from '../OpeningHoursDisplay.vue' // PŘIDÁNO
+import OpeningHoursDisplay from '../OpeningHoursDisplay.vue'
 
 defineProps({
   show: Boolean,

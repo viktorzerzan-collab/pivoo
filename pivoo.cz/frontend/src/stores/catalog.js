@@ -19,7 +19,7 @@ export const useCatalogStore = defineStore('catalog', {
     error: null,
   }),
   actions: {
-    // Zachováno primárně pro Dashboard (potřebujeme naplnit selectboxy pro CheckIn)
+    // Načtení základních dat (používáno pro Dashboard a Administraci)
     async fetchAllData() {
       if (this.isLoading) return
       
@@ -28,9 +28,11 @@ export const useCatalogStore = defineStore('catalog', {
       
       try {
         const results = await Promise.allSettled([
-          apiFetch('/beers.php?limit=2000'),      // Pro selecty potřebujeme maximum záznamů
+          apiFetch('/beers.php?limit=2000'),
           apiFetch('/breweries.php?limit=2000'),   
-          apiFetch('/locations.php?limit=2000'),   
+          // ZMĚNA: Přidán parametr include_all=1, aby byly v dropdownu pro zápis 
+          // piva vidět i lokace typu 'jine' (Doma, Venku atd.)
+          apiFetch('/locations.php?limit=2000&include_all=1'),   
           apiFetch('/styles.php'),      
           apiFetch('/countries.php'),   
           apiFetch('/stats.php'),
@@ -58,12 +60,10 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // --- NOVÉ AKCE PRO STRÁNKOVÁNÍ A FILTROVÁNÍ NA SERVERU ---
-
+    // Načítání piv s podporou filtrů a stránkování
     async fetchBeers(params = {}, append = false) {
-      this.isLoading = !append // Zobrazíme hlavní loader jen při prvním načtení (ne při scrollu)
+      this.isLoading = !append
       try {
-        // Odstraníme prázdné parametry (null, undefined, prázdný řetězec)
         const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== '' && v !== null))
         const query = new URLSearchParams(cleanParams).toString()
         
@@ -79,6 +79,7 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
+    // Načítání pivovarů s podporou filtrů a stránkování
     async fetchBreweries(params = {}, append = false) {
       this.isLoading = !append
       try {
@@ -97,6 +98,7 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
+    // Načítání lokací s podporou filtrů a stránkování (zde include_all neposíláme, chceme jen katalog)
     async fetchLocations(params = {}, append = false) {
       this.isLoading = !append
       try {
@@ -115,7 +117,7 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // Původní metoda pro oblíbené
+    // Metoda pro přepínání oblíbených položek (pivo, pivovar, podnik)
     async toggleFavorite(entityId, entityType) {
       try {
         const res = await apiFetch('/toggle_favorite.php', {

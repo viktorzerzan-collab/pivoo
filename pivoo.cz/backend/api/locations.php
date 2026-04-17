@@ -1,5 +1,5 @@
 <?php
-// ZMĚNA: Omezení CORS
+// backend/api/locations.php
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 require_once '../Database.php';
@@ -7,7 +7,7 @@ require_once '../JwtHandler.php';
 
 $token = JwtHandler::getBearerToken();
 $decoded = $token ? JwtHandler::decode($token) : null;
-$userId = $decoded ? $decoded['user_id'] : 0;
+$userId = $decoded ? (int)$decoded['user_id'] : 0;
 
 $db = (new Database())->getConnection();
 
@@ -18,13 +18,20 @@ if ($db) {
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 30;
         $offset = ($page - 1) * $limit;
 
-        $search = isset($_GET['search']) ? $_GET['search'] : '';
-        $city = isset($_GET['city']) ? $_GET['city'] : '';
-        $country = isset($_GET['country']) ? $_GET['country'] : '';
-        $sort = isset($_GET['sort']) ? $_GET['sort'] : 'name_asc';
+        $search = $_GET['search'] ?? '';
+        $city = $_GET['city'] ?? '';
+        $country = $_GET['country'] ?? '';
+        $sort = $_GET['sort'] ?? 'name_asc';
 
         // 2. Sestavení dynamických WHERE podmínek
         $whereParts = ["l.is_approved = 1"];
+        
+        // OPRAVA: Odfiltrování typu 'jine' (Doma, Venku atd.) pro katalog.
+        // Záznamy se zobrazí pouze pokud je v URL explicitně include_all=1.
+        if (!isset($_GET['include_all']) || $_GET['include_all'] !== '1') {
+            $whereParts[] = "l.type != 'jine'";
+        }
+        
         $params = [':uid' => $userId];
 
         if ($search !== '') {
@@ -37,7 +44,7 @@ if ($db) {
         }
         if ($country !== '') {
             $whereParts[] = "l.country_id = :country";
-            $params[':country'] = $country;
+            $params[':country'] = (int)$country;
         }
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
@@ -55,7 +62,7 @@ if ($db) {
         $totalItems = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         $totalPages = ceil($totalItems / $limit);
 
-        // 4. Nastavení řazení
+        // 4. Nastavení řazení (Whitelist přístup pro bezpečnost)
         $orderBy = "is_favorite DESC"; 
         switch ($sort) {
             case 'name_desc': $orderBy .= ", l.name DESC"; break;
@@ -108,7 +115,6 @@ if ($db) {
             ]
         ]);
     } catch (PDOException $e) {
-        // ZMĚNA: Přidán try-catch s logováním
         error_log("DB Error (locations): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba při načítání lokací."]);

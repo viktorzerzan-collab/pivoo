@@ -1,5 +1,5 @@
 <?php
-// ZMĚNA: Omezení CORS
+// backend/api/detailed_stats.php
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
@@ -10,14 +10,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
+// ZABEZPEČENÍ: Ověření uživatele
 $user = JwtHandler::checkUser();
 $user_id = $user['user_id'];
 $db = (new Database())->getConnection();
 
-$period = $_GET['period'] ?? 'all';
-$scope = $_GET['scope'] ?? 'me'; 
-$dateCondition = "";
+// VALIDACE VSTUPŮ: Whitelist pro období a rozsah
+$allowed_periods = ['all', 'month', 'year'];
+$period = isset($_GET['period']) && in_array($_GET['period'], $allowed_periods) ? $_GET['period'] : 'all';
 
+$allowed_scopes = ['me', 'global'];
+$scope = isset($_GET['scope']) && in_array($_GET['scope'], $allowed_scopes) ? $_GET['scope'] : 'me';
+
+$dateCondition = "";
 if ($period === 'month') {
     $dateCondition = " AND consumed_at >= DATE_FORMAT(NOW() ,'%Y-%m-01 00:00:00')";
 } elseif ($period === 'year') {
@@ -38,8 +43,6 @@ $response = [
 ];
 
 if ($db) {
-    // ZMĚNA: U všech try-catch bloků přidáno logování chyb místo tichého ignorování, které by ztížilo ladění na serveru.
-    
     // 1. TOP PIVA
     try {
         $beers_query = "SELECT b.name, br.name as brewery, SUM(c.quantity) as count
@@ -133,6 +136,6 @@ if ($db) {
     ]);
 } else {
     http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "Chyba spojení s DB."]);
+    echo json_encode(["status" => "error", "message" => "Chyba spojení s databází."]);
 }
 ?>

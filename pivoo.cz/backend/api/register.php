@@ -1,5 +1,5 @@
 <?php
-// ZMĚNA: Omezení CORS
+// ZMĚNA: Omezení CORS na konkrétní doménu pro vyšší bezpečnost
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -25,21 +25,21 @@ try {
         exit();
     }
 
-    // OPRAVA 1: Validace správného formátu e-mailu
+    // Validace formátu e-mailu
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Neplatný formát e-mailové adresy."]);
         exit();
     }
 
-    // OPRAVA 2: Backendová validace délky hesla
+    // Validace délky hesla
     if (strlen($password) < 8) {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Heslo musí mít alespoň 8 znaků."]);
         exit();
     }
 
-    // OPRAVA 3: Bezpečné parsování data narození
+    // Bezpečné parsování data narození a kontrola věku
     try {
         $bday = new DateTime($birthdate);
         $today = new DateTime('today');
@@ -57,17 +57,19 @@ try {
     $avatar_filename = null;
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         
-        // Backendová validace velikosti souboru (max 5 MB)
+        // Validace velikosti souboru (max 5 MB)
         if ($_FILES['avatar']['size'] > 5 * 1024 * 1024) {
             http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "Soubor profilové fotky je příliš velký. Maximum je 5 MB."]);
+            echo json_encode(["status" => "error", "message" => "Soubor profilové fotky je příliš velký."]);
             exit();
         }
 
         $file_tmp = $_FILES['avatar']['tmp_name'];
         $image_info = getimagesize($file_tmp);
         
-        if ($image_info) {
+        // Zabezpečení: Kontrola reálného MIME typu a whitelist přípon
+        $allowed_types = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP];
+        if ($image_info && in_array($image_info[2], $allowed_types)) {
             $w = $image_info[0];
             $h = $image_info[1];
             $type = $image_info[2];
@@ -82,27 +84,44 @@ try {
                 $min_side = min($w, $h);
                 $dst = imagecreatetruecolor($target_size, $target_size);
                 
-                // Zachování průhlednosti pro WebP
+                // Zachování průhlednosti
                 imagealphablending($dst, false);
                 imagesavealpha($dst, true);
                 
                 imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
                 
-                // Změna přípony na .webp
+                // Generování unikátního názvu a vynucení přípony .webp (překódování odstraní skrytý kód)
                 $avatar_filename = uniqid('avatar_') . '.webp';
                 $upload_dir = '../uploads/avatars/';
                 if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
                 
-                // Uložení jako WebP s kvalitou 80
                 imagewebp($dst, $upload_dir . $avatar_filename, 80);
                 
                 imagedestroy($src); 
                 imagedestroy($dst);
+            } else {
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "Nepodařilo se zpracovat obrázek."]);
+                exit();
             }
+        } else {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Nepodporovaný formát obrázku (pouze JPG, PNG, WEBP)."]);
+            exit();
         }
     }
 
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
+    
+    // Kontrola duplicity uživatele/emailu předem (předchází úniku informací z PDOException)
+    $check_stmt = $db_connection->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+    $check_stmt->execute([$username, $email]);
+    if ($check_stmt->fetch()) {
+        http_response_code(409);
+        echo json_encode(["status" => "error", "message" => "Uživatelské jméno nebo e-mail již existuje."]);
+        exit();
+    }
+
     $query = "INSERT INTO users (username, first_name, last_name, email, birthdate, password_hash, role, avatar, theme_mode, theme_preference) 
               VALUES (?, ?, ?, ?, ?, ?, 'user', ?, 'manual', 'light')";
     $insert = $db_connection->prepare($query);
@@ -111,9 +130,8 @@ try {
     echo json_encode(["status" => "success", "message" => "Registrace úspěšná."]);
 
 } catch (Throwable $e) {
-    // Zalognutí chyb a zobrazení bezpečné zprávy pro případ duplicitních mailů atd.
-    error_log("DB Error (register): " . $e->getMessage());
+    error_log("Registration Error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "Chyba při registraci (uživatelské jméno nebo e-mail už možná existuje)."]);
+    echo json_encode(["status" => "error", "message" => "Omlouváme se, při registraci nastala chyba."]);
 }
 ?>
