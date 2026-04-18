@@ -13,7 +13,7 @@
 import { onMounted, ref, watch, onUnmounted } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { NavigationIcon } from 'lucide-vue-next' // PŘIDÁNO
+import { NavigationIcon } from 'lucide-vue-next'
 
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
@@ -27,8 +27,8 @@ const emit = defineEmits(['showDetail'])
 const mapElement = ref(null)
 let map = null
 let markersGroup = null
-let userMarker = null // PŘIDÁNO: Marker pro uživatele
-const isLocating = ref(false) // PŘIDÁNO: Stav hledání polohy
+let userMarker = null
+const isLocating = ref(false)
 
 const escapeHTML = (str) => {
   if (!str) return '';
@@ -44,7 +44,8 @@ const escapeHTML = (str) => {
 }
 
 const initMap = () => {
-  map = L.map('map').setView([49.8175, 15.4730], 7)
+  if (!mapElement.value) return
+  map = L.map(mapElement.value).setView([49.8175, 15.4730], 7)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
@@ -55,7 +56,7 @@ const initMap = () => {
 }
 
 const updateMarkers = () => {
-  if (!markersGroup) return
+  if (!markersGroup || !map) return
   markersGroup.clearLayers()
 
   const customIcon = L.icon({
@@ -66,31 +67,41 @@ const updateMarkers = () => {
     popupAnchor: [1, -34]
   })
 
+  const bounds = L.latLngBounds()
+  let hasValidCoords = false
+
   props.items.forEach(item => {
     if (item.lat && item.lng) {
       const marker = L.marker([item.lat, item.lng], { icon: customIcon })
       
       const popupContent = `
         <div class="map-popup">
-          <strong>${escapeHTML(item.name)}</strong><br>
-          ${escapeHTML(item.city || '')}<br>
+          <strong class="popup-title">${escapeHTML(item.name)}</strong><br>
+          <span class="popup-city">${escapeHTML(item.city || '')}</span><br>
           <button class="popup-btn" id="btn-${item.id}">Zobrazit detail</button>
         </div>
       `
       marker.bindPopup(popupContent)
       
       marker.on('popupopen', () => {
-        document.getElementById(`btn-${item.id}`).addEventListener('click', () => {
-          emit('showDetail', item)
-        })
+        const btn = document.getElementById(`btn-${item.id}`)
+        if (btn) {
+          btn.onclick = () => emit('showDetail', item)
+        }
       })
 
       markersGroup.addLayer(marker)
+      bounds.extend([item.lat, item.lng])
+      hasValidCoords = true
     }
   })
+
+  // Automatický zoom podle špendlíků
+  if (hasValidCoords) {
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 })
+  }
 }
 
-// PŘIDÁNO: Funkce pro lokalizaci uživatele
 const locateMe = () => {
   if (!navigator.geolocation) {
     alert("Váš prohlížeč nepodporuje geolokaci.")
@@ -105,11 +116,8 @@ const locateMe = () => {
       const lng = pos.coords.longitude
       
       if (map) {
-        map.setView([lat, lng], 11) // Vycentrování s vhodným přiblížením
-        
+        map.setView([lat, lng], 13)
         if (userMarker) map.removeLayer(userMarker)
-        
-        // Využití CircleMarkeru pro čistý moderní vzhled "modré tečky"
         userMarker = L.circleMarker([lat, lng], {
           radius: 8,
           fillColor: "#3b82f6",
@@ -122,18 +130,17 @@ const locateMe = () => {
     },
     (err) => {
       isLocating.value = false
-      console.error("Geolokace selhala:", err)
-      alert("Nepodařilo se zjistit vaši polohu. Zkontrolujte oprávnění v prohlížeči.")
+      alert("Nepodařilo se zjistit vaši polohu.")
     }
   )
 }
 
-watch(() => props.items, updateMarkers, { deep: true })
+watch(() => props.items, () => {
+  updateMarkers()
+}, { deep: true })
 
 onMounted(() => {
-  setTimeout(() => {
-    initMap()
-  }, 100)
+  setTimeout(initMap, 100)
 })
 
 onUnmounted(() => {
@@ -152,18 +159,13 @@ onUnmounted(() => {
   position: relative;
 }
 
-#map {
-  height: 100%;
-  width: 100%;
-  z-index: 1;
-}
+#map { height: 100%; width: 100%; z-index: 1; }
 
-/* PŘIDÁNO: Styl tlačítka pro geolokaci */
 .btn-locate {
   position: absolute;
   top: 15px;
   right: 15px;
-  z-index: 400; /* Mapové prvky mají v Leafletu z-index kolem 400 */
+  z-index: 400;
   background-color: var(--bg-panel);
   color: var(--text-main);
   border: 2px solid var(--border);
@@ -173,48 +175,40 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
-  font-size: 0.9rem;
   cursor: pointer;
   box-shadow: var(--shadow-md);
-  transition: all 0.2s ease;
 }
 
-.btn-locate:hover:not(:disabled) {
-  border-color: var(--primary);
-  color: var(--primary-hover);
-}
-
-.btn-locate:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.spinning {
-  animation: spin 1.5s linear infinite;
-}
-
+.btn-locate:hover { border-color: var(--primary); }
+.spinning { animation: spin 1.5s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 :deep(.leaflet-popup-content-wrapper) {
   background: var(--bg-panel);
   color: var(--text-main);
   border-radius: 8px;
+  padding: 5px;
 }
 
 :deep(.map-popup) {
   text-align: center;
   font-family: 'Inter', sans-serif;
+  min-width: 120px;
 }
 
+.popup-title { font-size: 1rem; display: block; margin-bottom: 2px; }
+.popup-city { color: var(--text-muted); font-size: 0.85rem; }
+
 :deep(.popup-btn) {
-  margin-top: 8px;
+  margin-top: 10px;
   background: var(--primary);
   color: #1e293b;
   border: none;
-  padding: 5px 12px;
-  border-radius: 4px;
+  padding: 6px 14px;
+  border-radius: 6px;
   font-weight: 700;
   cursor: pointer;
   font-size: 0.8rem;
+  width: 100%;
 }
 </style>

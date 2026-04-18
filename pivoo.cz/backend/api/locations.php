@@ -21,8 +21,15 @@ if ($db) {
         $city = $_GET['city'] ?? '';
         $country = $_GET['country'] ?? '';
         $sort = $_GET['sort'] ?? 'name_asc';
+        
+        // Pokud include_all není 1, budeme filtrovat pryč 'jine'
+        $includeAll = isset($_GET['include_all']) && $_GET['include_all'] == 1;
 
         $whereParts = ["loc.is_approved = 1"];
+        if (!$includeAll) {
+            $whereParts[] = "loc.type != 'jine'";
+        }
+
         $params = [':uid' => $userId];
 
         function applyMultiSearch(&$whereParts, &$params, $inputValue, $dbColumn, $paramPrefix) {
@@ -96,7 +103,7 @@ if ($db) {
     } catch (PDOException $e) {
         error_log("DB Error (locations): " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Vnitřní chyba při načítání podniků."]);
+        echo json_encode(["status" => "error", "message" => "Vnitřní chyba."]);
     }
 }
 ?>
