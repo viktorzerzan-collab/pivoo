@@ -1,5 +1,5 @@
 <?php
-// ZMĚNA: Omezení CORS
+// backend/api/add_location.php
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
@@ -21,18 +21,20 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name) && !empty($data->type)) {
     try {
-        $query = "INSERT INTO locations (name, type, city, country_id, address, zip_code, email, phone, website, opening_hours, is_approved) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $query = "INSERT INTO locations (name, type, city, country_id, address, zip_code, email, phone, website, lat, lng, opening_hours, is_approved) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         
         $stmt = $db->prepare($query);
         
         $city = !empty($data->city) ? $data->city : null;
-        $country_id = !empty($data->country_id) ? (int)$data->country_id : 1; // 1 = CZ
+        $country_id = !empty($data->country_id) ? (int)$data->country_id : 1; 
         $address = !empty($data->address) ? $data->address : null;
         $zip_code = !empty($data->zip_code) ? $data->zip_code : null;
         $email = !empty($data->email) ? $data->email : null;
         $phone = !empty($data->phone) ? $data->phone : null;
         $website = !empty($data->website) ? $data->website : null;
+        $lat = !empty($data->lat) ? (float)$data->lat : null;
+        $lng = !empty($data->lng) ? (float)$data->lng : null;
         $opening_hours = !empty($data->opening_hours) ? $data->opening_hours : null;
 
         if ($stmt->execute([
@@ -45,6 +47,8 @@ if (!empty($data->name) && !empty($data->type)) {
             $email, 
             $phone, 
             $website, 
+            $lat,
+            $lng,
             $opening_hours
         ])) {
             echo json_encode(["status" => "success", "message" => "Nové místo bylo úspěšně přidáno."]);
@@ -53,7 +57,6 @@ if (!empty($data->name) && !empty($data->type)) {
             echo json_encode(["status" => "error", "message" => "Nepodařilo se uložit místo."]);
         }
     } catch (PDOException $e) {
-        // ZMĚNA: Skrytí chybové hlášky
         error_log("DB Error (add_location): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze při ukládání lokace."]);

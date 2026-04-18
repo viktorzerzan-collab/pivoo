@@ -21,17 +21,11 @@
         <transition name="slide-fade">
           <div v-show="filtersOpen" class="filters-body">
             <div class="filters-grid">
-              <FilterInput v-model="filters.search" label="Název pivovaru" placeholder="Hledat pivovar..." />
+              <FilterInput v-model="filters.search" label="Název pivovaru" placeholder="Např. Prazdroj..." />
               
-              <BaseSelect v-model="filters.city" label="Město" placeholder="Všechna města" searchable>
-                <option value="">Všechna města</option>
-                <option v-for="city in uniqueCities" :key="city" :value="city">{{ city }}</option>
-              </BaseSelect>
+              <FilterInput v-model="filters.city" label="Město" placeholder="Např. Praha, Plzeň..." />
 
-              <BaseSelect v-model="filters.country" label="Země" placeholder="Všechny země" searchable>
-                <option value="">Všechny země</option>
-                <option v-for="c in countries" :key="c.id" :value="c.id">{{ c.name_cz }}</option>
-              </BaseSelect>
+              <FilterInput v-model="filters.country" label="Země" placeholder="Např. Česko, Rakousko..." />
             </div>
             
             <div class="filters-footer">
@@ -39,6 +33,22 @@
             </div>
           </div>
         </transition>
+      </div>
+
+      <div v-if="activeFilters.length > 0" class="active-filters-chips">
+        <span class="chips-label">Aktivní filtry:</span>
+        <div class="chips-container">
+          <button 
+            v-for="chip in activeFilters" 
+            :key="chip.id" 
+            class="filter-chip"
+            @click="removeFilter(chip)"
+            title="Zrušit filtr"
+          >
+            {{ chip.label }}
+            <XIcon :size="14" />
+          </button>
+        </div>
       </div>
 
       <div class="results-bar">
@@ -103,7 +113,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, FactoryIcon, FilterIcon, ChevronDownIcon } from 'lucide-vue-next'
+import { PlusIcon, FactoryIcon, FilterIcon, ChevronDownIcon, XIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -143,7 +153,37 @@ const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 const totalPages = computed(() => breweriesPagination.value?.total_pages || 1)
 const totalItems = computed(() => breweriesPagination.value?.total || 0)
 
-// --- Nekonečné scrollování ---
+// Geniální funkce pro rozdělování čárek na štítky
+const activeFilters = computed(() => {
+  const active = []
+  
+  const addMultiChips = (value, key, labelPrefix) => {
+    if (value) {
+       const parts = String(value).split(',').map(s => s.trim()).filter(s => s)
+       parts.forEach(part => {
+         active.push({ id: `${key}|${part}`, realKey: key, partValue: part, label: `${labelPrefix}: ${part}` })
+       })
+    }
+  }
+
+  addMultiChips(filters.value.search, 'search', 'Hledání')
+  addMultiChips(filters.value.city, 'city', 'Město')
+  addMultiChips(filters.value.country, 'country', 'Země')
+
+  return active
+})
+
+// Chytřejší mazání (umaže jen část textu, pokud je jich víc)
+const removeFilter = (chip) => {
+  if (chip.partValue) {
+    let parts = String(filters.value[chip.realKey]).split(',').map(s => s.trim()).filter(s => s)
+    parts = parts.filter(p => p !== chip.partValue)
+    filters.value[chip.realKey] = parts.join(', ')
+  } else {
+    filters.value[chip.realKey] = ''
+  }
+}
+
 const loadMoreTrigger = ref(null)
 const isAppending = ref(false)
 let observer = null
@@ -222,18 +262,6 @@ const sortOptions = [
   { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' }
 ]
 
-const uniqueCities = computed(() => {
-  const cities = new Set()
-  if (breweries.value) {
-    breweries.value.forEach(b => {
-      if (b.city && b.city.trim() !== '') {
-        cities.add(b.city.trim())
-      }
-    })
-  }
-  return Array.from(cities).sort((a, b) => a.localeCompare(b))
-})
-
 const openDetail = (item) => { 
   selectedItem.value = item
   isDetailOpen.value = true 
@@ -284,6 +312,45 @@ onMounted(async () => {
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
+/* Stylování aktivních štítků */
+.active-filters-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+.chips-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: var(--primary);
+  color: #1e293b;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.filter-chip:hover {
+  background-color: var(--primary-hover);
+  transform: scale(1.05);
+}
+
 .results-bar { 
   display: flex; 
   justify-content: space-between; 
@@ -301,7 +368,6 @@ onMounted(async () => {
 .breweries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 .empty-state { text-align: center; padding: 4rem; color: var(--text-muted); }
 
-/* Styly pro stránkování a nekonečné scrollování */
 .desktop-pagination { display: block; }
 .load-more-trigger { height: 20px; width: 100%; }
 .mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }

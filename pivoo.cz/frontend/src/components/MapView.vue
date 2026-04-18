@@ -1,6 +1,11 @@
 <template>
   <div class="map-container-wrapper">
     <div id="map" ref="mapElement"></div>
+    
+    <button class="btn-locate" @click="locateMe" :disabled="isLocating" title="Moje poloha">
+      <NavigationIcon :size="18" :class="{ 'spinning': isLocating }" />
+      {{ isLocating ? 'Hledám...' : 'Kde jsem?' }}
+    </button>
   </div>
 </template>
 
@@ -8,13 +13,13 @@
 import { onMounted, ref, watch, onUnmounted } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { NavigationIcon } from 'lucide-vue-next' // PŘIDÁNO
 
-// Oprava výchozích ikon Leafletu v produkčním buildu
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 const props = defineProps({
-  items: Array, // Seznam pivovarů nebo podniků
+  items: Array,
   type: { type: String, default: 'brewery' }
 })
 
@@ -22,8 +27,9 @@ const emit = defineEmits(['showDetail'])
 const mapElement = ref(null)
 let map = null
 let markersGroup = null
+let userMarker = null // PŘIDÁNO: Marker pro uživatele
+const isLocating = ref(false) // PŘIDÁNO: Stav hledání polohy
 
-// Pomocná funkce pro ochranu proti XSS
 const escapeHTML = (str) => {
   if (!str) return '';
   return str.toString().replace(/[&<>'"]/g, 
@@ -38,10 +44,8 @@ const escapeHTML = (str) => {
 }
 
 const initMap = () => {
-  // Inicializace mapy (střed ČR)
   map = L.map('map').setView([49.8175, 15.4730], 7)
 
-  // Podkladová mapa (OpenStreetMap)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map)
@@ -66,7 +70,6 @@ const updateMarkers = () => {
     if (item.lat && item.lng) {
       const marker = L.marker([item.lat, item.lng], { icon: customIcon })
       
-      // Bublina po kliknutí s využitím escapeHTML
       const popupContent = `
         <div class="map-popup">
           <strong>${escapeHTML(item.name)}</strong><br>
@@ -87,13 +90,50 @@ const updateMarkers = () => {
   })
 }
 
-// Sledování změn v datech (např. při filtrování)
+// PŘIDÁNO: Funkce pro lokalizaci uživatele
+const locateMe = () => {
+  if (!navigator.geolocation) {
+    alert("Váš prohlížeč nepodporuje geolokaci.")
+    return
+  }
+
+  isLocating.value = true
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      isLocating.value = false
+      const lat = pos.coords.latitude
+      const lng = pos.coords.longitude
+      
+      if (map) {
+        map.setView([lat, lng], 11) // Vycentrování s vhodným přiblížením
+        
+        if (userMarker) map.removeLayer(userMarker)
+        
+        // Využití CircleMarkeru pro čistý moderní vzhled "modré tečky"
+        userMarker = L.circleMarker([lat, lng], {
+          radius: 8,
+          fillColor: "#3b82f6",
+          color: "#ffffff",
+          weight: 3,
+          opacity: 1,
+          fillOpacity: 1
+        }).addTo(map).bindPopup("<b>Nacházíte se zde</b>").openPopup()
+      }
+    },
+    (err) => {
+      isLocating.value = false
+      console.error("Geolokace selhala:", err)
+      alert("Nepodařilo se zjistit vaši polohu. Zkontrolujte oprávnění v prohlížeči.")
+    }
+  )
+}
+
 watch(() => props.items, updateMarkers, { deep: true })
 
 onMounted(() => {
   setTimeout(() => {
     initMap()
-  }, 100) // Drobný odklad pro správné vykreslení kontejneru
+  }, 100)
 })
 
 onUnmounted(() => {
@@ -109,6 +149,7 @@ onUnmounted(() => {
   overflow: hidden;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  position: relative;
 }
 
 #map {
@@ -117,7 +158,43 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* Stylování bubliny uvnitř mapy */
+/* PŘIDÁNO: Styl tlačítka pro geolokaci */
+.btn-locate {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 400; /* Mapové prvky mají v Leafletu z-index kolem 400 */
+  background-color: var(--bg-panel);
+  color: var(--text-main);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+}
+
+.btn-locate:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary-hover);
+}
+
+.btn-locate:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
 :deep(.leaflet-popup-content-wrapper) {
   background: var(--bg-panel);
   color: var(--text-main);

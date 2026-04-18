@@ -34,21 +34,28 @@ if ($db) {
         $whereParts = ["b.is_approved = 1"];
         $params = [':uid' => $userId];
 
-        if ($search !== '') {
-            $whereParts[] = "b.name LIKE :search";
-            $params[':search'] = "%{$search}%";
+        function applyMultiSearch(&$whereParts, &$params, $inputValue, $dbColumn, $paramPrefix) {
+            if (trim($inputValue) !== '') {
+                $values = array_filter(array_map('trim', explode(',', $inputValue)));
+                if (!empty($values)) {
+                    $conditions = [];
+                    foreach (array_values($values) as $index => $val) {
+                        $paramKey = ":{$paramPrefix}_{$index}";
+                        $conditions[] = "$dbColumn LIKE $paramKey";
+                        $params[$paramKey] = "%{$val}%";
+                    }
+                    $whereParts[] = "(" . implode(" OR ", $conditions) . ")";
+                }
+            }
         }
-        if ($brewery !== '') {
-            $whereParts[] = "b.brewery_id = :brewery";
-            $params[':brewery'] = (int)$brewery;
-        }
+
+        applyMultiSearch($whereParts, $params, $search, "b.name", "search");
+        applyMultiSearch($whereParts, $params, $brewery, "br.name", "brewery");
+        applyMultiSearch($whereParts, $params, $country, "c.name_cz", "country");
+
         if ($style !== '') {
             $whereParts[] = "b.style_id = :style";
             $params[':style'] = (int)$style;
-        }
-        if ($country !== '') {
-            $whereParts[] = "br.country_id = :country";
-            $params[':country'] = (int)$country;
         }
 
         if ($epm_min !== null) { $whereParts[] = "b.epm >= :epm_min"; $params[':epm_min'] = $epm_min; }
@@ -60,7 +67,7 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(DISTINCT b.id) as total FROM beers b LEFT JOIN breweries br ON b.brewery_id = br.id $whereSql";
+        $countQuery = "SELECT COUNT(DISTINCT b.id) as total FROM beers b LEFT JOIN breweries br ON b.brewery_id = br.id LEFT JOIN countries c ON br.country_id = c.id $whereSql";
         $countParams = $params;
         unset($countParams[':uid']); 
         $countStmt = $db->prepare($countQuery);
@@ -68,7 +75,6 @@ if ($db) {
         $totalItems = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         $totalPages = ceil($totalItems / $limit);
 
-        // BEZPEČNÉ ŘAZENÍ (Whitelist přístup)
         $orderBy = "is_favorite DESC"; 
         switch ($sort) {
             case 'name_desc': $orderBy .= ", b.name DESC"; break;
@@ -90,7 +96,7 @@ if ($db) {
             default: $orderBy .= ", b.name ASC"; break;
         }
 
-        $query = "SELECT b.*, br.name as brewery_name, c.name_cz as brewery_country, c.code as brewery_country_code, bs.name as style,
+        $query = "SELECT b.*, br.name as brewery_name, br.lat as brewery_lat, br.lng as brewery_lng, c.name_cz as brewery_country, c.code as brewery_country_code, bs.name as style,
                          ROUND(AVG(NULLIF(cons.rating_beer, 0)), 1) as avg_rating, 
                          COUNT(cons.id) as total_checkins,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite

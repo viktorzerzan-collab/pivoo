@@ -1,5 +1,5 @@
 <?php
-// ZMĚNA: Omezení CORS
+// backend/api/update_location.php
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
@@ -22,7 +22,7 @@ $data = json_decode(file_get_contents("php://input"));
 if (!empty($data->id) && !empty($data->name)) {
     try {
         $query = "UPDATE locations 
-                  SET name = ?, type = ?, city = ?, country_id = ?, address = ?, zip_code = ?, email = ?, phone = ?, website = ?, opening_hours = ? 
+                  SET name = ?, type = ?, city = ?, country_id = ?, address = ?, zip_code = ?, email = ?, phone = ?, website = ?, lat = ?, lng = ?, opening_hours = ? 
                   WHERE id = ?";
                   
         $stmt = $db->prepare($query);
@@ -34,6 +34,8 @@ if (!empty($data->id) && !empty($data->name)) {
         $email = !empty($data->email) ? $data->email : null;
         $phone = !empty($data->phone) ? $data->phone : null;
         $website = !empty($data->website) ? $data->website : null;
+        $lat = !empty($data->lat) ? (float)$data->lat : null;
+        $lng = !empty($data->lng) ? (float)$data->lng : null;
         $opening_hours = !empty($data->opening_hours) ? $data->opening_hours : null;
 
         if ($stmt->execute([
@@ -46,6 +48,8 @@ if (!empty($data->id) && !empty($data->name)) {
             $email, 
             $phone, 
             $website, 
+            $lat,
+            $lng,
             $opening_hours,
             $data->id
         ])) {
@@ -55,7 +59,6 @@ if (!empty($data->id) && !empty($data->name)) {
             echo json_encode(["status" => "error", "message" => "Chyba při aktualizaci v DB."]);
         }
     } catch (PDOException $e) {
-        // ZMĚNA: Skrytí chyby
         error_log("DB Error (update_location): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze při aktualizaci lokace."]);

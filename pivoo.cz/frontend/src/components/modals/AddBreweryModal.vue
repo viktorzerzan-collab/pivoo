@@ -30,7 +30,7 @@
 
         <div class="map-container-wrapper">
           <label class="form-label d-block mb-2">Poloha na mapě (přetáhněte špendlík)</label>
-          <div id="admin-map" class="admin-map-element"></div>
+          <div ref="mapContainerRef" class="admin-map-element"></div>
           <div class="coords-display">
             GPS: {{ form.lat || '???' }}, {{ form.lng || '???' }}
           </div>
@@ -61,7 +61,7 @@ import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseFileUpload from '../BaseFileUpload.vue'
 import BaseSelect from '../BaseSelect.vue'
-import OpeningHoursInput from '../OpeningHoursInput.vue' // PŘIDÁNO
+import OpeningHoursInput from '../OpeningHoursInput.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -75,6 +75,8 @@ const emit = defineEmits(['close', 'submit'])
 
 const map = ref(null)
 const marker = ref(null)
+// OPRAVA: Reference na DOM element
+const mapContainerRef = ref(null)
 
 const destroyMap = () => {
   if (map.value) {
@@ -85,13 +87,17 @@ const destroyMap = () => {
 }
 
 const initMap = () => {
+  // Ochrana před chybějícím DOM elementem
+  if (!mapContainerRef.value) return;
+
   destroyMap()
 
   const lat = parseFloat(props.form.lat) || 49.8175
   const lng = parseFloat(props.form.lng) || 15.4730
   const zoom = props.form.lat ? 16 : 6
 
-  map.value = L.map('admin-map').setView([lat, lng], zoom)
+  // OPRAVA: Mapu inicializujeme nad ref elementem
+  map.value = L.map(mapContainerRef.value).setView([lat, lng], zoom)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
@@ -140,11 +146,14 @@ onBeforeUnmount(() => destroyMap())
 .add-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
 .map-container-wrapper { margin: 0.5rem 0; }
+.form-label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+.mb-2 { margin-bottom: 0.5rem; }
+.d-block { display: block; }
 .admin-map-element {
   height: 250px;
   width: 100%;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   z-index: 1;
 }
 .coords-display { font-family: monospace; font-size: 0.8rem; margin-top: 5px; color: var(--text-muted); }

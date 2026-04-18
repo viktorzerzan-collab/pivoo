@@ -25,22 +25,29 @@ if ($db) {
         $whereParts = ["br.is_approved = 1"];
         $params = [':uid' => $userId];
 
-        if ($search !== '') {
-            $whereParts[] = "br.name LIKE :search";
-            $params[':search'] = "%{$search}%";
+        // Pomocná funkce pro vícenásobné hledání (oddělené čárkou)
+        function applyMultiSearch(&$whereParts, &$params, $inputValue, $dbColumn, $paramPrefix) {
+            if (trim($inputValue) !== '') {
+                $values = array_filter(array_map('trim', explode(',', $inputValue)));
+                if (!empty($values)) {
+                    $conditions = [];
+                    foreach (array_values($values) as $index => $val) {
+                        $paramKey = ":{$paramPrefix}_{$index}";
+                        $conditions[] = "$dbColumn LIKE $paramKey";
+                        $params[$paramKey] = "%{$val}%";
+                    }
+                    $whereParts[] = "(" . implode(" OR ", $conditions) . ")";
+                }
+            }
         }
-        if ($city !== '') {
-            $whereParts[] = "br.city = :city";
-            $params[':city'] = $city;
-        }
-        if ($country !== '') {
-            $whereParts[] = "br.country_id = :country";
-            $params[':country'] = (int)$country;
-        }
+
+        applyMultiSearch($whereParts, $params, $search, "br.name", "search");
+        applyMultiSearch($whereParts, $params, $city, "br.city", "city");
+        applyMultiSearch($whereParts, $params, $country, "c.name_cz", "country");
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(DISTINCT br.id) as total FROM breweries br $whereSql";
+        $countQuery = "SELECT COUNT(DISTINCT br.id) as total FROM breweries br LEFT JOIN countries c ON br.country_id = c.id $whereSql";
         $countParams = $params;
         unset($countParams[':uid']);
         $countStmt = $db->prepare($countQuery);
@@ -48,7 +55,6 @@ if ($db) {
         $totalItems = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         $totalPages = ceil($totalItems / $limit);
 
-        // BEZPEČNÉ ŘAZENÍ
         $orderBy = "is_favorite DESC"; 
         switch ($sort) {
             case 'name_desc': $orderBy .= ", br.name DESC"; break;

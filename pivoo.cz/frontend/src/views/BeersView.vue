@@ -23,21 +23,13 @@
             <div class="filters-grid">
               <FilterInput v-model="filters.search" label="Název piva" placeholder="Např. Pilsner..." />
               
-              <BaseSelect v-model="filters.brewery" label="Pivovar" placeholder="Všechny pivovary" searchable>
-                <option value="">Všechny pivovary</option>
-                <option v-for="b in breweries" :key="b.id" :value="b.id">
-                  {{ b.is_favorite ? '⭐ ' : '🏭 ' }}{{ b.name }}
-                </option>
-              </BaseSelect>
+              <FilterInput v-model="filters.brewery" label="Pivovar" placeholder="Např. Prazdroj, Bernard..." />
+
+              <FilterInput v-model="filters.country" label="Země původu" placeholder="Např. Česko, Německo..." />
 
               <BaseSelect v-model="filters.style" label="Pivní styl" placeholder="Všechny styly" searchable>
                 <option value="">Všechny styly</option>
                 <option v-for="s in styles" :key="s.id" :value="s.id">{{ s.name }}</option>
-              </BaseSelect>
-
-              <BaseSelect v-model="filters.country" label="Země původu" placeholder="Všechny země" searchable>
-                <option value="">Všechny země</option>
-                <option v-for="c in countries" :key="c.id" :value="c.id">{{ c.name_cz }}</option>
               </BaseSelect>
 
               <FilterRange v-model="filters.epm" label="Stupňovitost (EPM)" :step="0.1" unit="°" />
@@ -50,6 +42,22 @@
             </div>
           </div>
         </transition>
+      </div>
+
+      <div v-if="activeFilters.length > 0" class="active-filters-chips">
+        <span class="chips-label">Aktivní filtry:</span>
+        <div class="chips-container">
+          <button 
+            v-for="chip in activeFilters" 
+            :key="chip.id" 
+            class="filter-chip"
+            @click="removeFilter(chip)"
+            title="Zrušit filtr"
+          >
+            {{ chip.label }}
+            <XIcon :size="14" />
+          </button>
+        </div>
       </div>
 
       <div class="results-bar">
@@ -132,7 +140,7 @@ import { storeToRefs } from 'pinia'
 import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
-import { PlusCircleIcon, FilterIcon, ChevronDownIcon, BeerIcon } from 'lucide-vue-next'
+import { PlusCircleIcon, FilterIcon, ChevronDownIcon, BeerIcon, XIcon } from 'lucide-vue-next'
 
 import FilterInput from '../components/FilterInput.vue'
 import FilterRange from '../components/FilterRange.vue'
@@ -149,7 +157,6 @@ const authStore = useAuthStore()
 const { beers, beersPagination, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
 const currentPage = ref(1)
-// ZMĚNA: Standardizováno na 30 položek pro desktopovou paginaci i mobilní dávky
 const itemsPerPage = 30
 const sortBy = ref('name_asc')
 
@@ -162,7 +169,60 @@ const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 const totalPages = computed(() => beersPagination.value?.total_pages || 1)
 const totalItems = computed(() => beersPagination.value?.total || 0)
 
-// --- Nekonečné scrollování ---
+// Geniální funkce pro rozdělování čárek na štítky i zde
+const activeFilters = computed(() => {
+  const active = []
+  
+  const addMultiChips = (value, key, labelPrefix) => {
+    if (value) {
+       const parts = String(value).split(',').map(s => s.trim()).filter(s => s)
+       parts.forEach(part => {
+         active.push({ id: `${key}|${part}`, realKey: key, partValue: part, label: `${labelPrefix}: ${part}` })
+       })
+    }
+  }
+
+  addMultiChips(filters.value.search, 'search', 'Hledání')
+  addMultiChips(filters.value.brewery, 'brewery', 'Pivovar')
+  addMultiChips(filters.value.country, 'country', 'Země')
+  
+  if (filters.value.style) {
+    const s = styles.value.find(x => x.id == filters.value.style)
+    if (s) {
+      active.push({ id: 'style', realKey: 'style', label: `Styl: ${s.name}` })
+    }
+  }
+
+  const ranges = ['epm', 'abv', 'ibu'];
+  ranges.forEach(key => {
+    const min = filters.value[key].min
+    const max = filters.value[key].max
+    if (min !== '' || max !== '') {
+      active.push({ 
+        id: key, 
+        realKey: 'range',
+        rangeKey: key,
+        label: `${key.toUpperCase()}: ${min !== '' ? min : '0'} - ${max !== '' ? max : '∞'}` 
+      })
+    }
+  })
+  
+  return active
+})
+
+// Chytřejší mazání (umaže jen část textu, pokud je jich víc)
+const removeFilter = (chip) => {
+  if (chip.realKey === 'range') {
+    filters.value[chip.rangeKey] = { min: '', max: '' }
+  } else if (chip.partValue) {
+    let parts = String(filters.value[chip.realKey]).split(',').map(s => s.trim()).filter(s => s)
+    parts = parts.filter(p => p !== chip.partValue)
+    filters.value[chip.realKey] = parts.join(', ')
+  } else {
+    filters.value[chip.realKey] = ''
+  }
+}
+
 const loadMoreTrigger = ref(null)
 const isAppending = ref(false)
 let observer = null
@@ -195,12 +255,10 @@ const loadNextPage = async () => {
   }
 }
 
-// Nastavení Intersection Observeru pro mobilní zobrazení
 watch(loadMoreTrigger, (el) => {
   if (observer) observer.disconnect()
   if (el) {
     observer = new IntersectionObserver((entries) => {
-      // Aktivujeme nekonečné scrollování pouze pro obrazovky menší než 768px
       if (entries[0].isIntersecting && window.innerWidth <= 768) {
         loadNextPage()
       }
@@ -213,7 +271,6 @@ onUnmounted(() => {
   if (observer) observer.disconnect()
 })
 
-// Sledování filtrů (pokud se změní, začínáme od začátku na str. 1 a NEPŘIPOJUJEME)
 watch([filters, sortBy], () => {
   if (currentPage.value !== 1) {
     isAppending.value = false 
@@ -264,7 +321,6 @@ const sortOptions = [
   { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' }
 ]
 
-// --- Logika Modálů ---
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
@@ -344,6 +400,44 @@ const openDetail = async (beer) => {
 .filters-body { padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border); }
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
+
+.active-filters-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+.chips-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: var(--primary);
+  color: #1e293b;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.filter-chip:hover {
+  background-color: var(--primary-hover);
+  transform: scale(1.05);
+}
 
 .results-bar { 
   display: flex; 

@@ -31,6 +31,24 @@
           <div class="card-meta" style="margin-top: 0.5rem;" @click.stop>
             <OpeningHoursDisplay :openingHours="brewery.opening_hours" />
           </div>
+
+          <div class="card-meta distance-meta" @click.stop>
+            <div class="meta-item">
+              <template v-if="brewery.lat && brewery.lng">
+                <button v-if="!userLoc" class="distance-btn" @click="getUserLocation">
+                  <NavigationIcon :size="14" /> Zjistit vzdálenost
+                </button>
+                <span v-else class="distance-text">
+                  <NavigationIcon :size="14" /> {{ calculateDistance(userLoc.lat, userLoc.lng, brewery.lat, brewery.lng).toFixed(1) }} km od vás
+                </span>
+              </template>
+              <template v-else>
+                <span class="distance-text text-muted">
+                  <NavigationIcon :size="14" /> Poloha neznámá
+                </span>
+              </template>
+            </div>
+          </div>
           
           <div v-if="brewery.avg_rating" class="card-rating">
             <StarIcon :size="14" fill="#f59e0b" color="#f59e0b" />
@@ -53,16 +71,21 @@
 </template>
 
 <script setup>
-import { FactoryIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
+import { FactoryIcon, StarIcon, InfoIcon, NavigationIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
 import OpeningHoursDisplay from './OpeningHoursDisplay.vue'
+import { ref } from 'vue'
 
 const props = defineProps({ brewery: Object })
 defineEmits(['showDetail'])
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
+
+// Sdílený stav pro zjištěnou polohu uživatele napříč všemi kartami
+const userLoc = window.__pivooUserLoc || (window.__pivooUserLoc = ref(null))
+
 const toggleFav = () => { catalogStore.toggleFavorite(props.brewery.id, 'brewery') }
 
 const formatLocation = (brewery) => {
@@ -71,6 +94,34 @@ const formatLocation = (brewery) => {
     loc += loc ? ', ' + brewery.country : brewery.country; 
   }
   return loc || 'Lokalita neznámá';
+}
+
+const getUserLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLoc.value = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+      },
+      (err) => {
+        console.error(err)
+        alert("Nepodařilo se zjistit vaši polohu. Zkontrolujte oprávnění v prohlížeči.")
+      }
+    )
+  } else {
+    alert("Váš prohlížeč nepodporuje zjišťování polohy.")
+  }
+}
+
+// Výpočet vzdušné vzdálenosti (Haversinova formule)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; 
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
 </script>
 
@@ -96,6 +147,15 @@ const formatLocation = (brewery) => {
 .card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .flag-icon { width: 20px; height: auto; vertical-align: middle; margin-right: 0.3rem; border-radius: 2px; }
 .card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.1rem; }
+.meta-item { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Styly pro vzdálenost */
+.distance-meta { margin-top: 0.3rem !important; }
+.distance-btn { background: none; border: none; color: var(--blue); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; padding: 0; cursor: pointer; transition: color 0.2s; }
+.distance-btn:hover { color: var(--blue-hover); text-decoration: underline; }
+.distance-text { color: var(--blue); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+.text-muted { color: var(--text-muted) !important; font-style: italic; }
+
 .card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
 .rating-value { font-size: 0.9rem; font-weight: 800; color: #d97706; }
 .count { font-size: 0.75rem; color: var(--text-muted); margin-left: 4px; }

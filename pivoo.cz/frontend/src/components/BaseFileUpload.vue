@@ -2,8 +2,12 @@
   <div class="file-upload-wrapper">
     <label v-if="label" class="upload-label">{{ label }}</label>
     
-    <div class="upload-container" @click="triggerFileInput" :class="{ 'has-preview': previewUrl }">
-      <div v-if="previewUrl" class="image-preview">
+    <div class="upload-container" @click="triggerFileInput" :class="{ 'has-preview': previewUrl, 'is-compressing': isCompressing }">
+      <div v-if="isCompressing" class="compressing-overlay">
+        <span class="spinner"></span> Komprimuji obrázek...
+      </div>
+      
+      <div v-else-if="previewUrl" class="image-preview">
         <img :src="previewUrl" alt="Náhled" />
         <div class="change-overlay">Změnit obrázek</div>
       </div>
@@ -19,6 +23,7 @@
         class="hidden-input" 
         :accept="accept"
         @change="handleFileChange"
+        :disabled="isCompressing"
       />
     </div>
     
@@ -42,34 +47,110 @@ const fileInput = ref(null)
 const fileName = ref('')
 const error = ref('')
 const previewUrl = ref(null)
+const isCompressing = ref(false)
 
 const triggerFileInput = () => {
-  fileInput.value.click()
+  if (!isCompressing.value) {
+    fileInput.value.click()
+  }
 }
 
-const handleFileChange = (event) => {
+// Funkce pro kompresi obrázku na straně klienta
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = event => {
+      const img = new Image()
+      img.src = event.target.result
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+        const max_size = 1000 // Maximální šířka nebo výška bude 1000px
+
+        if (width > height) {
+          if (width > max_size) {
+            height *= max_size / width
+            width = max_size
+          }
+        } else {
+          if (height > max_size) {
+            width *= max_size / height
+            height = max_size
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Převod na WebP s 80% kvalitou
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Chyba při kompresi.'))
+            return
+          }
+          // Vytvoření nového File objektu
+          const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".webp"
+          const newFile = new File([blob], newFileName, {
+            type: 'image/webp',
+            lastModified: Date.now()
+          })
+          resolve(newFile)
+        }, 'image/webp', 0.8)
+      }
+      img.onerror = (e) => reject(e)
+    }
+    reader.onerror = (e) => reject(e)
+  })
+}
+
+const handleFileChange = async (event) => {
   const file = event.target.files[0]
   error.value = ''
   
   if (file) {
-    if (file.size > props.maxSizeMB * 1024 * 1024) {
-      error.value = `Soubor je příliš velký. Maximum je ${props.maxSizeMB} MB.`
-      fileName.value = ''
-      previewUrl.value = null
-      emit('update:file', null)
+    // Kontrola, zda jde o obrázek
+    if (!file.type.startsWith('image/')) {
+      error.value = 'Vybraný soubor není obrázek.'
+      if (fileInput.value) fileInput.value.value = ''
       return
     }
 
-    fileName.value = file.name
-    // Vytvoření dočasné URL pro náhled v prohlížeči
-    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value) // Vyčištění staré URL
-    previewUrl.value = URL.createObjectURL(file)
-    
-    emit('update:file', file)
+    isCompressing.value = true
+    try {
+      // Provedeme kompresi
+      const compressedFile = await compressImage(file)
+      
+      // I po kompresi zkontrolujeme velikost (pro jistotu)
+      if (compressedFile.size > props.maxSizeMB * 1024 * 1024) {
+        error.value = `I po kompresi je soubor příliš velký. Maximum je ${props.maxSizeMB} MB.`
+        fileName.value = ''
+        if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+        previewUrl.value = null
+        emit('update:file', null)
+        return
+      }
+
+      fileName.value = compressedFile.name
+      if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+      previewUrl.value = URL.createObjectURL(compressedFile)
+      
+      emit('update:file', compressedFile)
+    } catch (e) {
+      console.error(e)
+      error.value = 'Nepodařilo se zpracovat a zkomprimovat obrázek.'
+    } finally {
+      isCompressing.value = false
+      // Reset inputu, aby šel nahrát stejný soubor znovu, pokud by si to uživatel rozmyslel
+      if (fileInput.value) fileInput.value.value = ''
+    }
   }
 }
 
-// Důležité: uvolnění paměti při zničení komponenty
+// Uvolnění paměti při zničení komponenty
 onUnmounted(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
@@ -78,7 +159,6 @@ onUnmounted(() => {
 <style scoped>
 .file-upload-wrapper { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
 
-/* OPRAVA: Napojeno na proměnnou pro text s plynulým přechodem */
 .upload-label { font-weight: 600; color: var(--text-main); font-size: 0.9rem; transition: color 0.5s ease; }
 
 .upload-container {
@@ -91,14 +171,45 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-/* OPRAVA: Nahrazeno natvrdo zadané #fefce8 za průhlednou primární barvu, která pasuje do tmavého režimu */
-.upload-container:hover { border-color: var(--primary); background-color: rgba(250, 204, 21, 0.05); }
+.upload-container:not(.is-compressing):hover { 
+  border-color: var(--primary); 
+  background-color: rgba(250, 204, 21, 0.05); 
+}
+
+.upload-container.is-compressing {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.compressing-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 1.5rem;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 .upload-placeholder {
   display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.5rem;
 }
 
-/* OPRAVA: Ikona a text napojeny na CSS proměnné pro tmavý režim */
 .upload-icon { color: var(--text-muted); transition: color 0.5s ease; }
 .file-name { color: var(--text-muted); font-size: 0.9rem; transition: color 0.5s ease; }
 
@@ -106,7 +217,7 @@ onUnmounted(() => {
 .image-preview img { width: 100%; height: 100%; object-fit: cover; }
 
 .change-overlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,0.4);
+  position: absolute; inset: 0; background: rgba(0,0,0,0.5);
   color: white; display: flex; align-items: center; justify-content: center;
   font-weight: 600; opacity: 0; transition: opacity 0.2s;
 }
