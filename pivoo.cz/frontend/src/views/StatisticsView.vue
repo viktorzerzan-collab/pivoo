@@ -251,9 +251,12 @@ onMounted(() => fetchDetailedStats())
 .ranking-item { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: var(--bg-app); border: 1px solid var(--border); border-radius: 12px; transition: all 0.2s; min-width: 0; }
 .ranking-item:hover { transform: translateX(5px); border-color: var(--primary); }
 .rank-number { width: 28px; height: 28px; background: var(--primary); color: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
-.item-info { flex-grow: 1; min-width: 0; }
-.item-name { color: var(--text-main); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-sub { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Zde je důležitá část s úpravou flexboxu a zalamování */
+.item-info { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.item-name { color: var(--text-main); font-size: 0.95rem; word-break: break-word; line-height: 1.3; }
+.item-sub { color: var(--text-muted); font-size: 0.8rem; word-break: break-word; line-height: 1.3; }
+
 .item-count { font-weight: 800; color: var(--primary); font-size: 1.1rem; background: rgba(250, 204, 21, 0.1); padding: 0.25rem 0.75rem; border-radius: 8px; flex-shrink: 0; }
 
 .styles-list { display: flex; flex-direction: column; gap: 1rem; }
@@ -293,6 +296,10 @@ onMounted(() => fetchDetailedStats())
   .stats-grid-detailed { grid-template-columns: 1fr; }
   .chart-container { height: 140px; padding: 0.5rem 0; gap: 0.25rem; }
   .price-stats-grid { grid-template-columns: 1fr; }
+  
+  /* OPRAVA: Pro mobilní zobrazení trochu stáhneme vnitřní odsazení karet a položek seznamu */
+  .stats-card { padding: 1rem; }
+  .ranking-item { padding: 0.6rem 0.75rem; gap: 0.75rem; }
   .price-box { padding: 0.75rem; }
 }
 </style>
