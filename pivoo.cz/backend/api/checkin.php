@@ -18,14 +18,18 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->beer_id) && !empty($data->location_id)) {
     try {
-        $query = "INSERT INTO consumptions (user_id, beer_id, location_id, volume, quantity, price, rating_beer, rating_care, note, packaging, consumed_at) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // ÚPRAVA: Přidán sloupec is_free do dotazu
+        $query = "INSERT INTO consumptions (user_id, beer_id, location_id, volume, quantity, price, is_free, rating_beer, rating_care, note, packaging, consumed_at) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $db->prepare($query);
         
         $volume = !empty($data->volume) ? $data->volume : null;
         $quantity = !empty($data->quantity) ? (int)$data->quantity : 1;
         $price = (!empty($data->price) && $data->price !== '') ? $data->price : null;
+        
+        // NOVÉ: Zpracování příznaku neplacení
+        $is_free = (!empty($data->is_free) && $data->is_free) ? 1 : 0;
         
         $rating_beer = (!empty($data->rating_beer) && $data->rating_beer > 0) ? (int)$data->rating_beer : null;
         $rating_care = (!empty($data->rating_care) && $data->rating_care > 0) ? (int)$data->rating_care : null;
@@ -40,7 +44,8 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
             $data->location_id, 
             $volume, 
             $quantity, 
-            $price, 
+            $price,
+            $is_free, // NOVÉ
             $rating_beer, 
             $rating_care, 
             $note, 
@@ -53,7 +58,6 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
             echo json_encode(["status" => "error", "message" => "Chyba při zápisu."]);
         }
     } catch (PDOException $e) {
-        // ZMĚNA: Skrytí SQL chyby
         error_log("DB Error (checkin): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze."]);

@@ -79,8 +79,9 @@ const isDeleteConfirmModalOpen = ref(false)
 const recordIdToDelete = ref(null)
 const selectedEditRecordId = ref(null)
 
-const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
-const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' })
+// ÚPRAVA: Přidáno pole is_free
+const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
+const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
 
 onMounted(() => { 
   if (authStore.user) {
@@ -107,7 +108,8 @@ const openEditModal = (record) => {
     brewery_id: Number(prefillBreweryId),
     beer_id: Number(record.beer_id), 
     location_id: Number(record.location_id), 
-    quantity: Number(record.quantity) 
+    quantity: Number(record.quantity),
+    is_free: !!Number(record.is_free) // Převedení z 0/1 na boolean
   }
   isEditModalOpen.value = true
 }
@@ -123,7 +125,7 @@ const submitCheckIn = async () => {
       isModalOpen.value = false
       await catalogStore.fetchAllData()
       showToast('Záznam úspěšně zapsán!')
-      form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', rating_beer: 0, rating_care: 0, note: '' }
+      form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' }
     } else {
       showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error')
     }
@@ -190,7 +192,6 @@ const executeDelete = async () => {
 .panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.5s ease; }
 .panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.5s ease; }
 
-/* PŘIDÁNO: Definice barvy pro ikony v panelech */
 .panel-icon { color: var(--primary); }
 
 .empty-dashboard { text-align: center; color: var(--text-muted); padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: color 0.5s ease; }

@@ -4,7 +4,7 @@
       <div class="card-content">
         <div class="beer-header">
           <div class="beer-title">
-            <strong>{{ record.quantity }}x {{ record.beer_name }}</strong>
+            <strong>{{ record.beer_name }}</strong>
             <span class="brewery-info">
               <FactoryIcon :size="12" /> {{ record.brewery_name }}
             </span>
@@ -15,15 +15,28 @@
         <div class="consumption-meta">
           <div class="meta-item">
             <span class="label">Objem:</span>
-            <strong>{{ (record.volume * record.quantity).toFixed(1) }} l</strong>
+            <strong>{{ record.volume }} l</strong>
           </div>
-          <div class="meta-item price-item" v-if="record.price">
+
+          <div class="meta-item quantity-item">
+            <span class="label">Počet:</span>
+            <strong>{{ record.quantity }}x</strong>
+          </div>
+          
+          <div class="meta-item price-item" v-if="Number(record.is_free) === 1 || record.price">
             <span class="label">Cena:</span>
             <div class="price-val">
-              <span class="price-total">{{ record.price * record.quantity }} Kč</span>
-              <small class="unit">({{ record.price }} Kč/ks)</small>
+              <template v-if="Number(record.is_free) === 1">
+                <span class="free-text">Zdarma</span>
+                <small class="unit">Neplatil jsem</small>
+              </template>
+              <template v-else>
+                <span class="price-total">{{ record.price * record.quantity }} Kč</span>
+                <small class="unit">({{ record.price }} Kč/ks)</small>
+              </template>
             </div>
           </div>
+          <div v-else class="meta-item"></div>
         </div>
 
         <hr class="card-divider" />
@@ -107,18 +120,23 @@ const formatDate = (dateStr) => {
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.5rem;
+  min-height: 42px; /* Zajištění stability výšky záhlaví */
 }
 
 .beer-title {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  overflow: hidden;
 }
 
 .beer-title strong {
   font-size: 1.05rem;
   color: var(--text-main);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brewery-info {
@@ -141,11 +159,12 @@ const formatDate = (dateStr) => {
   white-space: nowrap;
 }
 
-/* Parametry konzumace */
+/* Parametry konzumace - ÚPRAVA na 3 sloupce */
 .consumption-meta {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: baseline;
+  gap: 0.5rem;
 }
 
 .meta-item {
@@ -161,6 +180,10 @@ const formatDate = (dateStr) => {
   font-weight: 700;
 }
 
+.quantity-item {
+  text-align: center;
+}
+
 .price-item {
   text-align: right;
 }
@@ -174,6 +197,12 @@ const formatDate = (dateStr) => {
 .price-total {
   color: #10b981;
   font-weight: 700;
+}
+
+.free-text {
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 1.05rem;
 }
 
 .unit {
@@ -200,6 +229,7 @@ const formatDate = (dateStr) => {
   flex-direction: column;
   gap: 0.35rem;
   flex: 1;
+  min-width: 0;
 }
 
 .info-row {
@@ -210,6 +240,12 @@ const formatDate = (dateStr) => {
   color: var(--text-main);
 }
 
+.info-row span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .info-row.date {
   color: var(--text-muted);
   font-size: 0.75rem;
@@ -218,6 +254,7 @@ const formatDate = (dateStr) => {
 .inline-actions {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 /* Menší verze tlačítek pro inline zobrazení */

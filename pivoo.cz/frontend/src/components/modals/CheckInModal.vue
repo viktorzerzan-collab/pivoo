@@ -38,17 +38,52 @@
             <option value="sud">Soukromý sud</option>
           </BaseSelect>
 
-          <BaseSelect class="half" v-model="form.volume" label="Objem">
-            <option value="0.30">Malé (0.3l)</option>
-            <option value="0.40">Šnyt (0.4l)</option>
-            <option value="0.50">Velké (0.5l)</option>
-            <option value="1.00">Tuplák (1.0l)</option>
-          </BaseSelect>
+          <div class="half">
+            <BaseSelect v-model="volumeMode" label="Objem">
+              <option value="0.20">Sklenička (0.2l)</option>
+              <option value="0.30">Malé (0.3l)</option>
+              <option value="0.40">Šnyt (0.4l)</option>
+              <option value="0.50">Velké (0.5l)</option>
+              <option value="1.00">Tuplák (1.0l)</option>
+              <option value="custom">Vlastní...</option>
+            </BaseSelect>
+          </div>
+        </div>
+
+        <div v-if="volumeMode === 'custom'" class="form-row">
+          <div class="half"></div>
+          <BaseInput 
+            class="half" 
+            v-model="customVolume" 
+            type="number" 
+            step="0.01" 
+            min="0.01" 
+            label="Zadej objem (litry)" 
+            placeholder="např. 0.25"
+            required
+          />
         </div>
 
         <div class="form-row">
-          <BaseInput class="half" v-model="form.quantity" type="number" min="1" label="Počet" required />
-          <BaseInput class="half" v-model="form.price" type="number" step="1" label="Cena za kus (Kč)" />
+          <BaseInput class="half" v-model="form.quantity" type="number" min="1" label="Počet vypitých kusů" required />
+          <div class="half"></div>
+        </div>
+
+        <div class="form-row align-end">
+          <BaseInput 
+            class="half" 
+            v-model="form.price" 
+            type="number" 
+            step="1" 
+            label="Cena za kus (Kč)" 
+            :disabled="form.is_free" 
+          />
+          <div class="half">
+            <BaseCheckbox 
+              v-model="form.is_free" 
+              label="Neplatil jsem" 
+            />
+          </div>
         </div>
 
         <div class="form-row">
@@ -76,7 +111,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { BeerIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -84,6 +119,8 @@ import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
 import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
+// PŘIDÁNO: Import univerzálního checkboxu
+import BaseCheckbox from '../BaseCheckbox.vue'
 
 const props = defineProps({ 
   show: Boolean, 
@@ -94,7 +131,55 @@ const props = defineProps({
 })
 defineEmits(['close', 'submit'])
 
-// Logika řazení: Oblíbené (is_favorite === 1) jdou nahoru
+const volumeMode = ref(props.form.volume)
+const customVolume = ref('')
+
+watch(volumeMode, (newVal) => {
+  if (newVal !== 'custom') {
+    props.form.volume = newVal
+  } else {
+    props.form.volume = customVolume.value
+  }
+})
+
+watch(customVolume, (newVal) => {
+  if (volumeMode.value === 'custom') {
+    props.form.volume = newVal
+  }
+})
+
+watch(() => props.form.is_free, (isFree) => {
+  if (isFree) {
+    props.form.price = ''
+  }
+})
+
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    const currentVol = props.form.volume
+    const standardVolumes = ['0.20', '0.30', '0.40', '0.50', '1.00']
+    
+    if (standardVolumes.includes(currentVol)) {
+      volumeMode.value = currentVol
+    } else if (currentVol) {
+      volumeMode.value = 'custom'
+      customVolume.value = currentVol
+    }
+
+    if (!props.form.consumed_at) {
+      const now = new Date();
+      const localDateTime = now.getFullYear() + '-' + 
+        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(now.getDate()).padStart(2, '0') + ' ' + 
+        String(now.getHours()).padStart(2, '0') + ':' + 
+        String(now.getMinutes()).padStart(2, '0') + ':' + 
+        String(now.getSeconds()).padStart(2, '0');
+      
+      props.form.consumed_at = localDateTime;
+    }
+  }
+})
+
 const sortByFavorite = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0);
 
 const sortedLocations = computed(() => {
@@ -125,20 +210,6 @@ watch(() => props.form.location_id, () => {
     props.form.rating_care = 0
   }
 })
-
-watch(() => props.show, (newVal) => {
-  if (newVal && !props.form.consumed_at) {
-    const now = new Date();
-    const localDateTime = now.getFullYear() + '-' + 
-      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-      String(now.getDate()).padStart(2, '0') + ' ' + 
-      String(now.getHours()).padStart(2, '0') + ':' + 
-      String(now.getMinutes()).padStart(2, '0') + ':' + 
-      String(now.getSeconds()).padStart(2, '0');
-    
-    props.form.consumed_at = localDateTime;
-  }
-})
 </script>
 
 <style scoped>
@@ -148,11 +219,15 @@ watch(() => props.show, (newVal) => {
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 
+/* Vertikální zarovnání checkboxu k inputu */
+.align-end { align-items: flex-end; }
+
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
 .input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.5s ease; }
 
 @media (max-width: 600px) { 
   .form-row { flex-direction: column; gap: 1.25rem; } 
   .half:empty { display: none; }
+  .align-end { align-items: stretch; }
 }
 </style>

@@ -38,17 +38,52 @@
             <option value="sud">Soukromý sud</option>
           </BaseSelect>
 
-          <BaseSelect class="half" v-model="form.volume" label="Objem">
-            <option value="0.30">Malé (0.3l)</option>
-            <option value="0.40">Šnyt (0.4l)</option>
-            <option value="0.50">Velké (0.5l)</option>
-            <option value="1.00">Tuplák (1.0l)</option>
-          </BaseSelect>
+          <div class="half">
+            <BaseSelect v-model="volumeMode" label="Objem">
+              <option value="0.20">Sklenička (0.2l)</option>
+              <option value="0.30">Malé (0.3l)</option>
+              <option value="0.40">Šnyt (0.4l)</option>
+              <option value="0.50">Velké (0.5l)</option>
+              <option value="1.00">Tuplák (1.0l)</option>
+              <option value="custom">Vlastní...</option>
+            </BaseSelect>
+          </div>
+        </div>
+
+        <div v-if="volumeMode === 'custom'" class="form-row">
+          <div class="half"></div>
+          <BaseInput 
+            class="half" 
+            v-model="customVolume" 
+            type="number" 
+            step="0.01" 
+            min="0.01" 
+            label="Zadej objem (litry)" 
+            placeholder="např. 0.25"
+            required
+          />
         </div>
 
         <div class="form-row">
-          <BaseInput class="half" v-model="form.quantity" type="number" min="1" label="Počet" required />
-          <BaseInput class="half" v-model="form.price" type="number" step="1" label="Cena za kus (Kč)" />
+          <BaseInput class="half" v-model="form.quantity" type="number" min="1" label="Počet kusů" required />
+          <div class="half"></div>
+        </div>
+
+        <div class="form-row align-end">
+          <BaseInput 
+            class="half" 
+            v-model="form.price" 
+            type="number" 
+            step="1" 
+            label="Cena za kus (Kč)" 
+            :disabled="form.is_free" 
+          />
+          <div class="half">
+            <BaseCheckbox 
+              v-model="form.is_free" 
+              label="Neplatil jsem" 
+            />
+          </div>
         </div>
 
         <div class="form-row">
@@ -76,7 +111,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { PencilIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -84,6 +119,8 @@ import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
 import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
+// PŘIDÁNO: Import univerzálního checkboxu
+import BaseCheckbox from '../BaseCheckbox.vue'
 
 const props = defineProps({ 
   show: Boolean, 
@@ -93,6 +130,44 @@ const props = defineProps({
   form: Object 
 })
 defineEmits(['close', 'submit'])
+
+const volumeMode = ref('')
+const customVolume = ref('')
+
+watch(volumeMode, (newVal) => {
+  if (newVal !== 'custom' && newVal !== '') {
+    props.form.volume = newVal
+  } else if (newVal === 'custom') {
+    props.form.volume = customVolume.value
+  }
+})
+
+watch(customVolume, (newVal) => {
+  if (volumeMode.value === 'custom') {
+    props.form.volume = newVal
+  }
+})
+
+watch(() => props.form.is_free, (isFree) => {
+  if (isFree) {
+    props.form.price = ''
+  }
+})
+
+watch(() => props.show, (isOpen) => {
+  if (isOpen) {
+    const currentVol = String(props.form.volume)
+    const standardVolumes = ['0.20', '0.30', '0.40', '0.50', '1.00']
+    
+    if (standardVolumes.includes(currentVol)) {
+      volumeMode.value = currentVol
+      customVolume.value = ''
+    } else {
+      volumeMode.value = 'custom'
+      customVolume.value = currentVol
+    }
+  }
+})
 
 const filteredBeers = computed(() => {
   if (!props.form.brewery_id) return []
@@ -118,11 +193,14 @@ watch(() => props.form.location_id, () => {
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 
+.align-end { align-items: flex-end; }
+
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
 .input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.5s ease; }
 
 @media (max-width: 600px) { 
   .form-row { flex-direction: column; gap: 1.25rem; } 
   .half:empty { display: none; }
+  .align-end { align-items: stretch; }
 }
 </style>

@@ -1,5 +1,4 @@
 <?php
-// backend/api/detailed_stats.php
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
@@ -10,12 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// ZABEZPEČENÍ: Ověření uživatele
 $user = JwtHandler::checkUser();
 $user_id = $user['user_id'];
 $db = (new Database())->getConnection();
 
-// VALIDACE VSTUPŮ: Whitelist pro období a rozsah
 $allowed_periods = ['all', 'month', 'year'];
 $period = isset($_GET['period']) && in_array($_GET['period'], $allowed_periods) ? $_GET['period'] : 'all';
 
@@ -118,12 +115,13 @@ if ($db) {
 
     // 7. CENY
     try {
+        // ÚPRAVA: Ceny analyzujeme pouze u placených piv (is_free = 0)
         $price_query = "SELECT 
                             AVG(price) as avg_price, 
                             MAX(price) as max_price, 
                             MIN(price) as min_price 
                         FROM consumptions c
-                        WHERE $userCondition $dateCondition AND price > 0";
+                        WHERE $userCondition $dateCondition AND price > 0 AND is_free = 0";
         $stmt = $db->prepare($price_query);
         $stmt->execute($params);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);

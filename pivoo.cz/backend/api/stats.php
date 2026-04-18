@@ -1,5 +1,4 @@
 <?php
-// ZMĚNA: Omezení CORS
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
@@ -10,29 +9,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// ZABEZPEČENÍ
 $user = JwtHandler::checkUser();
 $user_id = $user['user_id'];
 
 $database = new Database();
 $db = $database->getConnection();
 
-// Zjištění období
 $period = isset($_GET['period']) ? $_GET['period'] : 'all';
 $dateCondition = "";
 
 if ($period === 'month') {
-    // Filtr od prvního dne aktuálního měsíce 00:00:00
     $dateCondition = " AND consumed_at >= DATE_FORMAT(NOW() ,'%Y-%m-01 00:00:00')";
 }
 
 if ($db) {
     try {
-        // 1. Součty
+        // ÚPRAVA: total_price počítáme pouze tam, kde is_free = 0
         $query = "SELECT 
                     SUM(quantity) as total_beers,
                     COUNT(DISTINCT beer_id) as unique_beers,
-                    SUM(price * quantity) as total_price,
+                    SUM(CASE WHEN is_free = 0 THEN price * quantity ELSE 0 END) as total_price,
                     COUNT(DISTINCT location_id) as unique_locations,
                     SUM(volume * quantity) as total_liters
                   FROM consumptions 
@@ -43,7 +39,6 @@ if ($db) {
         $stmt->execute();
         $stats = $stmt->fetch();
 
-        // 2. Nejoblíbenější pivo
         $query_fav = "SELECT beers.name, SUM(consumptions.quantity) as qty
                       FROM consumptions 
                       JOIN beers ON consumptions.beer_id = beers.id
@@ -68,7 +63,6 @@ if ($db) {
             ]
         ]);
     } catch (Exception $e) {
-        // ZMĚNA: Skrytí SQL chyby
         error_log("DB Error (stats): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba při výpočtu statistik."]);

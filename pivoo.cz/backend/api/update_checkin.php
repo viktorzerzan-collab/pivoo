@@ -1,5 +1,4 @@
 <?php
-// ZMĚNA: Omezení CORS
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
@@ -18,8 +17,9 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->id)) {
     try {
+        // ÚPRAVA: Přidán sloupec is_free do UPDATE dotazu
         $query = "UPDATE consumptions 
-                  SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ?, consumed_at = ? 
+                  SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, is_free = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ?, consumed_at = ? 
                   WHERE id = ? AND user_id = ?";
                   
         $stmt = $db->prepare($query);
@@ -30,7 +30,9 @@ if (!empty($data->id)) {
         $quantity = !empty($data->quantity) ? (int)$data->quantity : 1;
         $price = (!empty($data->price) && $data->price !== '') ? $data->price : null;
         
-        // Stejné ošetření nulových hodnocení jako u přidávání
+        // NOVÉ: Zpracování příznaku is_free
+        $is_free = (!empty($data->is_free) && $data->is_free) ? 1 : 0;
+        
         $rating_beer = (!empty($data->rating_beer) && $data->rating_beer > 0) ? (int)$data->rating_beer : null;
         $rating_care = (!empty($data->rating_care) && $data->rating_care > 0) ? (int)$data->rating_care : null;
         
@@ -39,7 +41,7 @@ if (!empty($data->id)) {
         $consumed_at = !empty($data->consumed_at) ? $data->consumed_at : null;
 
         if ($stmt->execute([
-            $beer_id, $location_id, $volume, $quantity, $price, $rating_beer, $rating_care,
+            $beer_id, $location_id, $volume, $quantity, $price, $is_free, $rating_beer, $rating_care,
             $note, $packaging, $consumed_at, $data->id, $user['user_id']
         ])) {
             echo json_encode(["status" => "success", "message" => "Záznam byl úspěšně upraven."]);
@@ -48,7 +50,6 @@ if (!empty($data->id)) {
             echo json_encode(["status" => "error", "message" => "Nepodařilo se upravit záznam."]);
         }
     } catch (PDOException $e) {
-        // ZMĚNA: Skrytí chyby
         error_log("DB Error (update_checkin): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze."]);
