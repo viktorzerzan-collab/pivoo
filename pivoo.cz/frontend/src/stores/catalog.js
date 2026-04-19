@@ -19,19 +19,17 @@ export const useCatalogStore = defineStore('catalog', {
     error: null,
   }),
   actions: {
-    // Načtení základních dat (používáno pro Dashboard a Administraci)
-    async fetchAllData() {
-      if (this.isLoading) return
+    // Načtení základních dat (ponechán pouze parametr 'silent' pro skryté načtení u stolu v hospodě)
+    async fetchAllData(silent = false) {
+      if (this.isLoading && !silent) return
       
-      this.isLoading = true
+      if (!silent) this.isLoading = true
       this.error = null
       
       try {
         const results = await Promise.allSettled([
           apiFetch('/beers.php?limit=2000'),
           apiFetch('/breweries.php?limit=2000'),   
-          // ZMĚNA: Přidán parametr include_all=1, aby byly v dropdownu pro zápis 
-          // piva vidět i lokace typu 'jine' (Doma, Venku atd.)
           apiFetch('/locations.php?limit=2000&include_all=1'),   
           apiFetch('/styles.php'),      
           apiFetch('/countries.php'),   
@@ -53,10 +51,10 @@ export const useCatalogStore = defineStore('catalog', {
         if (historyRes.status === 'fulfilled' && historyRes.value.status === 'success') this.history = historyRes.value.data
 
       } catch (err) {
-        this.error = 'Došlo ke kritické chybě při načítání dat.'
+        if (!silent) this.error = 'Došlo ke kritické chybě při načítání dat.'
         console.error('Fetch error:', err)
       } finally {
-        this.isLoading = false
+        if (!silent) this.isLoading = false
       }
     },
 
@@ -98,7 +96,7 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // Načítání lokací s podporou filtrů a stránkování (zde include_all neposíláme, chceme jen katalog)
+    // Načítání lokací s podporou filtrů a stránkování
     async fetchLocations(params = {}, append = false) {
       this.isLoading = !append
       try {
@@ -117,7 +115,7 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // Metoda pro přepínání oblíbených položek (pivo, pivovar, podnik)
+    // Metoda pro přepínání oblíbených položek
     async toggleFavorite(entityId, entityType) {
       try {
         const res = await apiFetch('/toggle_favorite.php', {

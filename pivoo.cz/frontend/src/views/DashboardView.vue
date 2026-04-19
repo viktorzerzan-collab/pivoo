@@ -5,7 +5,7 @@
     </transition>
 
     <div class="section-actions">
-      <button class="btn-add" @click="isModalOpen = true">
+      <button class="btn-add" @click="openCheckInModal">
         <PlusCircleIcon /> Zaznamenat vypitá piva
       </button>
     </div>
@@ -79,7 +79,6 @@ const isDeleteConfirmModalOpen = ref(false)
 const recordIdToDelete = ref(null)
 const selectedEditRecordId = ref(null)
 
-// ÚPRAVA: Přidáno pole is_free
 const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
 const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
 
@@ -95,6 +94,14 @@ watch(() => authStore.user, (newUser) => {
   }
 })
 
+// NOVÉ: Funkce pro okamžité tiché načtení dat před otevřením modálu
+const openCheckInModal = async () => {
+  // Zavoláme tiché načtení s parametrem "true" (bez spinneru, který by uživatele blokoval)
+  await catalogStore.fetchAllData(true)
+  // Okno se otevře prakticky okamžitě, ale už bude mít 100% čerstvá data v roletkách
+  isModalOpen.value = true
+}
+
 const openEditModal = (record) => {
   selectedEditRecordId.value = record.id
   const fullDateTime = record.consumed_at || ''
@@ -109,7 +116,7 @@ const openEditModal = (record) => {
     beer_id: Number(record.beer_id), 
     location_id: Number(record.location_id), 
     quantity: Number(record.quantity),
-    is_free: !!Number(record.is_free) // Převedení z 0/1 na boolean
+    is_free: !!Number(record.is_free) 
   }
   isEditModalOpen.value = true
 }
@@ -176,6 +183,7 @@ const executeDelete = async () => {
 </script>
 
 <style scoped>
+/* Původní styly zachovány */
 .dashboard-layout { position: relative; min-height: 400px; }
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
 
