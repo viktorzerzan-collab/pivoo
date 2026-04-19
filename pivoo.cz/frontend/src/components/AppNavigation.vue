@@ -3,7 +3,7 @@
     <div class="header-content">
       
       <div class="header-left">
-        <router-link to="/dashboard" class="logo">
+        <router-link language="cz" to="/dashboard" class="logo">
           <BeerIcon :size="28" style="margin-right: 0.5rem; color: var(--primary);" />
           Pivoo.cz
         </router-link>
@@ -18,10 +18,10 @@
       </div>
 
       <div class="header-right">
-        <button class="theme-toggle-btn" @click="$emit('toggle-theme')" :title="isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'">
-          <SunIcon v-if="isDark" :size="22" />
-          <MoonIcon v-else :size="22" />
-        </button>
+        <ThemeToggleButton 
+          :is-dark="isDark" 
+          @toggle="$emit('toggle-theme')" 
+        />
 
         <div class="user-panel-wrapper" @click="toggleDropdown" ref="dropdownContainer">
           <div class="user-trigger">
@@ -85,10 +85,12 @@ import { storeToRefs } from 'pinia'
 import { 
   BeerIcon, LayoutDashboardIcon, FactoryIcon, MapPinIcon,
   ShieldAlertIcon, LogOutIcon, UserIcon, ChevronDownIcon,
-  SunIcon, MoonIcon, BarChart3Icon
+  BarChart3Icon
 } from 'lucide-vue-next'
 
 import { useAuthStore } from '../stores/auth'
+// IMPORT NOVÉ KOMPONENTY
+import ThemeToggleButton from './ThemeToggleButton.vue'
 
 defineProps({
   isDark: Boolean
@@ -127,7 +129,6 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
-/* Styly zůstávají zachovány podle původního souboru */
 .app-header { background-color: #1e293b; color: white; padding: 0.75rem 2rem; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 50; }
 .header-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; width: 100%; }
 
@@ -137,22 +138,7 @@ const handleLogout = () => {
 .logo { display: flex; align-items: center; font-size: 1.5rem; font-weight: 800; color: #fff; text-decoration: none; }
 .logo svg { filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3)); }
 
-.theme-toggle-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  cursor: pointer;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  color: var(--primary);
-}
-.theme-toggle-btn:hover { background: rgba(255, 255, 255, 0.2); transform: rotate(15deg); }
-.theme-toggle-btn svg { margin: 0 !important; }
+/* .theme-toggle-btn styly byly odstraněny, nyní jsou v ThemeToggleButton.vue */
 
 .main-nav { display: flex; gap: 0.5rem; }
 .nav-link { display: flex; align-items: center; gap: 0.4rem; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s ease; }

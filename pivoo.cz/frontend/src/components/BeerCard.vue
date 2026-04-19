@@ -9,21 +9,18 @@
           <div class="title-row">
             <h3 class="card-title">{{ beer.name }}</h3>
             <div class="action-wrap">
-              <button 
-                v-if="authStore.user"
-                class="fav-btn" 
-                :class="{ 'active': beer.is_favorite }" 
-                @click.stop="toggleFav" 
-                title="Přidat do oblíbených"
-              >
-                <StarIcon :size="20" :fill="beer.is_favorite ? 'var(--primary)' : 'none'" :color="beer.is_favorite ? 'var(--primary)' : 'var(--text-muted)'" />
-              </button>
+              <FavoriteButton 
+                :is-favorite="beer.is_favorite" 
+                @toggle="toggleFav" 
+              />
             </div>
           </div>
           
           <div class="brewery-line">
-            <img v-if="beer.brewery_country_code" :src="`https://flagcdn.com/w20/${beer.brewery_country_code}.png`" class="flag-icon" :title="beer.brewery_country" alt="flag" />
-            <span v-else class="flag" :title="beer.brewery_country">🌍</span>
+            <CountryFlag 
+              :code="beer.brewery_country_code" 
+              :name="beer.brewery_country" 
+            />
             <span class="brewery-name">{{ beer.brewery_name }}</span>
           </div>
 
@@ -75,6 +72,8 @@ import {
   PercentIcon, ActivityIcon, PipetteIcon 
 } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
+import FavoriteButton from './FavoriteButton.vue'
+import CountryFlag from './CountryFlag.vue'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
 
@@ -98,15 +97,9 @@ const toggleFav = () => { catalogStore.toggleFavorite(props.beer.id, 'beer') }
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; overflow: hidden; flex: 1; }
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .card-title { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-.fav-btn { background: none; border: none; padding: 4px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-.fav-btn:hover { transform: scale(1.2); color: var(--primary); }
-.fav-btn.active { color: var(--primary); }
 
 .brewery-line { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; }
 .brewery-name { font-size: 0.9rem; color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.flag-icon { width: 20px; height: auto; border-radius: 2px; flex-shrink: 0; }
-.flag { font-size: 1rem; flex-shrink: 0; }
 
 .card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.4rem; padding: 0.2rem 0; }
 .meta-item { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }

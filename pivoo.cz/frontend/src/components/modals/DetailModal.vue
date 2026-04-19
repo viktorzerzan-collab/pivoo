@@ -20,14 +20,18 @@
           
           <p class="modal-subtitle">
             <template v-if="type === 'beer'">
-              <img v-if="item?.brewery_country_code" :src="`https://flagcdn.com/w20/${item?.brewery_country_code}.png`" class="flag-icon" :title="item?.brewery_country" alt="flag" />
-              <span v-else-if="item?.brewery_country" class="flag" :title="item?.brewery_country">🌍</span>
+              <CountryFlag 
+                :code="item?.brewery_country_code" 
+                :name="item?.brewery_country" 
+              />
               {{ item?.brewery_name }} • {{ item?.style || 'Bez stylu' }}
             </template>
             
             <template v-else>
-              <img v-if="item?.country_code" :src="`https://flagcdn.com/w20/${item?.country_code}.png`" class="flag-icon" :title="item?.country" alt="flag" />
-              <span v-else-if="item?.country" class="flag" :title="item?.country">🌍</span>
+              <CountryFlag 
+                :code="item?.country_code" 
+                :name="item?.country" 
+              />
               {{ item?.city || 'Neznámé město' }}{{ item?.country ? ', ' + item?.country : '' }}
             </template>
           </p>
@@ -212,6 +216,7 @@ import {
 } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import OpeningHoursDisplay from '../OpeningHoursDisplay.vue'
+import CountryFlag from '../CountryFlag.vue'
 
 defineProps({
   show: Boolean,
@@ -250,9 +255,7 @@ const formatLocationType = (type) => {
 .prop-badge { background: var(--primary); color: #1e293b; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
 .prop-badge.loc-type { background: var(--bg-app); border: 1px solid var(--border); color: var(--text-muted); }
 
-.modal-subtitle { margin: 0.35rem 0 0; color: var(--text-muted); font-size: 1rem; font-weight: 500; }
-.flag-icon { width: 20px; height: auto; vertical-align: middle; margin-right: 0.4rem; border-radius: 2px; box-shadow: 0 0 1px rgba(0,0,0,0.3); }
-.flag { margin-right: 0.3rem; font-size: 1rem; vertical-align: middle; }
+.modal-subtitle { margin: 0.35rem 0 0; color: var(--text-muted); font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 0.4rem; }
 
 .rating-section { text-align: center; padding: 1.25rem; background: var(--bg-app); border-radius: 12px; margin: 1rem 0; border: 1px solid var(--border); }
 .label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
