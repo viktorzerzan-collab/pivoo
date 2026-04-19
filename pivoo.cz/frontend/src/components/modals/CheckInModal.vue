@@ -8,7 +8,7 @@
         
         <BaseDatePicker v-model="form.consumed_at" label="Kdy to bylo?" />
 
-        <BaseSelect v-model="form.location_id" label="Kde to bylo?" required>
+        <BaseSelect v-model="form.location_id" label="Kde to bylo?" searchable required>
           <option disabled value="">-- Vyber lokaci --</option>
           <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
             {{ loc.is_favorite ? '⭐' : '📍' }} {{ loc.name }}
@@ -119,7 +119,6 @@ import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
 import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
-// PŘIDÁNO: Import univerzálního checkboxu
 import BaseCheckbox from '../BaseCheckbox.vue'
 
 const props = defineProps({ 
@@ -219,7 +218,6 @@ watch(() => props.form.location_id, () => {
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 
-/* Vertikální zarovnání checkboxu k inputu */
 .align-end { align-items: flex-end; }
 
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }

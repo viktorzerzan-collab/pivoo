@@ -23,10 +23,12 @@
             <SearchIcon :size="16" class="search-icon" />
             <input 
               type="text" 
-              v-model="searchQuery" 
+              :value="searchQuery"
+              @input="searchQuery = $event.target.value"
               class="search-input" 
               placeholder="Hledat..." 
               ref="searchInputRef"
+              @keydown.enter.prevent
             />
           </div>
 
@@ -67,7 +69,7 @@ const props = defineProps({
   label: String,
   placeholder: { type: String, default: '-- Vyberte --' },
   disabled: Boolean,
-  searchable: { type: Boolean, default: false } // NOVÁ PROP: Povoluje vyhledávání
+  searchable: { type: Boolean, default: false } // Povoluje vyhledávání
 })
 
 const emit = defineEmits(['update:modelValue'])

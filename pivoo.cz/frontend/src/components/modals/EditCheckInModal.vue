@@ -8,7 +8,7 @@
         
         <BaseDatePicker v-model="form.consumed_at" label="Kdy to bylo?" />
 
-        <BaseSelect v-model="form.location_id" label="Kde to bylo?" required>
+        <BaseSelect v-model="form.location_id" label="Kde to bylo?" searchable required>
           <option disabled value="">-- Vyber lokaci --</option>
           <option v-for="loc in locations" :key="loc.id" :value="loc.id">
             {{ loc.name }}
@@ -119,7 +119,6 @@ import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
 import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
-// PŘIDÁNO: Import univerzálního checkboxu
 import BaseCheckbox from '../BaseCheckbox.vue'
 
 const props = defineProps({ 
