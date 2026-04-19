@@ -4,9 +4,10 @@
       <div class="card-content">
         <div class="beer-header">
           <div class="beer-title">
-            <strong>{{ record.beer_name }}</strong>
+            <strong class="text-truncate">{{ record.beer_name }}</strong>
             <span class="brewery-info">
-              <FactoryIcon :size="12" /> {{ record.brewery_name }}
+              <FactoryIcon :size="12" class="icon-shrink" /> 
+              <span class="text-truncate">{{ record.brewery_name }}</span>
             </span>
           </div>
           <div class="packaging-tag">{{ record.packaging }}</div>
@@ -15,7 +16,7 @@
         <div class="consumption-meta">
           <div class="meta-item">
             <span class="label">Objem:</span>
-            <strong>{{ record.volume }} l</strong>
+            <strong class="text-truncate">{{ record.volume }} l</strong>
           </div>
 
           <div class="meta-item quantity-item">
@@ -44,10 +45,12 @@
         <div class="footer-layout">
           <div class="card-footer-info">
             <div class="info-row">
-              <MapPinIcon :size="12" /> <span>{{ record.location_name }}</span>
+              <MapPinIcon :size="12" class="icon-shrink" /> 
+              <span class="text-truncate">{{ record.location_name }}</span>
             </div>
             <div class="info-row date">
-              <ClockIcon :size="12" /> <span>{{ formatDate(record.consumed_at) }}</span>
+              <ClockIcon :size="12" class="icon-shrink" /> 
+              <span class="text-truncate">{{ formatDate(record.consumed_at) }}</span>
             </div>
           </div>
 
@@ -87,8 +90,9 @@ const formatDate = (dateStr) => {
 /* Mřížka pro karty */
 .history-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 1.25rem;
+  width: 100%;
 }
 
 /* Styl samotné karty */
@@ -99,6 +103,8 @@ const formatDate = (dateStr) => {
   display: flex;
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  min-width: 0;
+  width: 100%;
 }
 
 .history-card:hover {
@@ -112,6 +118,8 @@ const formatDate = (dateStr) => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
+  width: 100%;
 }
 
 /* Záhlaví karty */
@@ -120,23 +128,18 @@ const formatDate = (dateStr) => {
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.5rem;
-  min-height: 42px; /* Zajištění stability výšky záhlaví */
+  min-height: 42px;
+  min-width: 0;
+  width: 100%;
 }
 
 .beer-title {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  flex: 1 1 0px; /* Extrémně důležité: Násilně dovolí elementu zmenšit se pod přirozenou šířku obsahu */
+  min-width: 0;
   overflow: hidden;
-}
-
-.beer-title strong {
-  font-size: 1.05rem;
-  color: var(--text-main);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .brewery-info {
@@ -145,6 +148,8 @@ const formatDate = (dateStr) => {
   gap: 0.3rem;
   font-size: 0.8rem;
   color: var(--text-muted);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .packaging-tag {
@@ -157,20 +162,23 @@ const formatDate = (dateStr) => {
   text-transform: uppercase;
   color: var(--text-muted);
   white-space: nowrap;
+  flex-shrink: 0; /* Zabrání tomu, aby název piva sežral místo pro štítek */
 }
 
-/* Parametry konzumace - ÚPRAVA na 3 sloupce */
+/* Parametry konzumace */
 .consumption-meta {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   align-items: baseline;
   gap: 0.5rem;
+  width: 100%;
 }
 
 .meta-item {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  min-width: 0;
 }
 
 .meta-item .label {
@@ -222,14 +230,17 @@ const formatDate = (dateStr) => {
   justify-content: space-between;
   align-items: flex-end;
   gap: 1rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .card-footer-info {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  flex: 1;
+  flex: 1 1 0px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .info-row {
@@ -238,12 +249,8 @@ const formatDate = (dateStr) => {
   gap: 0.4rem;
   font-size: 0.85rem;
   color: var(--text-main);
-}
-
-.info-row span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .info-row.date {
@@ -257,7 +264,6 @@ const formatDate = (dateStr) => {
   flex-shrink: 0;
 }
 
-/* Menší verze tlačítek pro inline zobrazení */
 .is-icon-only.sm {
   width: 32px;
   height: 32px;
@@ -265,9 +271,29 @@ const formatDate = (dateStr) => {
   border-radius: 8px;
 }
 
+/* NÁSILNÉ OŘEZÁVÁNÍ TEXTŮ - FUNGUJE JAK VE FLEXU, TAK V BLOCKU */
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+}
+
+strong.text-truncate {
+  font-size: 1.05rem;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.icon-shrink {
+  flex-shrink: 0;
+}
+
 @media (max-width: 600px) {
   .history-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
