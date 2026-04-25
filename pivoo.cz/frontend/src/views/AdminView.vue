@@ -182,6 +182,13 @@
 
                   <td data-label="Akce">
                     <div class="td-content action-buttons">
+                      
+                      <BaseTooltip v-if="activeTab === 'locations'" text="Sloučit duplicitu" position="top">
+                        <button class="btn-primary is-icon-only" style="background-color: #8b5cf6; color: white; border: none;" @click="openMergeModal(item)">
+                          <GitMergeIcon :size="16" />
+                        </button>
+                      </BaseTooltip>
+
                       <BaseTooltip text="Upravit" position="top">
                         <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
                           <PencilIcon :size="16" />
@@ -270,6 +277,38 @@
       </template>
     </BaseModal>
 
+    <BaseModal :show="modals.merge" @close="modals.merge = false">
+      <template #header>
+        <h2 style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+          <GitMergeIcon color="#8b5cf6" /> Sloučit podniky
+        </h2>
+      </template>
+      <template #body>
+        <form @submit.prevent="submitMerge" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <p style="margin: 0; color: var(--text-muted); line-height: 1.4;">
+            Chystáte se smazat duplicitu <strong>{{ mergeForm.source?.name }}</strong>. 
+            Vyberte níže podnik, který v databázi zůstane a na který se převedou všechny stávající záznamy o vypitých pivech.
+          </p>
+          
+          <BaseSelect 
+            v-model="mergeForm.target_id" 
+            label="Cílový podnik (ten, který zůstane) *" 
+            searchable 
+            required
+          >
+            <option disabled value="">-- Vyhledejte cílový podnik --</option>
+            <option v-for="loc in mergeTargetOptions" :key="loc.id" :value="loc.id">
+              {{ loc.name }} ({{ loc.city || 'Bez města' }})
+            </option>
+          </BaseSelect>
+          
+          <button type="submit" class="btn-primary" style="background-color: #8b5cf6; color: white; padding: 1rem; font-weight: 700; width: 100%;">
+            Provést sloučení
+          </button>
+        </form>
+      </template>
+    </BaseModal>
+
     <transition name="toast-fade"><div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div></transition>
   </div>
 </template>
@@ -279,7 +318,8 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { 
   PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
-  UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon
+  UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
+  GitMergeIcon // Přidáno
 } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -289,7 +329,7 @@ import BaseModal from '../components/BaseModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePagination from '../components/BasePagination.vue'
 import FilterInput from '../components/FilterInput.vue'
-// IMPORT TOOLTIPU
+import BaseSelect from '../components/BaseSelect.vue' // Přidáno pro Merge modál
 import BaseTooltip from '../components/BaseTooltip.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
@@ -310,7 +350,11 @@ const allUsers = ref([])
 const isUsersLoading = ref(false)
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false, ban: false, removeAvatar: false })
+
+// Přidáno: state pro Merge
+const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false, ban: false, removeAvatar: false, merge: false })
+const mergeForm = ref({ source: null, target_id: '' })
+
 const isEditing = ref(false)
 const selectedUserForPassword = ref(null)
 const selectedUserForBan = ref(null)
@@ -368,6 +412,14 @@ const filteredCurrentItems = computed(() => {
     items = items.filter(item => item.name.toLowerCase().includes(query))
   }
   return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
+})
+
+// Přidáno: Computed pro options v merge modálu (nesmí obsahovat sám sebe)
+const mergeTargetOptions = computed(() => {
+  if (!mergeForm.value.source) return []
+  return locations.value
+    .filter(l => l.id !== mergeForm.value.source.id)
+    .sort((a, b) => a.name.localeCompare(b.name, 'cs'))
 })
 
 const totalPages = computed(() => {
@@ -460,6 +512,37 @@ const openEditModal = (item, t) => {
     formData.value[key] = { ...item, logoFile: null }
   }
   modals.value[key] = true 
+}
+
+// Přidáno: Funkce pro otevření Merge modálu
+const openMergeModal = (locationItem) => {
+  mergeForm.value = { source: locationItem, target_id: '' }
+  modals.value.merge = true
+}
+
+// Přidáno: Submit sloučení
+const submitMerge = async () => {
+  if (!mergeForm.value.source || !mergeForm.value.target_id) return
+  
+  try {
+    const res = await apiFetch('/merge_locations.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        source_id: mergeForm.value.source.id,
+        target_id: mergeForm.value.target_id
+      })
+    })
+
+    if (res.status === 'success') {
+      showToast(res.message)
+      modals.value.merge = false
+      await catalogStore.fetchAllData()
+    } else {
+      showToast(res.message || 'Nepodařilo se podniky sloučit.', 'toast-error')
+    }
+  } catch (error) {
+    showToast('Chyba komunikace se serverem.', 'toast-error')
+  }
 }
 
 const openPasswordModal = (u) => { selectedUserForPassword.value = u; modals.value.password = true }

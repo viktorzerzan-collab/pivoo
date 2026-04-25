@@ -8,12 +8,26 @@
         
         <BaseDatePicker v-model="form.consumed_at" label="Kdy to bylo?" />
 
-        <BaseSelect v-model="form.location_id" label="Kde to bylo?" searchable required>
-          <option disabled value="">-- Vyber lokaci --</option>
-          <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
-            {{ loc.is_favorite ? '⭐' : '📍' }} {{ loc.name }}
-          </option>
-        </BaseSelect>
+        <div class="location-detect-wrapper">
+          <BaseSelect v-model="form.location_id" label="Kde to bylo?" searchable required style="flex: 1;">
+            <option disabled value="">-- Vyber lokaci --</option>
+            <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
+              {{ loc.is_favorite ? '⭐' : '📍' }} {{ loc.name }}
+            </option>
+          </BaseSelect>
+          
+          <GeoLocateButton 
+            :isLocating="isLocating" 
+            @locate="autodetectLocation" 
+          />
+        </div>
+
+        <div v-if="locationMessage" class="location-message" :class="locationMessageType">
+          {{ locationMessage }}
+          <a v-if="locationMessageType === 'warning'" href="#" @click.prevent="$emit('open-add-location', tempCoords)" class="add-loc-link">
+            Přidat nový podnik zde
+          </a>
+        </div>
 
         <BaseSelect v-model="form.brewery_id" label="Pivovar" searchable required>
           <option disabled value="">-- Vyber pivovar --</option>
@@ -138,6 +152,9 @@ import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
 import BaseCheckbox from '../BaseCheckbox.vue'
 
+// Import naší nové komponenty!
+import GeoLocateButton from '../GeoLocateButton.vue'
+
 const props = defineProps({ 
   show: Boolean, 
   breweries: Array,
@@ -145,10 +162,16 @@ const props = defineProps({
   locations: Array, 
   form: Object 
 })
-defineEmits(['close', 'submit'])
+
+const emit = defineEmits(['close', 'submit', 'open-add-location'])
 
 const volumeMode = ref(props.form.volume)
 const customVolume = ref('')
+
+const isLocating = ref(false)
+const locationMessage = ref('')
+const locationMessageType = ref('')
+const tempCoords = ref(null)
 
 watch(volumeMode, (newVal) => {
   if (newVal !== 'custom') {
@@ -172,6 +195,8 @@ watch(() => props.form.is_free, (isFree) => {
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
+    // Reset zpráv po otevření modálu
+    locationMessage.value = ''
     const currentVol = props.form.volume
     const standardVolumes = ['0.20', '0.30', '0.40', '0.50', '1.00']
     
@@ -194,12 +219,73 @@ watch(() => props.show, (newVal) => {
       props.form.consumed_at = localDateTime;
     }
 
-    // ZMĚNA: Nastavení výchozí měny
     if (!props.form.currency) {
       props.form.currency = 'CZK'
     }
   }
 })
+
+// Výpočet vzdálenosti v kilometrech
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
+}
+
+const autodetectLocation = () => {
+  if (!navigator.geolocation) {
+    locationMessage.value = 'Geolokace není prohlížečem podporována.'
+    locationMessageType.value = 'error'
+    return
+  }
+  
+  isLocating.value = true
+  locationMessage.value = ''
+  
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      isLocating.value = false
+      const lat = pos.coords.latitude
+      const lng = pos.coords.longitude
+      tempCoords.value = { lat, lng }
+
+      let nearestLoc = null
+      let minDistance = Infinity
+
+      props.locations.forEach(loc => {
+        if (loc.lat && loc.lng) {
+          const dist = calculateDistance(lat, lng, loc.lat, loc.lng)
+          if (dist < minDistance) {
+            minDistance = dist
+            nearestLoc = loc
+          }
+        }
+      })
+
+      // Limit 30 metrů (0.03 km)
+      if (nearestLoc && minDistance <= 0.03) {
+        props.form.location_id = nearestLoc.id
+        locationMessage.value = `📍 Nalezeno: ${nearestLoc.name} (${(minDistance * 1000).toFixed(0)} m)`
+        locationMessageType.value = 'success'
+      } else {
+        props.form.location_id = ''
+        locationMessage.value = 'Žádný známý podnik v okolí 30m.'
+        locationMessageType.value = 'warning'
+      }
+    },
+    (err) => {
+      isLocating.value = false
+      locationMessage.value = 'Nepodařilo se zjistit polohu. Zkontrolujte oprávnění.'
+      locationMessageType.value = 'error'
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
+}
 
 const sortByFavorite = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0);
 
@@ -240,8 +326,17 @@ watch(() => props.form.location_id, () => {
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 
-.align-end { align-items: flex-end; }
+.location-detect-wrapper { display: flex; align-items: flex-end; gap: 0.5rem; }
 
+.location-message { font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; margin-top: -0.5rem; }
+.location-message.success { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.location-message.warning { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); display: flex; justify-content: space-between; align-items: center; }
+.location-message.error { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+.add-loc-link { color: var(--blue); text-decoration: underline; cursor: pointer; }
+.add-loc-link:hover { color: var(--blue-hover); }
+
+.align-end { align-items: flex-end; }
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
 .input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.5s ease; }
 

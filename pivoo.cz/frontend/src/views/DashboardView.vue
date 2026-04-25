@@ -35,9 +35,41 @@
       </div>
     </div>
 
-    <CheckInModal :show="isModalOpen" :breweries="breweries" :beers="beers" :locations="locations" :form="form" @close="isModalOpen = false" @submit="submitCheckIn" />
-    <EditCheckInModal :show="isEditModalOpen" :breweries="breweries" :beers="beers" :locations="locations" :form="editForm" @close="isEditModalOpen = false" @submit="submitEdit" />
-    <DeleteConfirmModal :show="isDeleteConfirmModalOpen" @close="isDeleteConfirmModalOpen = false" @confirm="executeDelete" />
+    <CheckInModal 
+      :show="isModalOpen" 
+      :breweries="breweries" 
+      :beers="beers" 
+      :locations="locations" 
+      :form="form" 
+      @close="isModalOpen = false" 
+      @submit="submitCheckIn"
+      @open-add-location="openAddLocationFromCheckin" 
+    />
+    
+    <EditCheckInModal 
+      :show="isEditModalOpen" 
+      :breweries="breweries" 
+      :beers="beers" 
+      :locations="locations" 
+      :form="editForm" 
+      @close="isEditModalOpen = false" 
+      @submit="submitEdit" 
+    />
+    
+    <DeleteConfirmModal 
+      :show="isDeleteConfirmModalOpen" 
+      @close="isDeleteConfirmModalOpen = false" 
+      @confirm="executeDelete" 
+    />
+
+    <AddLocationModal 
+      :show="isAddLocationModalOpen" 
+      :isEditing="false" 
+      :countries="countries" 
+      :form="locationForm" 
+      @close="isAddLocationModalOpen = false" 
+      @submit="submitNewLocation" 
+    />
   </div>
 </template>
 
@@ -54,10 +86,11 @@ import HistoryList from '../components/HistoryList.vue'
 import CheckInModal from '../components/modals/CheckInModal.vue'
 import EditCheckInModal from '../components/modals/EditCheckInModal.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
+import AddLocationModal from '../components/modals/AddLocationModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
-const { beers, breweries, locations, stats, history, isLoading } = storeToRefs(catalogStore)
+const { beers, breweries, locations, stats, history, countries, isLoading } = storeToRefs(catalogStore)
 
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const showToast = (message, type = 'toast-success') => { 
@@ -76,13 +109,15 @@ const currentMonthName = computed(() => {
 const isModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const isDeleteConfirmModalOpen = ref(false)
+const isAddLocationModalOpen = ref(false)
+
 const recordIdToDelete = ref(null)
 const selectedEditRecordId = ref(null)
 
-// ZMĚNA: Přidána pole currency a price (v CheckInModalu slouží 'price' jako vstup pro original_price)
 const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
-// ZMĚNA: Přidána pole currency a original_price
 const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', original_price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
+
+const locationForm = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
 
 onMounted(() => { 
   if (authStore.user) {
@@ -101,6 +136,36 @@ const openCheckInModal = async () => {
   isModalOpen.value = true
 }
 
+const openAddLocationFromCheckin = (coords) => {
+  isModalOpen.value = false
+  locationForm.value = { 
+    name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', 
+    lat: coords?.lat || null, 
+    lng: coords?.lng || null 
+  }
+  isAddLocationModalOpen.value = true
+}
+
+const submitNewLocation = async () => {
+  try {
+    const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(locationForm.value) })
+    if (result.status === 'success') { 
+      isAddLocationModalOpen.value = false
+      await catalogStore.fetchAllData(true)
+      showToast("Podnik přidán, můžeš pokračovat v zápisu!")
+      
+      const newLoc = catalogStore.locations.find(l => l.name === locationForm.value.name)
+      if (newLoc) {
+        form.value.location_id = newLoc.id
+      }
+      
+      isModalOpen.value = true
+    } else {
+      showToast(result.message || 'Nepodařilo se přidat podnik.', 'toast-error')
+    }
+  } catch (e) { showToast('Chyba serveru při přidávání podniku.', 'toast-error') }
+}
+
 const openEditModal = (record) => {
   selectedEditRecordId.value = record.id
   const fullDateTime = record.consumed_at || ''
@@ -116,7 +181,6 @@ const openEditModal = (record) => {
     location_id: Number(record.location_id), 
     quantity: Number(record.quantity),
     is_free: !!Number(record.is_free),
-    // ZMĚNA: Mapování nových polí s fallbackem na CZK/původní cenu
     currency: record.currency || 'CZK',
     original_price: record.original_price || record.price
   }
@@ -134,7 +198,6 @@ const submitCheckIn = async () => {
       isModalOpen.value = false
       await catalogStore.fetchAllData()
       showToast('Záznam úspěšně zapsán!')
-      // ZMĚNA: Reset formuláře včetně měny
       form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' }
     } else {
       showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error')

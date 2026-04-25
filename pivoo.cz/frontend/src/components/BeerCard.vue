@@ -85,7 +85,6 @@ import {
 import BaseButton from './BaseButton.vue'
 import FavoriteButton from './FavoriteButton.vue'
 import CountryFlag from './CountryFlag.vue'
-// IMPORT TOOLTIPU
 import BaseTooltip from './BaseTooltip.vue'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
@@ -127,13 +126,15 @@ const toggleFav = () => { catalogStore.toggleFavorite(props.beer.id, 'beer') }
 .icon-wrapper { padding: 0.75rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
 .beer-bg { background: #1e293b; }
 
-.text-content { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+/* OPRAVA: Přidáno min-width: 0 */
+.text-content { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
 
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .card-title { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
-.brewery-line { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; }
-.brewery-name { font-size: 0.9rem; color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* OPRAVA: Pojistka pro dlouhé názvy pivovaru */
+.brewery-line { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; min-width: 0; }
+.brewery-name { font-size: 0.9rem; color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
 .card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.4rem; padding: 0.2rem 0; }
 .meta-item { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }

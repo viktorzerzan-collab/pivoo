@@ -17,7 +17,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ArrowUpIcon } from 'lucide-vue-next'
-import BaseTooltip from './BaseTooltip.vue' // Přidán import Tooltipu
+import BaseTooltip from './BaseTooltip.vue'
 
 const isVisible = ref(false)
 
@@ -42,16 +42,14 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Nový obal, který drží tlačítko i tooltip ukotvené v pravém rohu */
 .back-to-top-wrapper {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  z-index: 99;
+  z-index: 105; /* Zvýšeno nad 100, aby se případně nepodsunulo pod menu */
 }
 
 .back-to-top-btn {
-  /* position, bottom, right a z-index jsme přesunuli o třídu výš */
   background-color: var(--primary); 
   color: #1e293b;
   border: none;
@@ -85,7 +83,6 @@ onUnmounted(() => {
   transform: translateY(0);
 }
 
-/* Animace zůstává stejná */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -95,5 +92,14 @@ onUnmounted(() => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(20px);
+}
+
+/* PŘIDÁNO: Posunutí tlačítka nahoru na mobilních zařízeních */
+@media (max-width: 900px) {
+  .back-to-top-wrapper {
+    /* Odsazení o výšku spodního menu (zhruba 4rem) + trochu místa (1rem) + safe area pro iPhony */
+    bottom: calc(5rem + env(safe-area-inset-bottom));
+    right: 1rem;
+  }
 }
 </style>

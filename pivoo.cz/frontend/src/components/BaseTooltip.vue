@@ -25,7 +25,7 @@ defineProps({
     type: String,
     required: true
   },
-  // Možnosti: 'top', 'bottom', 'left', 'right'
+  // Možnosti: 'top', 'bottom', 'left', 'right', 'top-end'
   position: {
     type: String,
     default: 'top'
@@ -65,7 +65,7 @@ const show = ref(false)
   border-style: solid;
 }
 
-/* POZICE: TOP (Výchozí) */
+/* POZICE: TOP (Výchozí - středová) */
 .tooltip-box.top {
   bottom: calc(100% + 8px);
   left: 50%;
@@ -75,6 +75,18 @@ const show = ref(false)
   bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
+  border-width: 5px 5px 0 5px;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+/* PŘIDÁNO - POZICE: TOP-END (Zarovnáno doprava, vhodné k okrajům modálů) */
+.tooltip-box.top-end {
+  bottom: calc(100% + 8px);
+  right: -6px; /* Jemně přečnívá, aby opticky lícovalo s tlačítkem */
+}
+.tooltip-box.top-end .tooltip-arrow {
+  bottom: -4px;
+  right: 18px; /* Šipka ukazuje zhruba doprostřed 44px širokého tlačítka */
   border-width: 5px 5px 0 5px;
   border-color: #1e293b transparent transparent transparent;
 }
@@ -134,6 +146,7 @@ const show = ref(false)
 
 /* Jemný pohyb podle pozice při animaci */
 .tooltip-fade-enter-from.top { transform: translate(-50%, 5px); }
+.tooltip-fade-enter-from.top-end { transform: translateY(5px); }
 .tooltip-fade-enter-from.bottom { transform: translate(-50%, -5px); }
 .tooltip-fade-enter-from.left { transform: translate(5px, -50%); }
 .tooltip-fade-enter-from.right { transform: translate(-5px, -50%); }
