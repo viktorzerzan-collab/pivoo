@@ -4,7 +4,7 @@
       <span class="status-dot"></span>
       <span class="status-text">{{ isOpenNow ? 'Otevřeno' : 'Zavřeno' }}</span>
       <span class="today-hours" v-if="todaySchedule && !todaySchedule.closed && isOpenNow">
-        (dnes {{ todaySchedule.from }} - {{ todaySchedule.to }})
+        (dnes {{ formatIntervals(todaySchedule.intervals) }})
       </span>
       <ChevronDownIcon :class="['toggle-icon', { 'rotated': showDetails }]" :size="16" />
     </div>
@@ -18,10 +18,14 @@
           :class="{ 'is-today': day.id === currentDayId }"
         >
           <span class="day-name">{{ day.name }}</span>
-          <span class="day-time" v-if="parsedHours[day.id] && !parsedHours[day.id].closed">
-            {{ parsedHours[day.id].from }} - {{ parsedHours[day.id].to }}
-          </span>
-          <span class="day-time closed" v-else>Zavřeno</span>
+          <div class="day-time-wrapper">
+            <template v-if="parsedHours[day.id] && !parsedHours[day.id].closed">
+              <div v-for="(interval, idx) in parsedHours[day.id].intervals" :key="idx" class="time-interval">
+                {{ interval.from }} - {{ interval.to }}
+              </div>
+            </template>
+            <span v-else class="day-time closed">Zavřeno</span>
+          </div>
         </div>
       </div>
     </transition>
@@ -56,7 +60,6 @@ const showDetails = ref(false)
 const currentTime = ref(new Date())
 let timer = null
 
-// Aktualizace času každou minutu pro přesný výpočet "Otevřeno/Zavřeno"
 onMounted(() => {
   timer = setInterval(() => {
     currentTime.value = new Date()
@@ -71,19 +74,42 @@ const toggleDetails = () => {
   showDetails.value = !showDetails.value
 }
 
-// Parsování dat z databáze a kontrola, zda JSON obsahuje reálná data
+// Pomocná funkce pro formátování intervalů do jednoho řádku
+const formatIntervals = (intervals) => {
+  if (!intervals || intervals.length === 0) return ''
+  return intervals
+    .filter(i => i.from && i.to)
+    .map(i => `${i.from}-${i.to}`)
+    .join(', ')
+}
+
 const parsedHours = computed(() => {
   if (!props.openingHours) return null
   try {
     const parsed = typeof props.openingHours === 'string' ? JSON.parse(props.openingHours) : props.openingHours
-    const hasData = Object.values(parsed).some(day => !day.closed && day.from && day.to)
-    return hasData ? parsed : null
+    
+    // Transformace dat pro podporu více intervalů a zpětnou kompatibilitu
+    const transformed = {}
+    Object.keys(parsed).forEach(dayId => {
+      const dayData = parsed[dayId]
+      // Pokud data obsahují přímo from/to (starý formát), převedeme je na pole intervalů
+      if (dayData.from !== undefined || dayData.to !== undefined) {
+        transformed[dayId] = {
+          closed: dayData.closed,
+          intervals: dayData.closed ? [] : [{ from: dayData.from, to: dayData.to }]
+        }
+      } else {
+        transformed[dayId] = dayData
+      }
+    })
+
+    const hasData = Object.values(transformed).some(day => !day.closed && day.intervals && day.intervals.length > 0)
+    return hasData ? transformed : null
   } catch (e) {
     return null
   }
 })
 
-// Převod číslování dnů (neděle v JS je 0, my potřebujeme 7)
 const currentDayId = computed(() => {
   const day = currentTime.value.getDay()
   return day === 0 ? 7 : day
@@ -94,33 +120,33 @@ const todaySchedule = computed(() => {
   return parsedHours.value[currentDayId.value]
 })
 
-// Chytrý výpočet otevřeno/zavřeno vč. případů, kdy otvíračka přesahuje půlnoc
+// Vylepšený výpočet "Otevřeno" pro více intervalů
 const isOpenNow = computed(() => {
-  if (!todaySchedule.value || todaySchedule.value.closed) return false
+  if (!todaySchedule.value || todaySchedule.value.closed || !todaySchedule.value.intervals) return false
   
-  const from = todaySchedule.value.from
-  const to = todaySchedule.value.to
-  
-  if (!from || !to) return false
-
   const nowHours = currentTime.value.getHours()
   const nowMinutes = currentTime.value.getMinutes()
   const nowMinutesTotal = nowHours * 60 + nowMinutes
 
-  const [fromH, fromM] = from.split(':').map(Number)
-  const fromTotal = fromH * 60 + fromM
+  return todaySchedule.value.intervals.some(interval => {
+    const from = interval.from
+    const to = interval.to
+    
+    if (!from || !to) return false
 
-  const [toH, toM] = to.split(':').map(Number)
-  const toTotal = toH * 60 + toM
+    const [fromH, fromM] = from.split(':').map(Number)
+    const fromTotal = fromH * 60 + fromM
 
-  // Standardní případ (např. 10:00 - 22:00)
-  if (fromTotal <= toTotal) {
-    return nowMinutesTotal >= fromTotal && nowMinutesTotal <= toTotal
-  } 
-  // Případ přes půlnoc (např. 18:00 - 02:00)
-  else {
-    return nowMinutesTotal >= fromTotal || nowMinutesTotal <= toTotal
-  }
+    const [toH, toM] = to.split(':').map(Number)
+    const toTotal = toH * 60 + toM
+
+    // Případ standardní i přes půlnoc (např. 18:00 - 02:00)
+    if (fromTotal <= toTotal) {
+      return nowMinutesTotal >= fromTotal && nowMinutesTotal <= toTotal
+    } else {
+      return nowMinutesTotal >= fromTotal || nowMinutesTotal <= toTotal
+    }
+  })
 })
 </script>
 
@@ -203,26 +229,26 @@ const isOpenNow = computed(() => {
   margin-top: 0.5rem;
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 0.75rem;
-  min-width: 220px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 260px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   z-index: 50;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .hour-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0;
+  align-items: flex-start;
+  padding: 0.3rem 0;
   color: var(--text-main);
   border-bottom: 1px solid var(--border);
 }
 .hour-row:last-child {
   border-bottom: none;
-  padding-bottom: 0;
 }
 
 .hour-row.is-today {
@@ -231,10 +257,18 @@ const isOpenNow = computed(() => {
 }
 
 .day-name {
-  flex: 1;
+  flex: 0 0 80px;
 }
 
-.day-time {
+.day-time-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.time-interval {
   font-family: monospace;
   font-size: 0.95rem;
 }

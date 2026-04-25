@@ -9,6 +9,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
+// Pomocná funkce pro zjištění kurzu z ČNB (stejná jako u zápisu)
+function getCnbRate($currency, $dateStr) {
+    if ($currency === 'CZK') return 1.0;
+
+    $date = date("d.m.Y", strtotime($dateStr));
+    $url = "https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt?date=" . $date;
+
+    $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+    $content = @file_get_contents($url, false, $ctx);
+
+    if (!$content) return null;
+
+    $lines = explode("\n", $content);
+    foreach ($lines as $line) {
+        if (strpos($line, '|' . $currency . '|') !== false) {
+            $parts = explode('|', $line);
+            if (count($parts) >= 5) {
+                $amount = (float)$parts[2];
+                $rateRaw = str_replace(',', '.', $parts[4]);
+                $rate = (float)$rateRaw;
+                
+                return ($amount > 0) ? ($rate / $amount) : null;
+            }
+        }
+    }
+    return null;
+}
+
 $user = JwtHandler::checkUser();
 
 $database = new Database();
@@ -17,9 +45,9 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->id)) {
     try {
-        // ÚPRAVA: Přidán sloupec is_free do UPDATE dotazu
+        // ÚPRAVA: Přidány sloupce currency a original_price do UPDATE dotazu
         $query = "UPDATE consumptions 
-                  SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, is_free = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ?, consumed_at = ? 
+                  SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, currency = ?, original_price = ?, is_free = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ?, consumed_at = ? 
                   WHERE id = ? AND user_id = ?";
                   
         $stmt = $db->prepare($query);
@@ -28,20 +56,46 @@ if (!empty($data->id)) {
         $location_id = !empty($data->location_id) ? $data->location_id : null;
         $volume = !empty($data->volume) ? $data->volume : null;
         $quantity = !empty($data->quantity) ? (int)$data->quantity : 1;
-        $price = (!empty($data->price) && $data->price !== '') ? $data->price : null;
         
-        // NOVÉ: Zpracování příznaku is_free
         $is_free = (!empty($data->is_free) && $data->is_free) ? 1 : 0;
         
+        // ZMĚNA: Zpracování měny a zadané (původní) ceny
+        $currency = !empty($data->currency) ? $data->currency : 'CZK';
+        $original_price = (!empty($data->original_price) && $data->original_price !== '') ? (float)$data->original_price : null;
+        
+        $consumed_at = !empty($data->consumed_at) ? $data->consumed_at : null;
+
+        $czk_price = null;
+
+        // Logika pro výpočet korun z aktuálního kurzu ČNB
+        if ($is_free) {
+            $original_price = null;
+            $czk_price = null;
+        } elseif ($original_price !== null) {
+            if ($currency === 'CZK') {
+                $czk_price = $original_price;
+            } else {
+                $rate = getCnbRate($currency, $consumed_at ? $consumed_at : date("Y-m-d H:i:s"));
+                if ($rate !== null) {
+                    $czk_price = round($original_price * $rate, 2);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(["status" => "error", "message" => "Nepodařilo se získat kurz z ČNB pro přepočet. Zkuste to prosím znovu nebo použijte CZK."]);
+                    exit();
+                }
+            }
+        }
+
         $rating_beer = (!empty($data->rating_beer) && $data->rating_beer > 0) ? (int)$data->rating_beer : null;
         $rating_care = (!empty($data->rating_care) && $data->rating_care > 0) ? (int)$data->rating_care : null;
         
         $note = !empty($data->note) ? $data->note : null;
         $packaging = !empty($data->packaging) ? $data->packaging : 'točené';
-        $consumed_at = !empty($data->consumed_at) ? $data->consumed_at : null;
 
         if ($stmt->execute([
-            $beer_id, $location_id, $volume, $quantity, $price, $is_free, $rating_beer, $rating_care,
+            $beer_id, $location_id, $volume, $quantity, 
+            $czk_price, $currency, $original_price, // Nové proměnné pro cenu
+            $is_free, $rating_beer, $rating_care,
             $note, $packaging, $consumed_at, $data->id, $user['user_id']
         ])) {
             echo json_encode(["status" => "success", "message" => "Záznam byl úspěšně upraven."]);

@@ -1,20 +1,23 @@
 <template>
   <transition name="fade-slide">
-    <button
-      v-if="isVisible"
-      @click="scrollToTop"
-      class="back-to-top-btn"
-      aria-label="Zpět nahoru"
-      title="Zpět nahoru"
-    >
-      <ArrowUpIcon class="arrow-icon" />
-    </button>
+    <div v-if="isVisible" class="back-to-top-wrapper">
+      <BaseTooltip text="Zpět nahoru" position="top">
+        <button
+          @click="scrollToTop"
+          class="back-to-top-btn"
+          aria-label="Zpět nahoru"
+        >
+          <ArrowUpIcon class="arrow-icon" />
+        </button>
+      </BaseTooltip>
+    </div>
   </transition>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ArrowUpIcon } from 'lucide-vue-next'
+import BaseTooltip from './BaseTooltip.vue' // Přidán import Tooltipu
 
 const isVisible = ref(false)
 
@@ -39,11 +42,16 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.back-to-top-btn {
+/* Nový obal, který drží tlačítko i tooltip ukotvené v pravém rohu */
+.back-to-top-wrapper {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
   z-index: 99;
+}
+
+.back-to-top-btn {
+  /* position, bottom, right a z-index jsme přesunuli o třídu výš */
   background-color: var(--primary); 
   color: #1e293b;
   border: none;
@@ -56,14 +64,9 @@ onUnmounted(() => {
   cursor: pointer;
   box-shadow: var(--shadow-md);
   transition: all 0.3s ease;
-  /* Přidáme padding 0, aby se tlačítko nedeformovalo */
   padding: 0;
 }
 
-/* TÍMTO PŘEBIJEME GLOBÁLNÍ STYLY Z APP.VUE:
-  Musíme použít !important, abychom měli jistotu, že se aplikuje 
-  správná velikost a zruší se případné vnější okraje (margin).
-*/
 .back-to-top-btn .arrow-icon {
   width: 28px !important;
   height: 28px !important;
@@ -82,7 +85,7 @@ onUnmounted(() => {
   transform: translateY(0);
 }
 
-/* Animace pro zobrazení a skrytí */
+/* Animace zůstává stejná */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -92,20 +95,5 @@ onUnmounted(() => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(20px);
-}
-
-/* Úprava pro mobilní zobrazení */
-@media (max-width: 900px) {
-  .back-to-top-btn {
-    bottom: calc(75px + env(safe-area-inset-bottom));
-    right: 1rem;
-    width: 50px;
-    height: 50px;
-  }
-  
-  .back-to-top-btn .arrow-icon {
-    width: 24px !important;
-    height: 24px !important;
-  }
 }
 </style>

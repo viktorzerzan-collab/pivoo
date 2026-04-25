@@ -102,12 +102,13 @@ if ($db) {
 
     // 6. PIVNÍ STYLY
     try {
+        // ZMĚNA: Odstraněno LIMIT 5 na konci dotazu
         $styles_query = "SELECT s.name, SUM(c.quantity) as count
                          FROM consumptions c
                          JOIN beers b ON c.beer_id = b.id
                          JOIN beer_styles s ON b.style_id = s.id
                          WHERE $userCondition $dateCondition
-                         GROUP BY s.id ORDER BY count DESC LIMIT 5";
+                         GROUP BY s.id ORDER BY count DESC";
         $stmt = $db->prepare($styles_query);
         $stmt->execute($params);
         $response["styles"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -115,7 +116,6 @@ if ($db) {
 
     // 7. CENY
     try {
-        // ÚPRAVA: Ceny analyzujeme pouze u placených piv (is_free = 0)
         $price_query = "SELECT 
                             AVG(price) as avg_price, 
                             MAX(price) as max_price, 

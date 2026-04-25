@@ -210,7 +210,6 @@ onMounted(() => fetchDetailedStats())
 </script>
 
 <style scoped>
-/* OPRAVA: Přidána pojistka proti horizontálnímu scrollování, které rozbíjelo AppNavigation */
 .statistics-page { 
   flex: 1; 
   display: flex; 
@@ -233,7 +232,6 @@ onMounted(() => fetchDetailedStats())
 .scope-toggle button.active { background: var(--primary); color: #1e293b; box-shadow: var(--shadow-sm); }
 .filter-wrapper { width: 220px; }
 
-/* OPRAVA: min(100%, 350px) zaručí, že grid nevyjede z obrazovky na extrémně úzkých mobilech */
 .stats-grid-detailed { 
   display: grid; 
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); 
@@ -252,14 +250,25 @@ onMounted(() => fetchDetailedStats())
 .ranking-item:hover { transform: translateX(5px); border-color: var(--primary); }
 .rank-number { width: 28px; height: 28px; background: var(--primary); color: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
 
-/* Zde je důležitá část s úpravou flexboxu a zalamování */
 .item-info { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
 .item-name { color: var(--text-main); font-size: 0.95rem; word-break: break-word; line-height: 1.3; }
 .item-sub { color: var(--text-muted); font-size: 0.8rem; word-break: break-word; line-height: 1.3; }
 
 .item-count { font-weight: 800; color: var(--primary); font-size: 1.1rem; background: rgba(250, 204, 21, 0.1); padding: 0.25rem 0.75rem; border-radius: 8px; flex-shrink: 0; }
 
-.styles-list { display: flex; flex-direction: column; gap: 1rem; }
+/* ZMĚNA: Přidán max-height, overflow a vlastní scrollbar */
+.styles-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 1rem; 
+  max-height: 290px; 
+  overflow-y: auto; 
+  padding-right: 0.5rem;
+}
+.styles-list::-webkit-scrollbar { width: 6px; }
+.styles-list::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
+.styles-list::-webkit-scrollbar-thumb:hover { background-color: var(--primary); }
+
 .style-info { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.3rem; }
 .style-count { color: var(--primary); }
 .style-bar-bg { height: 8px; background: var(--bg-app); border-radius: 4px; overflow: hidden; }
@@ -297,7 +306,6 @@ onMounted(() => fetchDetailedStats())
   .chart-container { height: 140px; padding: 0.5rem 0; gap: 0.25rem; }
   .price-stats-grid { grid-template-columns: 1fr; }
   
-  /* OPRAVA: Pro mobilní zobrazení trochu stáhneme vnitřní odsazení karet a položek seznamu */
   .stats-card { padding: 1rem; }
   .ranking-item { padding: 0.6rem 0.75rem; gap: 0.75rem; }
   .price-box { padding: 0.75rem; }

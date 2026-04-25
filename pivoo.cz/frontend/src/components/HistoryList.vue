@@ -32,8 +32,14 @@
                 <small class="unit">Neplatil jsem</small>
               </template>
               <template v-else>
-                <span class="price-total">{{ record.price * record.quantity }} Kč</span>
-                <small class="unit">({{ record.price }} Kč/ks)</small>
+                <template v-if="record.currency && record.currency !== 'CZK'">
+                  <span class="price-total">{{ record.original_price * record.quantity }} {{ record.currency }}</span>
+                  <small class="unit">({{ Math.round(record.price * record.quantity) }} Kč celkem)</small>
+                </template>
+                <template v-else>
+                  <span class="price-total">{{ record.price * record.quantity }} Kč</span>
+                  <small class="unit">({{ record.price }} Kč/ks)</small>
+                </template>
               </template>
             </div>
           </div>
@@ -73,15 +79,14 @@ import { PencilIcon, Trash2Icon, MapPinIcon, ClockIcon, FactoryIcon } from 'luci
 defineProps({ history: { type: Array, required: true } })
 defineEmits(['edit', 'delete'])
 
+// ZMĚNA: Úprava na zobrazení pouze data bez času
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleString('cs-CZ', { 
     day: '2-digit', 
     month: '2-digit', 
-    year: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit' 
+    year: 'numeric'
   })
 }
 </script>
@@ -137,7 +142,7 @@ const formatDate = (dateStr) => {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  flex: 1 1 0px; /* Extrémně důležité: Násilně dovolí elementu zmenšit se pod přirozenou šířku obsahu */
+  flex: 1 1 0px;
   min-width: 0;
   overflow: hidden;
 }
@@ -162,7 +167,7 @@ const formatDate = (dateStr) => {
   text-transform: uppercase;
   color: var(--text-muted);
   white-space: nowrap;
-  flex-shrink: 0; /* Zabrání tomu, aby název piva sežral místo pro štítek */
+  flex-shrink: 0;
 }
 
 /* Parametry konzumace */
@@ -271,7 +276,6 @@ const formatDate = (dateStr) => {
   border-radius: 8px;
 }
 
-/* NÁSILNÉ OŘEZÁVÁNÍ TEXTŮ - FUNGUJE JAK VE FLEXU, TAK V BLOCKU */
 .text-truncate {
   white-space: nowrap;
   overflow: hidden;

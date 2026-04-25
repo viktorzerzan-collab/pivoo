@@ -4,38 +4,65 @@
     
     <div class="days-container">
       <div v-for="day in days" :key="day.id" class="day-row">
-        <div class="day-name">
-          <span class="day-label">{{ day.name }}</span>
+        <div class="day-info-row">
+          <div class="day-name">
+            <span class="day-label">{{ day.name }}</span>
+          </div>
+          
+          <div class="day-actions">
+            <label class="closed-checkbox">
+              <input 
+                type="checkbox" 
+                v-model="localValue[day.id].closed"
+                @change="handleClosedChange(day.id)"
+              >
+              <span class="checkbox-text">Zavřeno</span>
+            </label>
+            <button 
+              v-if="!localValue[day.id].closed" 
+              type="button" 
+              class="btn-add-interval" 
+              @click="addInterval(day.id)"
+              title="Přidat pauzu/interval"
+            >
+              + Přidat čas
+            </button>
+          </div>
         </div>
-        
-        <div class="day-controls">
-          <label class="closed-checkbox">
-            <input 
-              type="checkbox" 
-              v-model="localValue[day.id].closed"
-              @change="emitUpdate"
-            >
-            <span class="checkbox-text">Zavřeno</span>
-          </label>
 
-          <div v-if="!localValue[day.id].closed" class="time-inputs">
-            <input 
-              type="time" 
-              v-model="localValue[day.id].from"
-              class="time-input"
-              @change="emitUpdate"
+        <div v-if="!localValue[day.id].closed" class="intervals-list">
+          <div v-for="(interval, index) in localValue[day.id].intervals" :key="index" class="interval-row">
+            <div class="time-inputs">
+              <input 
+                type="time" 
+                v-model="interval.from"
+                class="time-input"
+                @change="emitUpdate"
+                required
+              >
+              <span class="time-separator">-</span>
+              <input 
+                type="time" 
+                v-model="interval.to"
+                class="time-input"
+                @change="emitUpdate"
+                required
+              >
+            </div>
+            
+            <button 
+              v-if="localValue[day.id].intervals.length > 1" 
+              type="button" 
+              class="btn-remove-interval" 
+              @click="removeInterval(day.id, index)"
+              title="Odebrat interval"
             >
-            <span class="time-separator">-</span>
-            <input 
-              type="time" 
-              v-model="localValue[day.id].to"
-              class="time-input"
-              @change="emitUpdate"
-            >
+              <XIcon :size="16" />
+            </button>
           </div>
-          <div v-else class="time-inputs closed-placeholder">
-            <span>---</span>
-          </div>
+        </div>
+        <div v-else class="closed-placeholder">
+          <span>--- Celý den zavřeno ---</span>
         </div>
       </div>
     </div>
@@ -44,6 +71,8 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+// ZMĚNA: Import ikony křížku
+import { XIcon } from 'lucide-vue-next'
 
 const props = defineProps({
   modelValue: {
@@ -68,25 +97,22 @@ const days = [
   { id: 7, name: 'Neděle' }
 ]
 
-// Výchozí prázdná struktura
 const getEmptySchedule = () => {
   const schedule = {}
   days.forEach(day => {
-    schedule[day.id] = { closed: false, from: '', to: '' }
+    schedule[day.id] = { closed: false, intervals: [{ from: '', to: '' }] }
   })
   return schedule
 }
 
 const localValue = ref(getEmptySchedule())
 
-// Při načtení se pokusíme rozparsovat existující hodnotu (pokud upravujeme existující záznam)
 onMounted(() => {
   parseIncomingValue()
 })
 
 watch(() => props.modelValue, (newVal) => {
-  // Zabráníme zbytečnému přepisování, pokud změna vychází odsud
-  if (JSON.stringify(localValue.value) !== newVal) {
+  if (typeof newVal === 'string' && newVal !== JSON.stringify(localValue.value)) {
     parseIncomingValue()
   }
 })
@@ -102,11 +128,15 @@ const parseIncomingValue = () => {
       ? JSON.parse(props.modelValue) 
       : props.modelValue
 
-    // Sloučíme s prázdným rozvrhem, aby nám nechyběly dny, kdyby byl JSON neúplný
     const schedule = getEmptySchedule()
     for (const key in parsed) {
       if (schedule[key]) {
-        schedule[key] = { ...schedule[key], ...parsed[key] }
+        if (parsed[key].from !== undefined || parsed[key].to !== undefined) {
+          schedule[key].closed = parsed[key].closed
+          schedule[key].intervals = [{ from: parsed[key].from || '', to: parsed[key].to || '' }]
+        } else {
+          schedule[key] = { ...schedule[key], ...parsed[key] }
+        }
       }
     }
     localValue.value = schedule
@@ -116,8 +146,24 @@ const parseIncomingValue = () => {
   }
 }
 
+const handleClosedChange = (dayId) => {
+  if (localValue.value[dayId].closed) {
+    localValue.value[dayId].intervals = [{ from: '', to: '' }]
+  }
+  emitUpdate()
+}
+
+const addInterval = (dayId) => {
+  localValue.value[dayId].intervals.push({ from: '', to: '' })
+  emitUpdate()
+}
+
+const removeInterval = (dayId, index) => {
+  localValue.value[dayId].intervals.splice(index, 1)
+  emitUpdate()
+}
+
 const emitUpdate = () => {
-  // Emitujeme jako JSON string, aby se to rovnou dalo uložit do DB
   emit('update:modelValue', JSON.stringify(localValue.value))
 }
 </script>
@@ -132,7 +178,7 @@ const emitUpdate = () => {
 
 .input-label {
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-main);
   margin-bottom: 0.25rem;
 }
@@ -140,18 +186,18 @@ const emitUpdate = () => {
 .days-container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1rem;
 }
 
 .day-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 0.5rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
 }
 
@@ -160,22 +206,22 @@ const emitUpdate = () => {
   border-bottom: none;
 }
 
-.day-name {
-  flex: 0 0 80px;
+.day-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .day-label {
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-main);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
-.day-controls {
+.day-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex: 1;
-  justify-content: flex-end;
 }
 
 .closed-checkbox {
@@ -191,33 +237,38 @@ const emitUpdate = () => {
   color: var(--text-muted);
 }
 
-.time-inputs {
+.intervals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-left: 0.5rem;
+}
+
+.interval-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 170px; /* Pevná šířka pro zarovnání pod sebe */
-  justify-content: center;
 }
 
-.closed-placeholder {
-  color: var(--text-muted);
-  font-weight: 500;
+.time-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-app);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
 }
 
 .time-input {
-  width: 75px;
+  width: 85px;
   padding: 0.3rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-body);
+  border: none;
+  background: transparent;
   color: var(--text-main);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-family: inherit;
-}
-
-.time-input:focus {
   outline: none;
-  border-color: var(--primary);
 }
 
 .time-separator {
@@ -225,13 +276,57 @@ const emitUpdate = () => {
   font-weight: bold;
 }
 
+.btn-add-interval {
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ZMĚNA: Úprava třídy pro dokonalé vycentrování s potlačením globálních stylů */
+.btn-remove-interval {
+  background: var(--danger);
+  color: white;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.btn-remove-interval:hover {
+  background: var(--danger-hover);
+  transform: scale(1.1);
+}
+
+/* Potlačení globálního odsazení ikon z App.vue */
+.btn-remove-interval :deep(svg) {
+  margin: 0 !important;
+}
+
+.closed-placeholder {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding-left: 0.5rem;
+}
+
 @media (max-width: 480px) {
-  .day-row {
+  .day-info-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  .day-controls {
+  .day-actions {
     width: 100%;
     justify-content: space-between;
   }

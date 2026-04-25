@@ -79,8 +79,10 @@ const isDeleteConfirmModalOpen = ref(false)
 const recordIdToDelete = ref(null)
 const selectedEditRecordId = ref(null)
 
-const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
-const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
+// ZMĚNA: Přidána pole currency a price (v CheckInModalu slouží 'price' jako vstup pro original_price)
+const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
+// ZMĚNA: Přidána pole currency a original_price
+const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', original_price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
 
 onMounted(() => { 
   if (authStore.user) {
@@ -94,11 +96,8 @@ watch(() => authStore.user, (newUser) => {
   }
 })
 
-// NOVÉ: Funkce pro okamžité tiché načtení dat před otevřením modálu
 const openCheckInModal = async () => {
-  // Zavoláme tiché načtení s parametrem "true" (bez spinneru, který by uživatele blokoval)
   await catalogStore.fetchAllData(true)
-  // Okno se otevře prakticky okamžitě, ale už bude mít 100% čerstvá data v roletkách
   isModalOpen.value = true
 }
 
@@ -116,7 +115,10 @@ const openEditModal = (record) => {
     beer_id: Number(record.beer_id), 
     location_id: Number(record.location_id), 
     quantity: Number(record.quantity),
-    is_free: !!Number(record.is_free) 
+    is_free: !!Number(record.is_free),
+    // ZMĚNA: Mapování nových polí s fallbackem na CZK/původní cenu
+    currency: record.currency || 'CZK',
+    original_price: record.original_price || record.price
   }
   isEditModalOpen.value = true
 }
@@ -132,12 +134,13 @@ const submitCheckIn = async () => {
       isModalOpen.value = false
       await catalogStore.fetchAllData()
       showToast('Záznam úspěšně zapsán!')
-      form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' }
+      // ZMĚNA: Reset formuláře včetně měny
+      form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' }
     } else {
       showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error')
     }
   } catch (e) {
-    showToast('Chyba serveru (kód 500).', 'toast-error')
+    showToast(e.message || 'Chyba serveru (kód 500).', 'toast-error')
   }
 }
 
@@ -156,7 +159,7 @@ const submitEdit = async () => {
       showToast(res.message || 'Chyba při úpravě.', 'toast-error')
     }
   } catch (e) {
-    showToast('Chyba komunikace se serverem.', 'toast-error')
+    showToast(e.message || 'Chyba komunikace se serverem.', 'toast-error')
   }
 }
 
@@ -183,7 +186,6 @@ const executeDelete = async () => {
 </script>
 
 <style scoped>
-/* Původní styly zachovány */
 .dashboard-layout { position: relative; min-height: 400px; }
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
 

@@ -70,14 +70,31 @@
         </div>
 
         <div class="form-row align-end">
-          <BaseInput 
-            class="half" 
-            v-model="form.price" 
-            type="number" 
-            step="1" 
-            label="Cena za kus (Kč)" 
-            :disabled="form.is_free" 
-          />
+          <div class="half" style="display: flex; gap: 0.5rem;">
+            <BaseInput 
+              style="flex: 2;"
+              v-model="form.original_price" 
+              type="number" 
+              step="0.01" 
+              label="Cena za kus" 
+              :disabled="form.is_free" 
+            />
+            <BaseSelect 
+              style="flex: 1;"
+              v-model="form.currency" 
+              label="Měna" 
+              :disabled="form.is_free"
+              :searchable="false"
+            >
+              <option value="CZK">CZK</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="PLN">PLN</option>
+              <option value="HUF">HUF</option>
+              <option value="GBP">GBP</option>
+              <option value="AUD">AUD</option>
+            </BaseSelect>
+          </div>
           <div class="half">
             <BaseCheckbox 
               v-model="form.is_free" 
@@ -149,6 +166,7 @@ watch(customVolume, (newVal) => {
 
 watch(() => props.form.is_free, (isFree) => {
   if (isFree) {
+    props.form.original_price = ''
     props.form.price = ''
   }
 })
@@ -164,6 +182,15 @@ watch(() => props.show, (isOpen) => {
     } else {
       volumeMode.value = 'custom'
       customVolume.value = currentVol
+    }
+
+    // ZMĚNA: Pokud měna u starého záznamu chybí, nastavíme CZK
+    if (!props.form.currency) {
+      props.form.currency = 'CZK'
+    }
+    // Pokud original_price chybí (starý záznam), naplníme ji stávající cenou
+    if (!props.form.original_price && props.form.price) {
+      props.form.original_price = props.form.price
     }
   }
 })

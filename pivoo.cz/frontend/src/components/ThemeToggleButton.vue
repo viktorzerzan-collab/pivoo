@@ -1,16 +1,18 @@
 <template>
-  <button 
-    class="theme-toggle-btn" 
-    @click="$emit('toggle')" 
-    :title="isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'"
-  >
-    <SunIcon v-if="isDark" :size="22" />
-    <MoonIcon v-else :size="22" />
-  </button>
+  <BaseTooltip :text="isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'" position="bottom">
+    <button 
+      class="theme-toggle-btn" 
+      @click="$emit('toggle')" 
+    >
+      <SunIcon v-if="isDark" :size="22" />
+      <MoonIcon v-else :size="22" />
+    </button>
+  </BaseTooltip>
 </template>
 
 <script setup>
 import { SunIcon, MoonIcon } from 'lucide-vue-next'
+import BaseTooltip from './BaseTooltip.vue'
 
 defineProps({
   isDark: Boolean
@@ -40,7 +42,7 @@ defineEmits(['toggle'])
   transform: rotate(15deg); 
 }
 
-/* Dokonalé vycentrování potlačením globálního stylu */
+/* Dokonalé vycentrování - potlačení globálního odsazení */
 .theme-toggle-btn :deep(svg) {
   margin: 0 !important;
 }
