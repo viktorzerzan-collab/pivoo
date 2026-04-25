@@ -55,18 +55,22 @@
               <span class="text-truncate">{{ record.location_name }}</span>
             </div>
             <div class="info-row date">
-              <ClockIcon :size="12" class="icon-shrink" /> 
+              <CircleHelpIcon :size="12" class="icon-shrink" /> 
               <span class="text-truncate">{{ formatDate(record.consumed_at) }}</span>
             </div>
           </div>
 
           <div class="inline-actions">
-            <button class="btn-edit is-icon-only sm" @click="$emit('edit', record)" title="Upravit">
-              <PencilIcon :size="14" />
-            </button>
-            <button class="btn-danger is-icon-only sm" @click="$emit('delete', record.id)" title="Smazat">
-              <Trash2Icon :size="14" />
-            </button>
+            <BaseTooltip text="Upravit" position="top">
+              <button class="btn-edit is-icon-only sm" @click="$emit('edit', record)">
+                <PencilIcon :size="14" />
+              </button>
+            </BaseTooltip>
+            <BaseTooltip text="Smazat" position="top">
+              <button class="btn-danger is-icon-only sm" @click="$emit('delete', record.id)">
+                <Trash2Icon :size="14" />
+              </button>
+            </BaseTooltip>
           </div>
         </div>
       </div>
@@ -76,10 +80,11 @@
 
 <script setup>
 import { PencilIcon, Trash2Icon, MapPinIcon, ClockIcon, FactoryIcon } from 'lucide-vue-next'
+import BaseTooltip from './BaseTooltip.vue'
+
 defineProps({ history: { type: Array, required: true } })
 defineEmits(['edit', 'delete'])
 
-// ZMĚNA: Úprava na zobrazení pouze data bez času
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -92,7 +97,6 @@ const formatDate = (dateStr) => {
 </script>
 
 <style scoped>
-/* Mřížka pro karty */
 .history-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
@@ -100,7 +104,6 @@ const formatDate = (dateStr) => {
   width: 100%;
 }
 
-/* Styl samotné karty */
 .history-card {
   background: var(--bg-app);
   border: 1px solid var(--border);
@@ -127,7 +130,6 @@ const formatDate = (dateStr) => {
   width: 100%;
 }
 
-/* Záhlaví karty */
 .beer-header {
   display: flex;
   justify-content: space-between;
@@ -170,7 +172,6 @@ const formatDate = (dateStr) => {
   flex-shrink: 0;
 }
 
-/* Parametry konzumace */
 .consumption-meta {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
@@ -229,7 +230,6 @@ const formatDate = (dateStr) => {
   margin: 0.25rem 0;
 }
 
-/* Spodní layout s tlačítky inline */
 .footer-layout {
   display: flex;
   justify-content: space-between;

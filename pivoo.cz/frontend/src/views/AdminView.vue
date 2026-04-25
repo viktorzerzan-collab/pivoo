@@ -83,19 +83,30 @@
                   </td>
                   <td data-label="Akce">
                     <div class="td-content action-buttons">
-                      <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')" title="Upravit údaje">
-                        <PencilIcon :size="16" />
-                      </button>
-                      <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: #3b82f6;" @click="openPasswordModal(u)" title="Změnit heslo">
-                        <KeyIcon :size="16" />
-                      </button>
-                      <button v-if="u?.id !== user?.id" class="is-icon-only admin-action-btn" :style="u.is_banned ? 'background-color: #10b981;' : 'background-color: #64748b;'" @click="openBanModal(u)" :title="u.is_banned ? 'Odblokovat' : 'Zablokovat'">
-                        <UnlockIcon v-if="u.is_banned" :size="16" />
-                        <BanIcon v-else :size="16" />
-                      </button>
-                      <button v-if="u?.id !== user?.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)" title="Smazat uživatele">
-                        <Trash2Icon :size="16" />
-                      </button>
+                      <BaseTooltip text="Upravit údaje" position="top">
+                        <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')">
+                          <PencilIcon :size="16" />
+                        </button>
+                      </BaseTooltip>
+                      
+                      <BaseTooltip text="Změnit heslo" position="top">
+                        <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: #3b82f6;" @click="openPasswordModal(u)">
+                          <KeyIcon :size="16" />
+                        </button>
+                      </BaseTooltip>
+
+                      <BaseTooltip :text="u.is_banned ? 'Odblokovat' : 'Zablokovat'" position="top">
+                        <button v-if="u?.id !== user?.id" class="is-icon-only admin-action-btn" :style="u.is_banned ? 'background-color: #10b981;' : 'background-color: #64748b;'" @click="openBanModal(u)">
+                          <UnlockIcon v-if="u.is_banned" :size="16" />
+                          <BanIcon v-else :size="16" />
+                        </button>
+                      </BaseTooltip>
+
+                      <BaseTooltip text="Smazat uživatele" position="top">
+                        <button v-if="u?.id !== user?.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)">
+                          <Trash2Icon :size="16" />
+                        </button>
+                      </BaseTooltip>
                     </div>
                   </td>
                 </tr>
@@ -171,12 +182,17 @@
 
                   <td data-label="Akce">
                     <div class="td-content action-buttons">
-                      <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
-                        <PencilIcon :size="16" />
-                      </button>
-                      <button class="btn-danger is-icon-only" @click="confirmDelete(item.id, activeTab)">
-                        <Trash2Icon :size="16" />
-                      </button>
+                      <BaseTooltip text="Upravit" position="top">
+                        <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
+                          <PencilIcon :size="16" />
+                        </button>
+                      </BaseTooltip>
+
+                      <BaseTooltip text="Smazat" position="top">
+                        <button class="btn-danger is-icon-only" @click="confirmDelete(item.id, activeTab)">
+                          <Trash2Icon :size="16" />
+                        </button>
+                      </BaseTooltip>
                     </div>
                   </td>
                 </tr>
@@ -273,6 +289,8 @@ import BaseModal from '../components/BaseModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePagination from '../components/BasePagination.vue'
 import FilterInput from '../components/FilterInput.vue'
+// IMPORT TOOLTIPU
+import BaseTooltip from '../components/BaseTooltip.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -557,7 +575,6 @@ const handleDelete = async () => {
 
 .user-cell, .main-item-cell { display: flex; align-items: center; gap: 1rem; }
 
-/* FIX: Udržení jména a odznaku v jedné linii */
 .info-top-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 
 .user-meta-row { display: block; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

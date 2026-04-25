@@ -1,17 +1,21 @@
 <template>
-  <span class="country-flag-wrapper">
-    <img 
-      v-if="code" 
-      :src="`https://flagcdn.com/w20/${code.toLowerCase()}.png`" 
-      class="flag-icon" 
-      :title="name" 
-      :alt="name" 
-    />
-    <span v-else class="flag-emoji" :title="name">🌍</span>
-  </span>
+  <BaseTooltip :text="name" position="top">
+    <span class="country-flag-wrapper">
+      <img 
+        v-if="code" 
+        :src="`https://flagcdn.com/w20/${code.toLowerCase()}.png`" 
+        class="flag-icon" 
+        :alt="name" 
+      />
+      <span v-else class="flag-emoji">🌍</span>
+    </span>
+  </BaseTooltip>
 </template>
 
 <script setup>
+// IMPORT TOOLTIPU
+import BaseTooltip from './BaseTooltip.vue'
+
 defineProps({
   code: String,
   name: String

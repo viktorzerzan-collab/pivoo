@@ -82,9 +82,29 @@ const formatLocation = (brewery) => {
 </script>
 
 <style scoped>
-.card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; height: 100%; position: relative; }
+.card { 
+  background: var(--bg-panel); 
+  border: 1px solid var(--border); 
+  border-radius: 12px; 
+  display: flex; 
+  flex-direction: column; 
+  box-shadow: var(--shadow-sm); 
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; 
+  height: 100%; 
+  position: relative; 
+  z-index: 1;
+}
+
 .card.is-fav { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
-.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); background-color: var(--card-hover-bg); z-index: 10; }
+
+.card:hover { 
+  transform: translateY(-3px); 
+  box-shadow: var(--shadow-md); 
+  border-color: var(--primary); 
+  background-color: var(--card-hover-bg); 
+  z-index: 10;
+}
+
 .card-body { padding: 1.25rem; flex-grow: 1; }
 .card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 
@@ -104,7 +124,7 @@ const formatLocation = (brewery) => {
 .distance-meta { margin-top: 0.3rem !important; }
 
 .card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
-.rating-value { font-size: 0.9rem; font-weight: 800; color: #d97706; }
+.rating-value { font-size: 0.9rem; font-weight: 800; color: #f59e0b; }
 .count { font-size: 0.75rem; color: var(--text-muted); margin-left: 4px; }
 .card-footer { padding: 0 1.25rem 1.25rem; }
 .full-width-btn { width: 100%; justify-content: center; background-color: var(--bg-app); border: 1px solid var(--border); color: var(--text-main); }

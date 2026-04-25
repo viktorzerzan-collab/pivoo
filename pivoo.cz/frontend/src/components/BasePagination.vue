@@ -1,44 +1,48 @@
 <template>
   <div class="pagination-wrapper" v-if="totalPages > 1">
-    <button
-      class="page-btn"
-      :disabled="currentPage === 1"
-      @click="changePage(1)"
-      title="První strana"
-    >
-      <ChevronsLeftIcon :size="20" />
-    </button>
+    <BaseTooltip text="První strana" position="top">
+      <button
+        class="page-btn"
+        :disabled="currentPage === 1"
+        @click="changePage(1)"
+      >
+        <ChevronsLeftIcon :size="20" />
+      </button>
+    </BaseTooltip>
 
-    <button
-      class="page-btn"
-      :disabled="currentPage === 1"
-      @click="changePage(currentPage - 1)"
-      title="Předchozí strana"
-    >
-      <ChevronLeftIcon :size="20" />
-    </button>
+    <BaseTooltip text="Předchozí strana" position="top">
+      <button
+        class="page-btn"
+        :disabled="currentPage === 1"
+        @click="changePage(currentPage - 1)"
+      >
+        <ChevronLeftIcon :size="20" />
+      </button>
+    </BaseTooltip>
 
     <div class="page-numbers">
       <span class="page-info">Strana <strong>{{ currentPage }}</strong> z <strong>{{ totalPages }}</strong></span>
     </div>
 
-    <button
-      class="page-btn"
-      :disabled="currentPage === totalPages"
-      @click="changePage(currentPage + 1)"
-      title="Další strana"
-    >
-      <ChevronRightIcon :size="20" />
-    </button>
+    <BaseTooltip text="Další strana" position="top">
+      <button
+        class="page-btn"
+        :disabled="currentPage === totalPages"
+        @click="changePage(currentPage + 1)"
+      >
+        <ChevronRightIcon :size="20" />
+      </button>
+    </BaseTooltip>
 
-    <button
-      class="page-btn"
-      :disabled="currentPage === totalPages"
-      @click="changePage(totalPages)"
-      title="Poslední strana"
-    >
-      <ChevronsRightIcon :size="20" />
-    </button>
+    <BaseTooltip text="Poslední strana" position="top">
+      <button
+        class="page-btn"
+        :disabled="currentPage === totalPages"
+        @click="changePage(totalPages)"
+      >
+        <ChevronsRightIcon :size="20" />
+      </button>
+    </BaseTooltip>
   </div>
 </template>
 
@@ -49,6 +53,8 @@ import {
   ChevronsLeftIcon, 
   ChevronsRightIcon 
 } from 'lucide-vue-next'
+// IMPORT TOOLTIPU
+import BaseTooltip from './BaseTooltip.vue'
 
 defineProps({
   currentPage: {

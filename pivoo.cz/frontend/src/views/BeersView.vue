@@ -169,7 +169,6 @@ const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 const totalPages = computed(() => beersPagination.value?.total_pages || 1)
 const totalItems = computed(() => beersPagination.value?.total || 0)
 
-// Geniální funkce pro rozdělování čárek na štítky i zde
 const activeFilters = computed(() => {
   const active = []
   
@@ -210,7 +209,6 @@ const activeFilters = computed(() => {
   return active
 })
 
-// Chytřejší mazání (umaže jen část textu, pokud je jich víc)
 const removeFilter = (chip) => {
   if (chip.realKey === 'range') {
     filters.value[chip.rangeKey] = { min: '', max: '' }
@@ -454,7 +452,8 @@ const openDetail = async (beer) => {
 .mobile-action-bar { display: none; }
 
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
-.beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+/* OPRAVA: Sjednocení minmax na 320px pro konzistentní počet sloupců */
+.beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 1rem; text-align: center; color: var(--text-muted); }
 .mt-2 { margin-top: 0.5rem; }

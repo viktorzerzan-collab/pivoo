@@ -84,9 +84,29 @@ const formatLocation = (location) => {
 </script>
 
 <style scoped>
-.card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; height: 100%; position: relative; }
+.card { 
+  background: var(--bg-panel); 
+  border: 1px solid var(--border); 
+  border-radius: 12px; 
+  display: flex; 
+  flex-direction: column; 
+  box-shadow: var(--shadow-sm); 
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; 
+  height: 100%; 
+  position: relative; 
+  z-index: 1;
+}
+
 .card.is-fav { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
-.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); background-color: var(--card-hover-bg); z-index: 10; }
+
+.card:hover { 
+  transform: translateY(-3px); 
+  box-shadow: var(--shadow-md); 
+  border-color: var(--primary); 
+  background-color: var(--card-hover-bg); 
+  z-index: 10; 
+}
+
 .card-body { padding: 1.25rem; flex-grow: 1; }
 .card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 

@@ -18,15 +18,16 @@
               >
               <span class="checkbox-text">Zavřeno</span>
             </label>
-            <button 
-              v-if="!localValue[day.id].closed" 
-              type="button" 
-              class="btn-add-interval" 
-              @click="addInterval(day.id)"
-              title="Přidat pauzu/interval"
-            >
-              + Přidat čas
-            </button>
+            
+            <BaseTooltip v-if="!localValue[day.id].closed" text="Přidat pauzu/interval" position="top">
+              <button 
+                type="button" 
+                class="btn-add-interval" 
+                @click="addInterval(day.id)"
+              >
+                + Přidat čas
+              </button>
+            </BaseTooltip>
           </div>
         </div>
 
@@ -50,15 +51,15 @@
               >
             </div>
             
-            <button 
-              v-if="localValue[day.id].intervals.length > 1" 
-              type="button" 
-              class="btn-remove-interval" 
-              @click="removeInterval(day.id, index)"
-              title="Odebrat interval"
-            >
-              <XIcon :size="16" />
-            </button>
+            <BaseTooltip v-if="localValue[day.id].intervals.length > 1" text="Odebrat interval" position="top">
+              <button 
+                type="button" 
+                class="btn-remove-interval" 
+                @click="removeInterval(day.id, index)"
+              >
+                <XIcon :size="16" />
+              </button>
+            </BaseTooltip>
           </div>
         </div>
         <div v-else class="closed-placeholder">
@@ -71,8 +72,9 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-// ZMĚNA: Import ikony křížku
 import { XIcon } from 'lucide-vue-next'
+// IMPORT TOOLTIPU
+import BaseTooltip from './BaseTooltip.vue'
 
 const props = defineProps({
   modelValue: {
@@ -287,7 +289,6 @@ const emitUpdate = () => {
   cursor: pointer;
 }
 
-/* ZMĚNA: Úprava třídy pro dokonalé vycentrování s potlačením globálních stylů */
 .btn-remove-interval {
   background: var(--danger);
   color: white;
@@ -308,7 +309,6 @@ const emitUpdate = () => {
   transform: scale(1.1);
 }
 
-/* Potlačení globálního odsazení ikon z App.vue */
 .btn-remove-interval :deep(svg) {
   margin: 0 !important;
 }
