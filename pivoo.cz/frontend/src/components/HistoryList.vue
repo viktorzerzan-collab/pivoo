@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { PencilIcon, Trash2Icon, MapPinIcon, ClockIcon, FactoryIcon } from 'lucide-vue-next'
+import { PencilIcon, Trash2Icon, MapPinIcon, CircleHelpIcon, FactoryIcon } from 'lucide-vue-next'
 import BaseTooltip from './BaseTooltip.vue'
 
 defineProps({ history: { type: Array, required: true } })

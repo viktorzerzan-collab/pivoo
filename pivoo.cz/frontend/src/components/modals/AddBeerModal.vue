@@ -9,6 +9,11 @@
     <template #body>
       <form @submit.prevent="$emit('submit')" class="add-form">
         
+        <div v-if="form.is_magic" class="magic-banner">
+          <SparklesIcon :size="20" class="magic-icon" />
+          <span>Údaje byly předvyplněny umělou inteligencí. Prosím, zkontrolujte je před uložením.</span>
+        </div>
+
         <div class="form-section">
           <h3 class="section-label">Základní informace</h3>
           <BaseInput v-model="form.name" label="Název piva *" required />
@@ -76,7 +81,8 @@
 </template>
 
 <script setup>
-import { BeerIcon } from 'lucide-vue-next'
+// PŘIDÁNO: SparklesIcon pro magický banner
+import { BeerIcon, SparklesIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
@@ -108,6 +114,22 @@ defineEmits(['close', 'submit'])
 .custom-checkbox:hover .checkbox-box { border-color: var(--primary); }
 .custom-checkbox input:checked + .checkbox-box { background-color: var(--primary); border-color: var(--primary); }
 .custom-checkbox input:checked + .checkbox-box::after { content: ""; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px; border: solid #1e293b; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+
+/* PŘIDÁNO: Styly pro magický banner */
+.magic-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #8b5cf6;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.magic-icon { flex-shrink: 0; }
 
 @media (max-width: 600px) {
   .form-row { flex-direction: column; }

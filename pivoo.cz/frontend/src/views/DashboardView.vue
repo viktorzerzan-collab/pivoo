@@ -44,6 +44,8 @@
       @close="isModalOpen = false" 
       @submit="submitCheckIn"
       @open-add-location="openAddLocationFromCheckin" 
+      @magic-add-brewery="handleMagicAddBrewery"
+      @magic-add-beer="handleMagicAddBeer"
     />
     
     <EditCheckInModal 
@@ -70,6 +72,25 @@
       @close="isAddLocationModalOpen = false" 
       @submit="submitNewLocation" 
     />
+
+    <AddBreweryModal 
+      :show="isAddBreweryModalOpen" 
+      :isEditing="false" 
+      :countries="countries" 
+      :form="breweryForm" 
+      @close="isAddBreweryModalOpen = false" 
+      @submit="submitNewBrewery" 
+    />
+
+    <AddBeerModal 
+      :show="isAddBeerModalOpen" 
+      :isEditing="false" 
+      :breweries="breweries" 
+      :styles="styles" 
+      :form="beerForm" 
+      @close="isAddBeerModalOpen = false" 
+      @submit="submitNewBeer" 
+    />
   </div>
 </template>
 
@@ -87,10 +108,13 @@ import CheckInModal from '../components/modals/CheckInModal.vue'
 import EditCheckInModal from '../components/modals/EditCheckInModal.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
+// NOVÉ IMPORTY
+import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
+import AddBeerModal from '../components/modals/AddBeerModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
-const { beers, breweries, locations, stats, history, countries, isLoading } = storeToRefs(catalogStore)
+const { beers, breweries, locations, stats, history, countries, styles, isLoading } = storeToRefs(catalogStore)
 
 const toast = ref({ show: false, message: '', type: 'toast-success' })
 const showToast = (message, type = 'toast-success') => { 
@@ -99,10 +123,7 @@ const showToast = (message, type = 'toast-success') => {
 }
 
 const currentMonthName = computed(() => {
-  const months = [
-    'lednu', 'únoru', 'březnu', 'dubnu', 'květnu', 'červnu', 
-    'červenci', 'srpnu', 'září', 'říjnu', 'listopadu', 'prosinci'
-  ]
+  const months = ['lednu', 'únoru', 'březnu', 'dubnu', 'květnu', 'červnu', 'červenci', 'srpnu', 'září', 'říjnu', 'listopadu', 'prosinci']
   return months[new Date().getMonth()]
 })
 
@@ -110,6 +131,8 @@ const isModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const isDeleteConfirmModalOpen = ref(false)
 const isAddLocationModalOpen = ref(false)
+const isAddBreweryModalOpen = ref(false)
+const isAddBeerModalOpen = ref(false)
 
 const recordIdToDelete = ref(null)
 const selectedEditRecordId = ref(null)
@@ -118,31 +141,101 @@ const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: ''
 const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', original_price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
 
 const locationForm = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
+const breweryForm = ref({ name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null, is_magic: false })
+const beerForm = ref({ name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false, is_magic: false })
 
-onMounted(() => { 
-  if (authStore.user) {
-    catalogStore.fetchAllData() 
-  }
-})
+// Pomocný stav pro řetězení AI dat mezi modály
+const pendingAiData = ref(null)
 
-watch(() => authStore.user, (newUser) => {
-  if (newUser) {
-    catalogStore.fetchAllData()
-  }
-})
+onMounted(() => { if (authStore.user) catalogStore.fetchAllData() })
+watch(() => authStore.user, (newUser) => { if (newUser) catalogStore.fetchAllData() })
 
 const openCheckInModal = async () => {
   await catalogStore.fetchAllData(true)
   isModalOpen.value = true
 }
 
+// --- LOGIKA PRO MAGICKÉ PŘIDÁVÁNÍ (AI) ---
+
+const handleMagicAddBrewery = (aiData) => {
+  isModalOpen.value = false
+  pendingAiData.value = aiData
+  breweryForm.value = { 
+    name: aiData.brewery_name, 
+    city: aiData.brewery_metadata?.city || '', 
+    country_id: aiData.brewery_metadata?.country_id || 1,
+    is_magic: true 
+  }
+  isAddBreweryModalOpen.value = true
+}
+
+const handleMagicAddBeer = (aiData) => {
+  isModalOpen.value = false
+  pendingAiData.value = aiData
+  beerForm.value = {
+    name: aiData.beer_name,
+    brewery_id: aiData.brewery_id,
+    style_id: aiData.style_id || '',
+    epm: aiData.epm || '',
+    abv: aiData.abv || '',
+    ibu: aiData.ibu || '',
+    ebc: aiData.ebc || '',
+    is_unfiltered: !!aiData.is_unfiltered,
+    is_unpasteurized: !!aiData.is_unpasteurized,
+    is_magic: true
+  }
+  isAddBeerModalOpen.value = true
+}
+
+const submitNewBrewery = async () => {
+  try {
+    const formData = new FormData()
+    Object.keys(breweryForm.value).forEach(key => {
+      if (breweryForm.value[key] !== null && breweryForm.value[key] !== '') formData.append(key, breweryForm.value[key])
+    })
+    const res = await apiFetch('/add_brewery.php', { method: 'POST', body: formData })
+    if (res.status === 'success') {
+      isAddBreweryModalOpen.value = false
+      await catalogStore.fetchAllData(true)
+      showToast("Pivovar přidán!")
+      
+      // Pokud jsme přišli z AI skenu, pokračujeme na přidání piva
+      if (pendingAiData.value) {
+        const newBrewery = catalogStore.breweries.find(b => b.name === breweryForm.value.name)
+        if (newBrewery) {
+           pendingAiData.value.brewery_id = newBrewery.id
+           handleMagicAddBeer(pendingAiData.value)
+        }
+      }
+    }
+  } catch (e) { showToast('Chyba při ukládání pivovaru.', 'toast-error') }
+}
+
+const submitNewBeer = async () => {
+  try {
+    const res = await apiFetch('/add_beer.php', { method: 'POST', body: JSON.stringify(beerForm.value) })
+    if (res.status === 'success') {
+      isAddBeerModalOpen.value = false
+      await catalogStore.fetchAllData(true)
+      showToast("Pivo přidáno do katalogu!")
+      
+      // Vrátíme se do CheckIn modálu a předvyplníme nové ID
+      const newBeer = catalogStore.beers.find(b => b.name === beerForm.value.name && b.brewery_id == beerForm.value.brewery_id)
+      if (newBeer) {
+        form.value.brewery_id = newBeer.brewery_id
+        setTimeout(() => { form.value.beer_id = newBeer.id }, 100)
+      }
+      pendingAiData.value = null
+      isModalOpen.value = true
+    }
+  } catch (e) { showToast('Chyba při ukládání piva.', 'toast-error') }
+}
+
+// --- STANDARDNÍ HANDLERY ---
+
 const openAddLocationFromCheckin = (coords) => {
   isModalOpen.value = false
-  locationForm.value = { 
-    name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', 
-    lat: coords?.lat || null, 
-    lng: coords?.lng || null 
-  }
+  locationForm.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: coords?.lat || null, lng: coords?.lng || null }
   isAddLocationModalOpen.value = true
 }
 
@@ -152,130 +245,62 @@ const submitNewLocation = async () => {
     if (result.status === 'success') { 
       isAddLocationModalOpen.value = false
       await catalogStore.fetchAllData(true)
-      showToast("Podnik přidán, můžeš pokračovat v zápisu!")
-      
+      showToast("Podnik přidán!")
       const newLoc = catalogStore.locations.find(l => l.name === locationForm.value.name)
-      if (newLoc) {
-        form.value.location_id = newLoc.id
-      }
-      
+      if (newLoc) form.value.location_id = newLoc.id
       isModalOpen.value = true
-    } else {
-      showToast(result.message || 'Nepodařilo se přidat podnik.', 'toast-error')
     }
   } catch (e) { showToast('Chyba serveru při přidávání podniku.', 'toast-error') }
 }
 
 const openEditModal = (record) => {
   selectedEditRecordId.value = record.id
-  const fullDateTime = record.consumed_at || ''
-  
   const currentBeer = beers.value.find(b => b.id == record.beer_id)
   const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''
-
-  editForm.value = { 
-    ...record, 
-    consumed_at: fullDateTime, 
-    brewery_id: Number(prefillBreweryId),
-    beer_id: Number(record.beer_id), 
-    location_id: Number(record.location_id), 
-    quantity: Number(record.quantity),
-    is_free: !!Number(record.is_free),
-    currency: record.currency || 'CZK',
-    original_price: record.original_price || record.price
-  }
+  editForm.value = { ...record, consumed_at: record.consumed_at || '', brewery_id: Number(prefillBreweryId), beer_id: Number(record.beer_id), location_id: Number(record.location_id), quantity: Number(record.quantity), is_free: !!Number(record.is_free), currency: record.currency || 'CZK', original_price: record.original_price || record.price }
   isEditModalOpen.value = true
 }
 
 const submitCheckIn = async () => {
   try {
-    const res = await apiFetch('/checkin.php', { 
-      method: 'POST', 
-      body: JSON.stringify(form.value) 
-    })
-    
+    const res = await apiFetch('/checkin.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (res.status === 'success') { 
       isModalOpen.value = false
       await catalogStore.fetchAllData()
       showToast('Záznam úspěšně zapsán!')
       form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' }
-    } else {
-      showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error')
-    }
-  } catch (e) {
-    showToast(e.message || 'Chyba serveru (kód 500).', 'toast-error')
-  }
+    } else { showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error') }
+  } catch (e) { showToast(e.message || 'Chyba serveru.', 'toast-error') }
 }
 
 const submitEdit = async () => {
   try {
-    const res = await apiFetch('/update_checkin.php', { 
-      method: 'POST', 
-      body: JSON.stringify({ id: selectedEditRecordId.value, ...editForm.value }) 
-    })
-    
-    if (res.status === 'success') { 
-      isEditModalOpen.value = false
-      await catalogStore.fetchAllData()
-      showToast('Záznam upraven!')
-    } else {
-      showToast(res.message || 'Chyba při úpravě.', 'toast-error')
-    }
-  } catch (e) {
-    showToast(e.message || 'Chyba komunikace se serverem.', 'toast-error')
-  }
+    const res = await apiFetch('/update_checkin.php', { method: 'POST', body: JSON.stringify({ id: selectedEditRecordId.value, ...editForm.value }) })
+    if (res.status === 'success') { isEditModalOpen.value = false; await catalogStore.fetchAllData(); showToast('Záznam upraven!') }
+  } catch (e) { showToast(e.message || 'Chyba komunikace.', 'toast-error') }
 }
 
 const confirmDelete = (id) => { recordIdToDelete.value = id; isDeleteConfirmModalOpen.value = true }
-
 const executeDelete = async () => {
   try {
-    const res = await apiFetch('/delete_checkin.php', { 
-      method: 'POST', 
-      body: JSON.stringify({ id: recordIdToDelete.value }) 
-    })
-    
-    if (res.status === 'success') { 
-      isDeleteConfirmModalOpen.value = false
-      await catalogStore.fetchAllData()
-      showToast('Záznam smazán.')
-    } else {
-      showToast(res.message || 'Chyba při mazání.', 'toast-error')
-    }
-  } catch (e) {
-    showToast('Chyba komunikace se serverem.', 'toast-error')
-  }
+    const res = await apiFetch('/delete_checkin.php', { method: 'POST', body: JSON.stringify({ id: recordIdToDelete.value }) })
+    if (res.status === 'success') { isDeleteConfirmModalOpen.value = false; await catalogStore.fetchAllData(); showToast('Záznam smazán.') }
+  } catch (e) { showToast('Chyba komunikace.', 'toast-error') }
 }
 </script>
 
 <style scoped>
 .dashboard-layout { position: relative; min-height: 400px; }
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
-
-.btn-add { 
-  display: flex; 
-  align-items: center; 
-  gap: 0.5rem; 
-  padding: 0.75rem 1.5rem; 
-  font-weight: 600; 
-}
-
+.btn-add { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; font-weight: 600; }
 .dashboard-content { display: flex; flex-direction: column; gap: 2rem; }
 .panel-card { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.5s ease, border-color 0.5s ease; }
 .panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.5s ease; }
 .panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.5s ease; }
-
 .panel-icon { color: var(--primary); }
-
 .empty-dashboard { text-align: center; color: var(--text-muted); padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: color 0.5s ease; }
-
 @media (max-width: 600px) {
-  .section-actions .btn-add { 
-    width: 100%; 
-    padding: 1rem; 
-    justify-content: center; 
-    font-size: 1.1rem; 
-  }
+  .section-actions .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
   .panel-card { padding: 1rem; }
 }
 </style>

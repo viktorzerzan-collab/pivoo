@@ -29,7 +29,10 @@ export async function apiFetch(endpoint, options = {}) {
 
   // Založení AbortControlleru pro řešení timeoutu
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  
+  // Umožníme přepsat timeout (AI analýza může trvat déle než 10s)
+  const timeoutValue = options.timeout || TIMEOUT_MS;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutValue);
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, {

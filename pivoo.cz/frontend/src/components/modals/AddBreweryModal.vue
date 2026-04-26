@@ -9,6 +9,11 @@
     <template #body>
       <form @submit.prevent="$emit('submit')" class="add-form">
         
+        <div v-if="form.is_magic" class="magic-banner">
+          <SparklesIcon :size="20" class="magic-icon" />
+          <span>Údaje byly předvyplněny umělou inteligencí. Prosím, zkontrolujte je před uložením.</span>
+        </div>
+
         <div style="margin-bottom: 0.5rem;">
           <BaseFileUpload v-model:file="form.logoFile" label="Logo pivovaru (volitelné)" placeholder="Nahrát logo" />
         </div>
@@ -55,7 +60,8 @@
 
 <script setup>
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
-import { FactoryIcon, SaveIcon } from 'lucide-vue-next'
+// PŘIDÁNO: SparklesIcon pro magický banner
+import { FactoryIcon, SaveIcon, SparklesIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
@@ -75,7 +81,6 @@ const emit = defineEmits(['close', 'submit'])
 
 const map = ref(null)
 const marker = ref(null)
-// OPRAVA: Reference na DOM element
 const mapContainerRef = ref(null)
 
 const destroyMap = () => {
@@ -87,7 +92,6 @@ const destroyMap = () => {
 }
 
 const initMap = () => {
-  // Ochrana před chybějícím DOM elementem
   if (!mapContainerRef.value) return;
 
   destroyMap()
@@ -96,7 +100,6 @@ const initMap = () => {
   const lng = parseFloat(props.form.lng) || 15.4730
   const zoom = props.form.lat ? 16 : 6
 
-  // OPRAVA: Mapu inicializujeme nad ref elementem
   map.value = L.map(mapContainerRef.value).setView([lat, lng], zoom)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -157,4 +160,20 @@ onBeforeUnmount(() => destroyMap())
   z-index: 1;
 }
 .coords-display { font-family: monospace; font-size: 0.8rem; margin-top: 5px; color: var(--text-muted); }
+
+/* PŘIDÁNO: Styly pro magický banner */
+.magic-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #8b5cf6;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.magic-icon { flex-shrink: 0; }
 </style>
