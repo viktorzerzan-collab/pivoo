@@ -308,8 +308,6 @@
         </form>
       </template>
     </BaseModal>
-
-    <transition name="toast-fade"><div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div></transition>
   </div>
 </template>
 
@@ -319,17 +317,18 @@ import { storeToRefs } from 'pinia'
 import { 
   PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
   UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
-  GitMergeIcon // Přidáno
+  GitMergeIcon 
 } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
+import { useToastStore } from '../stores/toast'
 import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePagination from '../components/BasePagination.vue'
 import FilterInput from '../components/FilterInput.vue'
-import BaseSelect from '../components/BaseSelect.vue' // Přidáno pro Merge modál
+import BaseSelect from '../components/BaseSelect.vue' 
 import BaseTooltip from '../components/BaseTooltip.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
@@ -342,16 +341,15 @@ import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmMo
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
+const toastStore = useToastStore()
 const { user } = storeToRefs(authStore)
 const { beers, breweries, locations, styles, countries, isLoading } = storeToRefs(catalogStore)
 
 const activeTab = ref('users')
 const allUsers = ref([])
 const isUsersLoading = ref(false)
-const toast = ref({ show: false, message: '', type: 'toast-success' })
 const deleteModal = ref({ show: false, id: null, type: '' })
 
-// Přidáno: state pro Merge
 const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false, ban: false, removeAvatar: false, merge: false })
 const mergeForm = ref({ source: null, target_id: '' })
 
@@ -414,7 +412,6 @@ const filteredCurrentItems = computed(() => {
   return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
 })
 
-// Přidáno: Computed pro options v merge modálu (nesmí obsahovat sám sebe)
 const mergeTargetOptions = computed(() => {
   if (!mergeForm.value.source) return []
   return locations.value
@@ -459,10 +456,6 @@ watch(loadMoreTrigger, (el) => {
     observer.observe(el)
   }
 })
-
-const showToast = (message, type = 'toast-success') => { 
-  toast.value = { show: true, message, type }; setTimeout(() => { toast.value.show = false }, 3000) 
-}
 
 const fetchUsers = async () => {
   isUsersLoading.value = true
@@ -514,13 +507,11 @@ const openEditModal = (item, t) => {
   modals.value[key] = true 
 }
 
-// Přidáno: Funkce pro otevření Merge modálu
 const openMergeModal = (locationItem) => {
   mergeForm.value = { source: locationItem, target_id: '' }
   modals.value.merge = true
 }
 
-// Přidáno: Submit sloučení
 const submitMerge = async () => {
   if (!mergeForm.value.source || !mergeForm.value.target_id) return
   
@@ -534,14 +525,14 @@ const submitMerge = async () => {
     })
 
     if (res.status === 'success') {
-      showToast(res.message)
+      toastStore.showToast(res.message)
       modals.value.merge = false
       await catalogStore.fetchAllData()
     } else {
-      showToast(res.message || 'Nepodařilo se podniky sloučit.', 'toast-error')
+      toastStore.showToast(res.message || 'Nepodařilo se podniky sloučit.', 'toast-error')
     }
   } catch (error) {
-    showToast('Chyba komunikace se serverem.', 'toast-error')
+    toastStore.showToast('Chyba komunikace se serverem.', 'toast-error')
   }
 }
 
@@ -550,9 +541,12 @@ const openPasswordModal = (u) => { selectedUserForPassword.value = u; modals.val
 const handlePasswordChange = async (payload) => {
   try {
     const res = await apiFetch('/admin_change_password.php', { method: 'POST', body: JSON.stringify(payload) })
-    if (res.status === 'success') { showToast(res.message); modals.value.password = false } 
-    else { showToast(res.message || 'Nepodařilo se změnit heslo.', 'toast-error') }
-  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
+    if (res.status === 'success') { 
+      toastStore.showToast(res.message)
+      modals.value.password = false 
+    } 
+    else { toastStore.showToast(res.message || 'Nepodařilo se změnit heslo.', 'toast-error') }
+  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }
 
 const handleRemoveAvatar = (userId) => {
@@ -564,9 +558,12 @@ const executeRemoveAvatar = async (userId) => {
   try {
     const res = await apiFetch('/admin_remove_avatar.php', { method: 'POST', body: JSON.stringify({ user_id: userId }) })
     if (res.status === 'success') {
-      showToast(res.message); modals.value.removeAvatar = false; modals.value.user = false; fetchUsers() 
-    } else { showToast(res.message || 'Nepodařilo se smazat fotku.', 'toast-error') }
-  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
+      toastStore.showToast(res.message)
+      modals.value.removeAvatar = false
+      modals.value.user = false
+      fetchUsers() 
+    } else { toastStore.showToast(res.message || 'Nepodařilo se smazat fotku.', 'toast-error') }
+  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }
 
 const openBanModal = (u) => { selectedUserForBan.value = u; modals.value.ban = true }
@@ -575,9 +572,13 @@ const handleBanConfirm = async (u) => {
   const newStatus = u.is_banned ? 0 : 1;
   try {
     const res = await apiFetch('/admin_toggle_ban.php', { method: 'POST', body: JSON.stringify({ user_id: u.id, is_banned: newStatus }) })
-    if (res.status === 'success') { showToast(res.message); modals.value.ban = false; fetchUsers() } 
-    else { showToast(res.message || 'Chyba při změně blokace.', 'toast-error') }
-  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
+    if (res.status === 'success') { 
+      toastStore.showToast(res.message)
+      modals.value.ban = false
+      fetchUsers() 
+    } 
+    else { toastStore.showToast(res.message || 'Chyba při změně blokace.', 'toast-error') }
+  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }
 
 const submitForm = async (t) => {
@@ -596,10 +597,11 @@ const submitForm = async (t) => {
     }
     const res = await apiFetch(`/${endpoint}`, { method: 'POST', body: bodyData })
     if (res.status === 'success') { 
-      showToast(res.message); modals.value[t] = false; 
+      toastStore.showToast(res.message)
+      modals.value[t] = false
       t === 'user' ? fetchUsers() : catalogStore.fetchAllData() 
-    } else { showToast(res.message || 'Chyba při ukládání.', 'toast-error') }
-  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
+    } else { toastStore.showToast(res.message || 'Chyba při ukládání.', 'toast-error') }
+  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }
 
 const confirmDelete = (id, t) => {
@@ -611,9 +613,10 @@ const handleDelete = async () => {
   try {
     const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { method: 'POST', body: JSON.stringify({ id: deleteModal.value.id }) })
     if (res.status === 'success') {
-      showToast("Smazáno"); deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
-    } else { showToast(res.message || 'Nepodařilo se smazat.', 'toast-error') }
-  } catch(e) { showToast('Chyba při mazání.', 'toast-error') } 
+      toastStore.showToast("Smazáno")
+      deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
+    } else { toastStore.showToast(res.message || 'Nepodařilo se smazat.', 'toast-error') }
+  } catch(e) { toastStore.showToast('Chyba při mazání.', 'toast-error') } 
   finally { deleteModal.value.show = false }
 }
 </script>

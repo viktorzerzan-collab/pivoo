@@ -1,9 +1,5 @@
 <template>
   <div class="profile-page">
-    <transition name="toast-fade">
-      <div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div>
-    </transition>
-
     <div class="profile-content">
       
       <div class="panel-card user-info-card">
@@ -116,6 +112,7 @@ import { UserIcon, KeyIcon, Trash2Icon, PaletteIcon, MonitorIcon, ClockIcon } fr
 import { apiFetch } from '../api'
 
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
 import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseFileUpload from '../components/BaseFileUpload.vue'
@@ -123,12 +120,8 @@ import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmMo
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toastStore = useToastStore() // NOVÉ: Inicializace storu
 const { user } = storeToRefs(authStore)
-
-const toast = ref({ show: false, message: '', type: 'toast-success' })
-const showToast = (message, type = 'toast-success') => { 
-  toast.value = { show: true, message, type }; setTimeout(() => { toast.value.show = false }, 3000) 
-}
 
 const passForm = ref({ old_password: '', new_password: '', new_password_confirm: '' })
 const themeForm = ref({ theme_mode: 'manual' })
@@ -155,9 +148,9 @@ const saveThemeSettings = async () => {
     
     if (result.status === 'success') {
       authStore.updateUser({ theme_mode: themeForm.value.theme_mode })
-      showToast(result.message)
+      toastStore.showToast(result.message) // NOVÉ: Použití storu
     }
-  } catch (error) { showToast('Chyba při ukládání nastavení.', 'toast-error') }
+  } catch (error) { toastStore.showToast('Chyba při ukládání nastavení.', 'toast-error') }
 }
 
 const handleAvatarUpload = async () => {
@@ -175,9 +168,9 @@ const handleAvatarUpload = async () => {
     if (result.status === 'success') {
       authStore.updateUser({ avatar: result.avatar })
       avatarFile.value = null
-      showToast(result.message)
-    } else { showToast(result.message, 'toast-error') }
-  } catch (error) { showToast('Chyba komunikace.', 'toast-error') }
+      toastStore.showToast(result.message) // NOVÉ: Použití storu
+    } else { toastStore.showToast(result.message, 'toast-error') }
+  } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
 }
 
 const executeAvatarRemove = async () => {
@@ -192,14 +185,14 @@ const executeAvatarRemove = async () => {
     if (result.status === 'success') {
       authStore.updateUser({ avatar: null })
       isRemoveAvatarModalOpen.value = false
-      showToast(result.message)
+      toastStore.showToast(result.message) // NOVÉ: Použití storu
     }
-  } catch (error) { showToast('Chyba komunikace.', 'toast-error') }
+  } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
 }
 
 const handlePasswordChange = async () => {
   if (passForm.value.new_password !== passForm.value.new_password_confirm) {
-    showToast('Nová hesla se neshodují.', 'toast-error')
+    toastStore.showToast('Nová hesla se neshodují.', 'toast-error') // NOVÉ: Použití storu
     return
   }
   try {
@@ -213,10 +206,10 @@ const handlePasswordChange = async () => {
     })
     
     if (result.status === 'success') {
-      showToast(result.message)
+      toastStore.showToast(result.message) // NOVÉ: Použití storu
       passForm.value = { old_password: '', new_password: '', new_password_confirm: '' }
-    } else { showToast(result.message, 'toast-error') }
-  } catch (error) { showToast('Chyba komunikace se serverem.', 'toast-error') }
+    } else { toastStore.showToast(result.message, 'toast-error') }
+  } catch (error) { toastStore.showToast('Chyba komunikace se serverem.', 'toast-error') }
 }
 
 const handleAccountDeletion = async () => {
@@ -228,8 +221,8 @@ const handleAccountDeletion = async () => {
     
     if (result.status === 'success') {
       isDeleteModalOpen.value = false; authStore.logout(); router.push('/')
-    } else { showToast(result.message, 'toast-error') }
-  } catch (error) { showToast('Chyba komunikace.', 'toast-error') }
+    } else { toastStore.showToast(result.message, 'toast-error') }
+  } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
 }
 </script>
 

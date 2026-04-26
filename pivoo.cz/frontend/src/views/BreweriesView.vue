@@ -109,6 +109,7 @@ import { PlusIcon, FactoryIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIc
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
+import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
 import BaseLoader from '../components/BaseLoader.vue'
 import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
@@ -120,6 +121,7 @@ import BasePagination from '../components/BasePagination.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
+const toastStore = useToastStore() // NOVÉ: Inicializace storu
 const { user } = storeToRefs(authStore)
 const { breweries, breweriesPagination, countries, isLoading } = storeToRefs(catalogStore)
 
@@ -130,7 +132,6 @@ const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
-const toast = ref({ show: false, message: '', type: 'toast-success' })
 
 const form = ref({ name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null })
 const currentPage = ref(1)
@@ -216,7 +217,6 @@ const sortOptions = [
 ]
 
 const openDetail = (item) => { selectedItem.value = item; isDetailOpen.value = true }
-const showToast = (message, type = 'toast-success') => { toast.value = { show: true, message, type }; setTimeout(() => { toast.value.show = false }, 3000) }
 
 const submitBrewery = async () => {
   try {
@@ -225,9 +225,10 @@ const submitBrewery = async () => {
     const result = await apiFetch('/add_brewery.php', { method: 'POST', body: formData })
     if (result.status === 'success') { 
       isAddModalOpen.value = false; currentPage.value = 1; 
-      await loadBreweries(false); showToast("Pivovar přidán") 
+      await loadBreweries(false); 
+      toastStore.showToast("Pivovar přidán") // NOVÉ: Použití storu
     }
-  } catch (e) { showToast('Chyba serveru.', 'toast-error') }
+  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }
 
 onMounted(async () => { await catalogStore.fetchAllData(); loadBreweries(false) })

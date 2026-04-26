@@ -163,9 +163,11 @@ import {
   CoinsIcon, ShapesIcon
 } from 'lucide-vue-next'
 import { apiFetch } from '../api'
+import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
 import BaseLoader from '../components/BaseLoader.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 
+const toastStore = useToastStore() // NOVÉ: Inicializace storu
 const isLoading = ref(true)
 const period = ref('month')
 const scope = ref('me')
@@ -199,7 +201,8 @@ const fetchDetailedStats = async () => {
       statsData.value = res.data
     }
   } catch (error) {
-    console.error("Chyba při načítání statistik:", error)
+    // NOVÉ: Použití globálního toastu
+    toastStore.showToast('Nepodařilo se načíst statistiky.', 'toast-error')
   } finally {
     isLoading.value = false
   }
@@ -256,7 +259,6 @@ onMounted(() => fetchDetailedStats())
 
 .item-count { font-weight: 800; color: var(--primary); font-size: 1.1rem; background: rgba(250, 204, 21, 0.1); padding: 0.25rem 0.75rem; border-radius: 8px; flex-shrink: 0; }
 
-/* ZMĚNA: Přidán max-height, overflow a vlastní scrollbar */
 .styles-list { 
   display: flex; 
   flex-direction: column; 

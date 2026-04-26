@@ -7,10 +7,6 @@
       </div>
       <p class="auth-subtitle">Přidej se k pivní komunitě Pivoo.cz</p>
 
-      <div v-if="errorMessage" class="auth-error-banner">
-        {{ errorMessage }}
-      </div>
-
       <form @submit.prevent="handleRegister" class="auth-form">
         
         <div class="avatar-upload-row">
@@ -50,16 +46,16 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserPlusIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
+import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 import BaseFileUpload from '../components/BaseFileUpload.vue'
-// OPRAVA: Importujeme DatePicker
 import BaseDatePicker from '../components/BaseDatePicker.vue' 
 
 const router = useRouter()
+const toastStore = useToastStore() // NOVÉ: Inicializace storu
 const isLoading = ref(false)
-const errorMessage = ref('')
 
 const avatarFile = ref(null)
 const form = ref({
@@ -69,11 +65,11 @@ const form = ref({
 
 const handleRegister = async () => {
   if (form.value.password !== form.value.password_confirm) {
-    errorMessage.value = 'Zadaná hesla se neshodují.'
+    toastStore.showToast('Zadaná hesla se neshodují.', 'toast-error')
     return
   }
   
-  isLoading.value = true; errorMessage.value = ''
+  isLoading.value = true
   
   const formData = new FormData()
   Object.keys(form.value).forEach(key => formData.append(key, form.value[key]))
@@ -88,12 +84,13 @@ const handleRegister = async () => {
     })
     
     if (result.status === 'success') {
+      toastStore.showToast('Registrace proběhla úspěšně! Nyní se můžeš přihlásit.')
       router.push('/')
     } else {
-      errorMessage.value = result.message || 'Registrace se nezdařila.'
+      toastStore.showToast(result.message || 'Registrace se nezdařila.', 'toast-error')
     }
   } catch (error) {
-    errorMessage.value = 'Chyba při komunikaci se serverem.'
+    toastStore.showToast('Chyba při komunikaci se serverem.', 'toast-error')
   } finally {
     isLoading.value = false
   }
@@ -147,17 +144,6 @@ const handleRegister = async () => {
 .form-row { display: flex; gap: 1rem; }
 .form-row > * { flex: 1; }
 .avatar-upload-row { margin-bottom: 0.5rem; }
-
-.auth-error-banner { 
-  background-color: rgba(239, 68, 68, 0.1); 
-  color: #ef4444; 
-  padding: 0.75rem; 
-  border-radius: 8px; 
-  margin-bottom: 1.5rem; 
-  font-size: 0.9rem; 
-  border: 1px solid #fca5a5; 
-  font-weight: 600; 
-}
 
 .auth-footer-link { 
   margin-top: 1.5rem; 

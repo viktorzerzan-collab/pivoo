@@ -7,10 +7,6 @@
       </div>
       <p class="auth-subtitle">Tvůj osobní pivní deníček</p>
 
-      <div v-if="errorMessage" class="auth-error-banner">
-        {{ errorMessage }}
-      </div>
-
       <form @submit.prevent="handleLogin" class="auth-form">
         <BaseInput 
           v-model="username" 
@@ -51,20 +47,20 @@ import { useRouter } from 'vue-router'
 import { LogInIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toastStore = useToastStore() // NOVÉ: Inicializace storu
 
 const username = ref('')
 const password = ref('')
 const isLoading = ref(false)
-const errorMessage = ref('')
 
 const handleLogin = async () => {
   isLoading.value = true
-  errorMessage.value = ''
   
   try {
     const result = await apiFetch('/login.php', { 
@@ -79,10 +75,11 @@ const handleLogin = async () => {
       authStore.login(result.user, result.token)
       router.push('/dashboard')
     } else {
-      errorMessage.value = result.message || 'Chyba přihlášení.'
+      // NOVÉ: Použití globálního toastu místo banneru
+      toastStore.showToast(result.message || 'Chyba přihlášení.', 'toast-error')
     }
   } catch (error) {
-    errorMessage.value = 'Server není dostupný. Zkuste to později.'
+    toastStore.showToast('Server není dostupný. Zkuste to později.', 'toast-error')
   } finally {
     isLoading.value = false
   }
@@ -142,17 +139,6 @@ const handleLogin = async () => {
   flex-direction: column;
   gap: 1.5rem;
   text-align: left;
-}
-
-.auth-error-banner {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-  border: 1px solid #fca5a5;
-  font-weight: 600;
 }
 
 .auth-footer-link {

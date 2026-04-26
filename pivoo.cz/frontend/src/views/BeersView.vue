@@ -127,10 +127,6 @@
       :reviews="beerReviews"
       @close="isDetailOpen = false" 
     />
-
-    <transition name="toast-fade">
-      <div v-if="toast.show" class="toast-notification" :class="toast.type">{{ toast.message }}</div>
-    </transition>
   </div>
 </template>
 
@@ -140,6 +136,7 @@ import { storeToRefs } from 'pinia'
 import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast' // NOVÉ: Import store
 import { PlusCircleIcon, FilterIcon, ChevronDownIcon, BeerIcon, XIcon } from 'lucide-vue-next'
 
 import FilterInput from '../components/FilterInput.vue'
@@ -153,6 +150,7 @@ import DetailModal from '../components/modals/DetailModal.vue'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
+const toastStore = useToastStore() // NOVÉ: Inicializace store
 
 const { beers, beersPagination, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
@@ -321,7 +319,6 @@ const sortOptions = [
 
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
-const toast = ref({ show: false, message: '', type: 'toast-success' })
 
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
@@ -342,11 +339,6 @@ const openAddModal = () => {
   isAddModalOpen.value = true
 }
 
-const showToast = (message, type = 'toast-success') => { 
-  toast.value = { show: true, message, type }
-  setTimeout(() => { toast.value.show = false }, 3000) 
-}
-
 const submitBeer = async () => {
   try {
     const res = await apiFetch('/add_beer.php', { 
@@ -358,12 +350,12 @@ const submitBeer = async () => {
       isAppending.value = false
       currentPage.value = 1
       await loadBeers(false) 
-      showToast("Pivo bylo úspěšně přidáno") 
+      toastStore.showToast("Pivo bylo úspěšně přidáno") // NOVÉ: Použití store
     } else {
-      showToast(res.message || "Chyba při ukládání", "toast-error")
+      toastStore.showToast(res.message || "Chyba při ukládání", "toast-error")
     }
   } catch (e) { 
-    showToast('Chyba serveru.', 'toast-error') 
+    toastStore.showToast('Chyba serveru.', 'toast-error') 
   }
 }
 
@@ -452,7 +444,6 @@ const openDetail = async (beer) => {
 .mobile-action-bar { display: none; }
 
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
-/* OPRAVA: Sjednocení minmax na 320px pro konzistentní počet sloupců */
 .beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 1rem; text-align: center; color: var(--text-muted); }

@@ -8,6 +8,7 @@
     </main>
     <AppFooter v-if="!isAuthPage" />
 
+    <AppToast />
     <BackToTop />
   </div>
 </template>
@@ -18,7 +19,8 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
-// NOVÉ: Import komponenty
+// NOVÉ: Import globální toast komponenty
+import AppToast from './components/AppToast.vue'
 import BackToTop from './components/BackToTop.vue'
 import { useAuthStore } from './stores/auth'
 import { apiFetch } from './api' 
