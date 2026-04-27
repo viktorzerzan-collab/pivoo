@@ -6,7 +6,7 @@
       <input 
         type="text" 
         :value="modelValue" 
-        @input="$emit('update:modelValue', $event.target.value)"
+        @input="handleInput"
         :placeholder="placeholder"
         class="custom-input"
       />
@@ -16,12 +16,21 @@
 
 <script setup>
 import { SearchIcon } from 'lucide-vue-next'
-defineProps({
+const props = defineProps({
   modelValue: String,
   label: { type: String, default: '' },
   placeholder: { type: String, default: 'Hledat...' }
 })
-defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue'])
+
+let timeout = null
+
+const handleInput = (event) => {
+  clearTimeout(timeout)
+  timeout = setTimeout(() => {
+    emit('update:modelValue', event.target.value)
+  }, 300)
+}
 </script>
 
 <style scoped>

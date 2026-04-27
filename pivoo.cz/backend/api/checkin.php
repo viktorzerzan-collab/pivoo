@@ -110,7 +110,8 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
             $packaging,
             $consumed_at
         ])) {
-            echo json_encode(["status" => "success", "message" => "Zapsáno do deníčku!"]);
+            $new_id = $db->lastInsertId();
+            echo json_encode(["status" => "success", "message" => "Zapsáno do deníčku!", "id" => $new_id]);
         } else {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "Chyba při zápisu."]);

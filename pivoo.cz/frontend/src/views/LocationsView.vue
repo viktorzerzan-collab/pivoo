@@ -109,7 +109,7 @@ import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIcon }
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
+import { useToastStore } from '../stores/toast'
 import BaseLoader from '../components/BaseLoader.vue'
 import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
@@ -121,7 +121,7 @@ import BasePagination from '../components/BasePagination.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
-const toastStore = useToastStore() // NOVÉ: Inicializace storu
+const toastStore = useToastStore()
 const { user } = storeToRefs(authStore)
 const { locations, locationsPagination, countries, isLoading } = storeToRefs(catalogStore)
 
@@ -231,9 +231,34 @@ const submitLocation = async () => {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
+      
+      const country = countries.value.find(c => c.id == form.value.country_id)
+
+      catalogStore.addLocationLocally({
+         id: result.id,
+         name: form.value.name,
+         type: form.value.type,
+         city: form.value.city,
+         country_id: form.value.country_id,
+         country: country ? country.name_cz : '',
+         country_code: country ? country.code : '',
+         is_favorite: 0,
+         avg_rating: null,
+         total_visits: 0,
+         address: form.value.address,
+         zip_code: form.value.zip_code,
+         email: form.value.email,
+         phone: form.value.phone,
+         website: form.value.website,
+         opening_hours: form.value.opening_hours,
+         lat: form.value.lat,
+         lng: form.value.lng
+      })
+
       currentPage.value = 1
-      await loadLocations(false)
-      toastStore.showToast("Podnik uložen") // NOVÉ: Použití storu
+      toastStore.showToast("Podnik uložen") 
+    } else {
+      toastStore.showToast(result.message || 'Nepodařilo se uložit podnik.', 'toast-error')
     }
   } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }

@@ -97,7 +97,7 @@ import { PlusCircleIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
+import { useToastStore } from '../stores/toast'
 import BaseLoader from '../components/BaseLoader.vue'
 import StatsBoard from '../components/StatsBoard.vue'
 import HistoryList from '../components/HistoryList.vue'
@@ -110,12 +110,12 @@ import AddBeerModal from '../components/modals/AddBeerModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
-const toastStore = useToastStore() // NOVÉ: Inicializace storu
+const toastStore = useToastStore()
 const { beers, breweries, locations, stats, history, countries, styles, isLoading } = storeToRefs(catalogStore)
 
 const currentMonthName = computed(() => {
   const months = ['lednu', 'únoru', 'březnu', 'dubnu', 'květnu', 'červnu', 'červenci', 'srpnu', 'září', 'říjnu', 'listopadu', 'prosinci']
-  return months[new Date().getHours()]
+  return months[new Date().getHours() === 0 ? 0 : new Date().getMonth()]
 })
 
 const isModalOpen = ref(false)
@@ -184,15 +184,22 @@ const submitNewBrewery = async () => {
     const res = await apiFetch('/add_brewery.php', { method: 'POST', body: formData })
     if (res.status === 'success') {
       isAddBreweryModalOpen.value = false
-      await catalogStore.fetchAllData(true)
-      toastStore.showToast("Pivovar přidán!") // NOVÉ: Použití storu
+      
+      const newBrewery = {
+        id: res.id,
+        name: breweryForm.value.name,
+        city: breweryForm.value.city,
+        country_id: breweryForm.value.country_id,
+        is_favorite: 0,
+        avg_rating: null,
+        total_beers_in_catalog: 0
+      }
+      catalogStore.addBreweryLocally(newBrewery)
+      toastStore.showToast("Pivovar přidán!")
       
       if (pendingAiData.value) {
-        const newBrewery = catalogStore.breweries.find(b => b.name === breweryForm.value.name)
-        if (newBrewery) {
-           pendingAiData.value.brewery_id = newBrewery.id
-           handleMagicAddBeer(pendingAiData.value)
-        }
+         pendingAiData.value.brewery_id = res.id
+         handleMagicAddBeer(pendingAiData.value)
       }
     }
   } catch (e) { toastStore.showToast('Chyba při ukládání pivovaru.', 'toast-error') }
@@ -203,14 +210,24 @@ const submitNewBeer = async () => {
     const res = await apiFetch('/add_beer.php', { method: 'POST', body: JSON.stringify(beerForm.value) })
     if (res.status === 'success') {
       isAddBeerModalOpen.value = false
-      await catalogStore.fetchAllData(true)
-      toastStore.showToast("Pivo přidáno do katalogu!") // NOVÉ: Použití storu
       
-      const newBeer = catalogStore.beers.find(b => b.name === beerForm.value.name && b.brewery_id == beerForm.value.brewery_id)
-      if (newBeer) {
-        form.value.brewery_id = newBeer.brewery_id
-        setTimeout(() => { form.value.beer_id = newBeer.id }, 100)
+      const newBeer = {
+        id: res.id,
+        name: beerForm.value.name,
+        brewery_id: beerForm.value.brewery_id,
+        style_id: beerForm.value.style_id,
+        is_unfiltered: beerForm.value.is_unfiltered,
+        is_unpasteurized: beerForm.value.is_unpasteurized,
+        avg_rating: null,
+        total_checkins: 0,
+        is_favorite: 0
       }
+      catalogStore.addBeerLocally(newBeer)
+      toastStore.showToast("Pivo přidáno do katalogu!")
+      
+      form.value.brewery_id = newBeer.brewery_id
+      setTimeout(() => { form.value.beer_id = newBeer.id }, 100)
+      
       pendingAiData.value = null
       isModalOpen.value = true
     }
@@ -228,10 +245,21 @@ const submitNewLocation = async () => {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(locationForm.value) })
     if (result.status === 'success') { 
       isAddLocationModalOpen.value = false
-      await catalogStore.fetchAllData(true)
-      toastStore.showToast("Podnik přidán!") // NOVÉ: Použití storu
-      const newLoc = catalogStore.locations.find(l => l.name === locationForm.value.name)
-      if (newLoc) form.value.location_id = newLoc.id
+      
+      const newLoc = {
+         id: result.id,
+         name: locationForm.value.name,
+         type: locationForm.value.type,
+         city: locationForm.value.city,
+         country_id: locationForm.value.country_id,
+         is_favorite: 0,
+         avg_rating: null,
+         total_visits: 0
+      }
+      catalogStore.addLocationLocally(newLoc)
+      toastStore.showToast("Podnik přidán!")
+      
+      form.value.location_id = result.id
       isModalOpen.value = true
     }
   } catch (e) { toastStore.showToast('Chyba serveru při přidávání podniku.', 'toast-error') }
@@ -250,8 +278,32 @@ const submitCheckIn = async () => {
     const res = await apiFetch('/checkin.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (res.status === 'success') { 
       isModalOpen.value = false
-      await catalogStore.fetchAllData()
-      toastStore.showToast('Záznam úspěšně zapsán!') // NOVÉ: Použití storu
+      
+      const beer = beers.value.find(b => b.id == form.value.beer_id)
+      const brewery = breweries.value.find(b => b.id == form.value.brewery_id)
+      const loc = locations.value.find(l => l.id == form.value.location_id)
+      
+      const newCheckin = {
+         id: res.id,
+         beer_id: form.value.beer_id,
+         beer_name: beer ? beer.name : 'Neznámé pivo',
+         brewery_name: brewery ? brewery.name : 'Neznámý pivovar',
+         location_name: loc ? loc.name : 'Neznámý podnik',
+         consumed_at: form.value.consumed_at || new Date().toISOString().slice(0, 19).replace('T', ' '),
+         packaging: form.value.packaging,
+         volume: form.value.volume,
+         quantity: form.value.quantity,
+         price: form.value.price,
+         currency: form.value.currency,
+         original_price: form.value.original_price,
+         is_free: form.value.is_free,
+         rating_beer: form.value.rating_beer,
+         rating_care: form.value.rating_care,
+         note: form.value.note
+      }
+      catalogStore.addCheckinLocally(newCheckin)
+      toastStore.showToast('Záznam úspěšně zapsán!')
+      
       form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' }
     } else { toastStore.showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error') }
   } catch (e) { toastStore.showToast(e.message || 'Chyba serveru.', 'toast-error') }
@@ -260,15 +312,35 @@ const submitCheckIn = async () => {
 const submitEdit = async () => {
   try {
     const res = await apiFetch('/update_checkin.php', { method: 'POST', body: JSON.stringify({ id: selectedEditRecordId.value, ...editForm.value }) })
-    if (res.status === 'success') { isEditModalOpen.value = false; await catalogStore.fetchAllData(); toastStore.showToast('Záznam upraven!') }
+    if (res.status === 'success') { 
+       isEditModalOpen.value = false
+       
+       const beer = beers.value.find(b => b.id == editForm.value.beer_id)
+       const brewery = breweries.value.find(b => b.id == editForm.value.brewery_id)
+       const loc = locations.value.find(l => l.id == editForm.value.location_id)
+       
+       catalogStore.updateCheckinLocally({
+           id: selectedEditRecordId.value,
+           ...editForm.value,
+           beer_name: beer ? beer.name : 'Neznámé pivo',
+           brewery_name: brewery ? brewery.name : 'Neznámý pivovar',
+           location_name: loc ? loc.name : 'Neznámý podnik'
+       })
+       toastStore.showToast('Záznam upraven!') 
+    }
   } catch (e) { toastStore.showToast(e.message || 'Chyba komunikace.', 'toast-error') }
 }
 
 const confirmDelete = (id) => { recordIdToDelete.value = id; isDeleteConfirmModalOpen.value = true }
+
 const executeDelete = async () => {
   try {
     const res = await apiFetch('/delete_checkin.php', { method: 'POST', body: JSON.stringify({ id: recordIdToDelete.value }) })
-    if (res.status === 'success') { isDeleteConfirmModalOpen.value = false; await catalogStore.fetchAllData(); toastStore.showToast('Záznam smazán.') }
+    if (res.status === 'success') { 
+      isDeleteConfirmModalOpen.value = false
+      catalogStore.removeCheckinLocally(recordIdToDelete.value)
+      toastStore.showToast('Záznam smazán.') 
+    }
   } catch (e) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
 }
 </script>

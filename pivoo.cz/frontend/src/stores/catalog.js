@@ -58,6 +58,40 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
+    // Lokální aktualizace katalogů
+    addBeerLocally(beer) {
+      this.beers.unshift(beer)
+    },
+    addBreweryLocally(brewery) {
+      this.breweries.unshift(brewery)
+    },
+    addLocationLocally(location) {
+      this.locations.unshift(location)
+    },
+    
+    // Lokální aktualizace historie a statistik
+    addCheckinLocally(record) {
+      this.history.unshift(record)
+      if (this.history.length > 12) this.history.pop()
+      
+      if (this.stats) {
+        this.stats.total_beers = (this.stats.total_beers || 0) + parseInt(record.quantity || 1)
+        this.stats.total_liters = parseFloat((parseFloat(this.stats.total_liters || 0) + (parseFloat(record.volume || 0) * parseInt(record.quantity || 1))).toFixed(2))
+        if (!record.is_free && record.price) {
+           this.stats.total_price = parseFloat((parseFloat(this.stats.total_price || 0) + (parseFloat(record.price || 0) * parseInt(record.quantity || 1))).toFixed(2))
+        }
+      }
+    },
+    updateCheckinLocally(record) {
+      const index = this.history.findIndex(r => r.id === record.id)
+      if (index !== -1) {
+        this.history[index] = { ...this.history[index], ...record }
+      }
+    },
+    removeCheckinLocally(id) {
+      this.history = this.history.filter(r => r.id !== id)
+    },
+
     // Načítání piv s podporou filtrů a stránkování
     async fetchBeers(params = {}, append = false) {
       this.isLoading = !append

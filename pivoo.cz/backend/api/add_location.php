@@ -51,7 +51,8 @@ if (!empty($data->name) && !empty($data->type)) {
             $lng,
             $opening_hours
         ])) {
-            echo json_encode(["status" => "success", "message" => "Nové místo bylo úspěšně přidáno."]);
+            $new_id = $db->lastInsertId();
+            echo json_encode(["status" => "success", "message" => "Nové místo bylo úspěšně přidáno.", "id" => $new_id]);
         } else {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "Nepodařilo se uložit místo."]);

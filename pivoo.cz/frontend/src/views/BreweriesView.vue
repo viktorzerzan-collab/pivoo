@@ -109,7 +109,7 @@ import { PlusIcon, FactoryIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIc
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
+import { useToastStore } from '../stores/toast'
 import BaseLoader from '../components/BaseLoader.vue'
 import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
@@ -121,7 +121,7 @@ import BasePagination from '../components/BasePagination.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
-const toastStore = useToastStore() // NOVÉ: Inicializace storu
+const toastStore = useToastStore()
 const { user } = storeToRefs(authStore)
 const { breweries, breweriesPagination, countries, isLoading } = storeToRefs(catalogStore)
 
@@ -224,9 +224,23 @@ const submitBrewery = async () => {
     Object.keys(form.value).forEach(key => { if (form.value[key] !== null && form.value[key] !== '') formData.append(key, form.value[key]) })
     const result = await apiFetch('/add_brewery.php', { method: 'POST', body: formData })
     if (result.status === 'success') { 
-      isAddModalOpen.value = false; currentPage.value = 1; 
-      await loadBreweries(false); 
-      toastStore.showToast("Pivovar přidán") // NOVÉ: Použití storu
+      isAddModalOpen.value = false
+      
+      const country = catalogStore.countries.find(c => c.id == form.value.country_id)
+      
+      catalogStore.addBreweryLocally({
+         id: result.id,
+         name: form.value.name,
+         city: form.value.city,
+         country_id: form.value.country_id,
+         country: country ? country.name_cz : '',
+         country_code: country ? country.code : '',
+         is_favorite: 0,
+         avg_rating: null,
+         total_beers_in_catalog: 0
+      })
+      
+      toastStore.showToast("Pivovar přidán")
     }
   } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }
@@ -239,7 +253,6 @@ onUnmounted(() => { if (observer) observer.disconnect() })
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
 
-/* Sjednocení velikosti tlačítka s Dashboardem */
 .btn-add { 
   display: flex; align-items: center; gap: 0.5rem; 
   padding: 0.75rem 1.5rem; font-weight: 700; 

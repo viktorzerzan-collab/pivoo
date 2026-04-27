@@ -136,7 +136,7 @@ import { storeToRefs } from 'pinia'
 import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import store
+import { useToastStore } from '../stores/toast'
 import { PlusCircleIcon, FilterIcon, ChevronDownIcon, BeerIcon, XIcon } from 'lucide-vue-next'
 
 import FilterInput from '../components/FilterInput.vue'
@@ -150,7 +150,7 @@ import DetailModal from '../components/modals/DetailModal.vue'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
-const toastStore = useToastStore() // NOVÉ: Inicializace store
+const toastStore = useToastStore()
 
 const { beers, beersPagination, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
@@ -347,10 +347,23 @@ const submitBeer = async () => {
     })
     if (res.status === 'success') { 
       isAddModalOpen.value = false
-      isAppending.value = false
-      currentPage.value = 1
-      await loadBeers(false) 
-      toastStore.showToast("Pivo bylo úspěšně přidáno") // NOVÉ: Použití store
+      
+      const brewery = breweries.value.find(b => b.id == beerForm.value.brewery_id)
+      const style = styles.value.find(s => s.id == beerForm.value.style_id)
+      
+      catalogStore.addBeerLocally({
+        id: res.id,
+        ...beerForm.value,
+        brewery_name: brewery ? brewery.name : '',
+        brewery_country: brewery ? brewery.country : '',
+        brewery_country_code: brewery ? brewery.country_code : '',
+        style: style ? style.name : '',
+        avg_rating: null,
+        total_checkins: 0,
+        is_favorite: 0
+      })
+      
+      toastStore.showToast("Pivo bylo úspěšně přidáno")
     } else {
       toastStore.showToast(res.message || "Chyba při ukládání", "toast-error")
     }

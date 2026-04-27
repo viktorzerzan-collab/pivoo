@@ -92,7 +92,8 @@ if (!empty($data->name)) {
         $opening_hours = !empty($data->opening_hours) ? $data->opening_hours : null;
 
         if ($stmt->execute([$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $opening_hours, $logo_filename])) {
-            echo json_encode(["status" => "success", "message" => "Pivovar byl úspěšně přidán do katalogu."]);
+            $new_id = $db->lastInsertId();
+            echo json_encode(["status" => "success", "message" => "Pivovar byl úspěšně přidán do katalogu.", "id" => $new_id]);
         } else {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "Pivovar se nepodařilo uložit."]);

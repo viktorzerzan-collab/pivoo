@@ -527,7 +527,7 @@ const submitMerge = async () => {
     if (res.status === 'success') {
       toastStore.showToast(res.message)
       modals.value.merge = false
-      await catalogStore.fetchAllData()
+      catalogStore.locations = catalogStore.locations.filter(l => l.id !== mergeForm.value.source.id)
     } else {
       toastStore.showToast(res.message || 'Nepodařilo se podniky sloučit.', 'toast-error')
     }
@@ -599,7 +599,24 @@ const submitForm = async (t) => {
     if (res.status === 'success') { 
       toastStore.showToast(res.message)
       modals.value[t] = false
-      t === 'user' ? fetchUsers() : catalogStore.fetchAllData() 
+
+      if (t === 'user') {
+        fetchUsers()
+      } else {
+        if (isEditing.value) {
+          const arrName = t === 'style' ? 'styles' : (t === 'brewery' ? 'breweries' : t + 's')
+          const index = catalogStore[arrName].findIndex(x => x.id === formData.value[t].id)
+          if (index !== -1) {
+             catalogStore[arrName][index] = { ...catalogStore[arrName][index], ...formData.value[t] }
+          }
+        } else {
+          const newItem = { ...formData.value[t], id: res.id }
+          if (t === 'beer') catalogStore.addBeerLocally({ ...newItem, avg_rating: null, total_checkins: 0, is_favorite: 0 })
+          else if (t === 'brewery') catalogStore.addBreweryLocally({ ...newItem, avg_rating: null, total_beers_in_catalog: 0, is_favorite: 0 })
+          else if (t === 'location') catalogStore.addLocationLocally({ ...newItem, avg_rating: null, total_visits: 0, is_favorite: 0 })
+          else catalogStore.fetchAllData()
+        }
+      }
     } else { toastStore.showToast(res.message || 'Chyba při ukládání.', 'toast-error') }
   } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
 }
@@ -614,7 +631,12 @@ const handleDelete = async () => {
     const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { method: 'POST', body: JSON.stringify({ id: deleteModal.value.id }) })
     if (res.status === 'success') {
       toastStore.showToast("Smazáno")
-      deleteModal.value.type === 'user' ? fetchUsers() : catalogStore.fetchAllData()
+      if (deleteModal.value.type === 'user') {
+        fetchUsers()
+      } else {
+        const arrName = deleteModal.value.type === 'brewery' ? 'breweries' : (deleteModal.value.type === 'style' ? 'styles' : deleteModal.value.type + 's')
+        catalogStore[arrName] = catalogStore[arrName].filter(x => x.id !== deleteModal.value.id)
+      }
     } else { toastStore.showToast(res.message || 'Nepodařilo se smazat.', 'toast-error') }
   } catch(e) { toastStore.showToast('Chyba při mazání.', 'toast-error') } 
   finally { deleteModal.value.show = false }
