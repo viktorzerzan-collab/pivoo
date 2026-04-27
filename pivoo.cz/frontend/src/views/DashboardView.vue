@@ -293,9 +293,9 @@ const submitCheckIn = async () => {
          packaging: form.value.packaging,
          volume: form.value.volume,
          quantity: form.value.quantity,
-         price: form.value.price,
-         currency: form.value.currency,
-         original_price: form.value.original_price,
+         price: res.price,           // ÚPRAVA: Použijeme přepočítanou cenu z backendu
+         currency: res.currency,     // ÚPRAVA: Použijeme měnu z backendu
+         original_price: res.original_price, // ÚPRAVA: Použijeme původní cenu z backendu
          is_free: form.value.is_free,
          rating_beer: form.value.rating_beer,
          rating_care: form.value.rating_care,
@@ -322,6 +322,9 @@ const submitEdit = async () => {
        catalogStore.updateCheckinLocally({
            id: selectedEditRecordId.value,
            ...editForm.value,
+           price: res.price,           // ÚPRAVA: Použijeme přepočítanou cenu z backendu
+           currency: res.currency,     // ÚPRAVA: Použijeme měnu z backendu
+           original_price: res.original_price, // ÚPRAVA: Použijeme původní cenu z backendu
            beer_name: beer ? beer.name : 'Neznámé pivo',
            brewery_name: brewery ? brewery.name : 'Neznámý pivovar',
            location_name: loc ? loc.name : 'Neznámý podnik'

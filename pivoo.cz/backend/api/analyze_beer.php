@@ -85,8 +85,8 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, mark
 
     // 4. Volání Google Gemini API
     $clean_api_key = trim(GEMINI_API_KEY);
-    // PŘECHOD NA AKTUÁLNÍ MODEL: gemini-2.5-flash
-    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $clean_api_key;
+    // PŘECHOD NA AKTUÁLNÍ MODEL: gemini-3-flash
+    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=" . $clean_api_key;
 
     $postData = [
         "contents" => [

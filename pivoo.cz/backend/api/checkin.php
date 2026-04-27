@@ -111,7 +111,15 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
             $consumed_at
         ])) {
             $new_id = $db->lastInsertId();
-            echo json_encode(["status" => "success", "message" => "Zapsáno do deníčku!", "id" => $new_id]);
+            // ZMĚNA: Vracíme vypočítané cenové údaje zpět na frontend
+            echo json_encode([
+                "status" => "success", 
+                "message" => "Zapsáno do deníčku!", 
+                "id" => $new_id,
+                "price" => $czk_price,
+                "original_price" => $original_price,
+                "currency" => $currency
+            ]);
         } else {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "Chyba při zápisu."]);

@@ -98,7 +98,14 @@ if (!empty($data->id)) {
             $is_free, $rating_beer, $rating_care,
             $note, $packaging, $consumed_at, $data->id, $user['user_id']
         ])) {
-            echo json_encode(["status" => "success", "message" => "Záznam byl úspěšně upraven."]);
+            // ZMĚNA: Vracíme vypočítané cenové údaje zpět na frontend
+            echo json_encode([
+                "status" => "success", 
+                "message" => "Záznam byl úspěšně upraven.",
+                "price" => $czk_price,
+                "original_price" => $original_price,
+                "currency" => $currency
+            ]);
         } else {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "Nepodařilo se upravit záznam."]);
