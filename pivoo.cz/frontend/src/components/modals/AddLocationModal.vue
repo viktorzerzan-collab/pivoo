@@ -78,6 +78,10 @@ import OpeningHoursInput from '../OpeningHoursInput.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+// Přidáno ruční načítání obrázků pro Leaflet z dist složky
+import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
+import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
+
 // OPRAVENO: Import store pro zjišťování duplicit (přidáno ../ navíc)
 import { useCatalogStore } from '../../stores/catalog'
 
@@ -178,7 +182,16 @@ const initMap = () => {
     attribution: '© OpenStreetMap'
   }).addTo(map.value)
 
-  marker.value = L.marker([lat, lng], { draggable: true }).addTo(map.value)
+  // Aplikování správných ikon pro Leaflet ve Vite
+  const customIcon = L.icon({
+    iconUrl: markerIconUrl,
+    shadowUrl: markerShadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34]
+  })
+
+  marker.value = L.marker([lat, lng], { icon: customIcon, draggable: true }).addTo(map.value)
 
   marker.value.on('dragend', (e) => {
     const newPos = e.target.getLatLng()

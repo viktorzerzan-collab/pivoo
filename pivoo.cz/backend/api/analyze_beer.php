@@ -40,6 +40,10 @@ try {
     $styles_stmt = $db->query("SELECT id, name FROM beer_styles");
     $styles_list = $styles_stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Přidáno načítání zemí, aby AI mohla přiřadit správné country_id
+    $countries_stmt = $db->query("SELECT id, name_cz FROM countries");
+    $countries_list = $countries_stmt->fetchAll(PDO::FETCH_ASSOC);
+
     // 2. Příprava obrázku pro API (Base64)
     $imagePath = $_FILES['image']['tmp_name'];
     $imageMime = $_FILES['image']['type'];
@@ -64,8 +68,9 @@ Tvé úkoly:
 
 Zde je seznam existujících pivovarů: " . json_encode($breweries_list) . "
 Zde je seznam existujících pivních stylů: " . json_encode($styles_list) . "
+Zde je seznam zemí a jejich ID: " . json_encode($countries_list) . "
 
-DŮLEŽITÉ: Pokud pivovar v seznamu NENÍ, nastav 'brewery_id' na null, 'is_new_brewery' na true a do 'brewery_metadata' doplň informace o pivovaru, abys mi ušetřil práci (city, country_id). Pro Česko je country_id 1.
+DŮLEŽITÉ: Pokud pivovar v seznamu pivovarů NENÍ, nastav 'brewery_id' na null, 'is_new_brewery' na true a do 'brewery_metadata' doplň maximum informací o pivovaru z tvých znalostí, abys mi ušetřil práci. Vyhledej přesné město, PSČ, ulici a číslo popisné, kontakt (web, email, telefon), přibližné GPS souřadnice (lat, lng) a přiřaď správné 'country_id' podle poskytnutého seznamu zemí.
 
 Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, markdownu nebo formátování. Struktura musí být:
 {
@@ -73,7 +78,17 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, mark
     \"brewery_name\": \"...\",
     \"brewery_id\": null,
     \"is_new_brewery\": false,
-    \"brewery_metadata\": {\"city\": \"...\", \"country_id\": 1},
+    \"brewery_metadata\": {
+        \"city\": \"...\",
+        \"zip_code\": \"...\",
+        \"address\": \"...\",
+        \"country_id\": 1,
+        \"website\": \"...\",
+        \"email\": \"...\",
+        \"phone\": \"...\",
+        \"lat\": 0.000000,
+        \"lng\": 0.000000
+    },
     \"style_id\": null,
     \"epm\": null,
     \"abv\": null,
@@ -85,8 +100,8 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, mark
 
     // 4. Volání Google Gemini API
     $clean_api_key = trim(GEMINI_API_KEY);
-    // PŘECHOD NA AKTUÁLNÍ MODEL: gemini-3-flash
-    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=" . $clean_api_key;
+    // PŘECHOD NA AKTUÁLNÍ MODEL: gemini-3-flash-preview
+    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" . $clean_api_key;
 
     $postData = [
         "contents" => [
