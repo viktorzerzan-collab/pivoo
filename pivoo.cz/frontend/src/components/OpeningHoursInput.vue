@@ -34,12 +34,12 @@
         <div v-if="!localValue[day.id].closed" class="intervals-list">
           <div v-for="(interval, index) in localValue[day.id].intervals" :key="index" class="interval-row">
             <div class="time-inputs">
+              <!-- Odstraněn atribut required pro volitelné zadání otevírací doby -->
               <input 
                 type="time" 
                 v-model="interval.from"
                 class="time-input"
                 @change="emitUpdate"
-                required
               >
               <span class="time-separator">-</span>
               <input 
@@ -47,7 +47,6 @@
                 v-model="interval.to"
                 class="time-input"
                 @change="emitUpdate"
-                required
               >
             </div>
             
