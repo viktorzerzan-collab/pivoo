@@ -4,14 +4,7 @@
 
     <div class="catalog-header-layout">
       <div class="header-top-row">
-        <div class="view-mode-toggle">
-          <button :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
-            <LayoutGridIcon :size="18" /> Karty
-          </button>
-          <button :class="{ active: viewMode === 'map' }" @click="viewMode = 'map'">
-            <MapIcon :size="18" /> Mapa
-          </button>
-        </div>
+        <BaseSwitch v-model="viewMode" :options="viewModeOptions" />
 
         <div class="mobile-action-bar">
           <button v-if="isAdmin" class="btn-add" @click="openAddModal">
@@ -118,6 +111,7 @@ import MapView from '../components/MapView.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import BasePagination from '../components/BasePagination.vue'
+import BaseSwitch from '../components/BaseSwitch.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -127,6 +121,11 @@ const { locations, locationsPagination, countries, isLoading } = storeToRefs(cat
 
 const isAdmin = computed(() => user.value?.role === 'admin')
 const viewMode = ref('list')
+
+const viewModeOptions = [
+  { value: 'list', label: 'Karty', icon: LayoutGridIcon },
+  { value: 'map', label: 'Mapa', icon: MapIcon }
+]
 
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
@@ -270,15 +269,10 @@ onMounted(async () => { await catalogStore.fetchAllData(); loadLocations(false) 
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
 
-/* Sjednocení velikosti tlačítka s Dashboardem */
 .btn-add { 
   display: flex; align-items: center; gap: 0.5rem; 
   padding: 0.75rem 1.5rem; font-weight: 700; 
 }
-
-.view-mode-toggle { display: flex; background: var(--bg-panel); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
-.view-mode-toggle button { padding: 0.5rem 1.25rem; border-radius: 7px; border: none; background: none; color: var(--text-muted); font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
-.view-mode-toggle button.active { background: var(--primary); color: #1e293b; box-shadow: var(--shadow-sm); }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
 .filters-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; cursor: pointer; }
@@ -311,7 +305,6 @@ onMounted(async () => { await catalogStore.fetchAllData(); loadLocations(false) 
 
 @media (max-width: 800px) {
   .header-top-row { flex-direction: column; align-items: stretch; }
-  .view-mode-toggle button { flex: 1; justify-content: center; }
   .mobile-action-bar { display: block; margin-bottom: 1.5rem; }
   .mobile-action-bar .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
   .desktop-action-bar { display: none; }

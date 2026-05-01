@@ -1,11 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="admin-header">
-      <nav class="admin-tabs">
-        <button v-for="t in tabs" :key="t.id" @click="activeTab = t.id" :class="{ active: activeTab === t.id }">
-          {{ t.label }}
-        </button>
-      </nav>
+      <BaseSwitch v-model="activeTab" :options="tabs" />
     </div>
 
     <div class="admin-layout">
@@ -16,7 +12,7 @@
           <div class="header-info">
             <FilterInput 
               v-model="searchQuery" 
-              :placeholder="'Hledat v sekci ' + tabs.find(t => t.id === activeTab).label.toLowerCase() + '...'" 
+              :placeholder="'Hledat v sekci ' + tabs.find(t => t.value === activeTab).label.toLowerCase() + '...'" 
               class="admin-search"
             />
           </div>
@@ -233,7 +229,6 @@
 
     <DeleteConfirmModal :show="deleteModal.show" @close="deleteModal.show = false" @confirm="handleDelete" />
     
-    <!-- ZMĚNA: AddBeerModal už nepotřebuje prop breweries a styles -->
     <AddBeerModal :show="modals.beer" :isEditing="isEditing" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
     
     <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :countries="countries" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
@@ -319,7 +314,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { 
   PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
-  UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
+  UnlockIcon, UserIcon, UsersIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
   GitMergeIcon 
 } from 'lucide-vue-next'
 import { apiFetch } from '../api'
@@ -333,6 +328,7 @@ import BasePagination from '../components/BasePagination.vue'
 import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue' 
 import BaseTooltip from '../components/BaseTooltip.vue'
+import BaseSwitch from '../components/BaseSwitch.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -382,11 +378,11 @@ watch(activeTab, () => { searchQuery.value = ''; currentPage.value = 1 })
 watch(searchQuery, () => { currentPage.value = 1 })
 
 const tabs = [
-  { id: 'users', label: 'Uživatelé' },
-  { id: 'beers', label: 'Piva' },
-  { id: 'breweries', label: 'Pivovary' },
-  { id: 'locations', label: 'Podniky' },
-  { id: 'styles', label: 'Styly' }
+  { value: 'users', label: 'Uživatelé', icon: UsersIcon },
+  { value: 'beers', label: 'Piva', icon: BeerIcon },
+  { value: 'breweries', label: 'Pivovary', icon: FactoryIcon },
+  { value: 'locations', label: 'Podniky', icon: MapPinIcon },
+  { value: 'styles', label: 'Styly', icon: HopIcon }
 ]
 
 const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl', users: 'uživatele' }[activeTab.value]))
@@ -415,8 +411,6 @@ const filteredCurrentItems = computed(() => {
   return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
 })
 
-// ZMĚNA: Sloučení podniků teď využívá catalogStore.allLocations místo samotných locations, 
-// abychom mohli sloučit s kterýmkoliv podnikem z databáze, nejen s prvními 30.
 const mergeTargetOptions = computed(() => {
   if (!mergeForm.value.source) return []
   return catalogStore.allLocations
@@ -650,10 +644,7 @@ const handleDelete = async () => {
 
 <style scoped>
 .admin-page { flex: 1; display: flex; flex-direction: column; }
-.admin-header { margin-bottom: 2rem; }
-.admin-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; overflow-x: auto; }
-.admin-tabs button { padding: 0.6rem 1.2rem; border: none; background: none; color: var(--text-muted); cursor: pointer; font-weight: 600; border-radius: 8px; white-space: nowrap; box-shadow: none; transition: all 0.2s; }
-.admin-tabs button.active { background: var(--primary); color: #1e293b; }
+.admin-header { margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
 .admin-section { display: flex; flex-direction: column; flex: 1; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }

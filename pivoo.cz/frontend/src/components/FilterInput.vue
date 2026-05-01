@@ -8,7 +8,7 @@
         :value="modelValue" 
         @input="handleInput"
         :placeholder="placeholder"
-        class="custom-input"
+        class="filter-input"
       />
     </div>
   </div>
@@ -65,22 +65,33 @@ const handleInput = (event) => {
   transition: color 0.5s ease; 
 }
 
-.custom-input {
+.filter-input {
   width: 100%;
-  /* Stejný padding a border-radius jako má BaseSelect */
+  /* Dostatečný padding na levé straně, aby se text nepřekrýval s ikonou lupy */
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--bg-panel);
+  background-color: var(--bg-app); /* Lehce odlišené od samotného panelu */
   color: var(--text-main);
   font-size: 0.95rem;
+  font-family: inherit;
   transition: all 0.3s ease;
-  box-shadow: var(--shadow);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
   outline: none;
 }
 
-.custom-input:focus { 
+.filter-input:focus { 
   border-color: var(--primary); 
   box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15); 
+}
+
+/* Zajištění správného vykreslení v Chrome/Webkit (zrušení defaultního bílého pozadí při autofillu) */
+.filter-input:-webkit-autofill,
+.filter-input:-webkit-autofill:hover, 
+.filter-input:-webkit-autofill:focus, 
+.filter-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--bg-app) inset !important;
+  -webkit-text-fill-color: var(--text-main) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 </style>

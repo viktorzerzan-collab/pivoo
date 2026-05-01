@@ -1,26 +1,7 @@
 <template>
   <div class="wishlist-page">
     <div class="view-toggle-container">
-      <div class="view-toggle">
-        <button 
-          @click="activeTab = 'beers'" 
-          :class="{ active: activeTab === 'beers' }"
-        >
-          <BeerIcon :size="18" /> Piva
-        </button>
-        <button 
-          @click="activeTab = 'breweries'" 
-          :class="{ active: activeTab === 'breweries' }"
-        >
-          <FactoryIcon :size="18" /> Pivovary
-        </button>
-        <button 
-          @click="activeTab = 'locations'" 
-          :class="{ active: activeTab === 'locations' }"
-        >
-          <MapPinIcon :size="18" /> Podniky
-        </button>
-      </div>
+      <BaseSwitch v-model="activeTab" :options="tabOptions" />
     </div>
 
     <BaseLoader :show="catalogStore.isLoading" />
@@ -89,9 +70,16 @@ import BreweryCard from '../components/BreweryCard.vue'
 import LocationCard from '../components/LocationCard.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
+import BaseSwitch from '../components/BaseSwitch.vue'
 
 const catalogStore = useCatalogStore()
 const activeTab = ref('beers')
+
+const tabOptions = [
+  { value: 'beers', label: 'Piva', icon: BeerIcon },
+  { value: 'breweries', label: 'Pivovary', icon: FactoryIcon },
+  { value: 'locations', label: 'Podniky', icon: MapPinIcon }
+]
 
 const wishlistBeers = computed(() => catalogStore.beers.filter(b => Number(b.is_wishlist) === 1))
 const wishlistBreweries = computed(() => catalogStore.breweries.filter(b => Number(b.is_wishlist) === 1))
@@ -129,46 +117,9 @@ onMounted(async () => {
   flex-direction: column; 
 }
 
-/* KONZISTENTNÍ PŘEPÍNAČ DLE OBRÁZKU A STANDARDŮ APLIKACE */
 .view-toggle-container {
   display: flex;
   margin-bottom: 2rem;
-}
-
-.view-toggle { 
-  display: inline-flex; 
-  background-color: var(--border); /* Reaguje na dark/light mode */
-  padding: 0.375rem; 
-  border-radius: 14px; 
-  gap: 0.25rem; 
-  transition: background-color 0.5s ease;
-}
-
-.view-toggle button { 
-  display: flex; 
-  align-items: center; 
-  gap: 0.5rem; 
-  padding: 0.6rem 1.25rem; 
-  border: none; 
-  background: transparent; 
-  cursor: pointer; 
-  border-radius: 10px; 
-  font-weight: 700; 
-  font-size: 0.9rem; 
-  color: var(--text-muted); /* Standardní utlumený text[cite: 1] */
-  transition: all 0.3s ease; 
-  box-shadow: none;
-}
-
-.view-toggle button:hover:not(.active) { 
-  color: var(--text-main); 
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.view-toggle button.active { 
-  background-color: var(--primary); /* Pivní žlutá z obrázku[cite: 1] */
-  color: #1e293b; /* Tmavý text na žlutém pozadí */
-  box-shadow: var(--shadow-sm);
 }
 
 .wishlist-content {
@@ -195,7 +146,5 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .items-grid { grid-template-columns: 1fr; }
-  .view-toggle { width: 100%; display: flex; }
-  .view-toggle button { flex: 1; justify-content: center; padding: 0.7rem 0.5rem; font-size: 0.8rem; }
 }
 </style>

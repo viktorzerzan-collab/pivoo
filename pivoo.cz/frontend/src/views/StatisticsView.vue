@@ -2,10 +2,8 @@
   <div class="statistics-page">
     <div class="view-header">
       <div class="header-actions">
-        <div class="scope-toggle">
-          <button :class="{ active: scope === 'me' }" @click="scope = 'me'">Moje</button>
-          <button :class="{ active: scope === 'global' }" @click="scope = 'global'">Globální</button>
-        </div>
+        
+        <BaseSwitch v-model="scope" :options="scopeOptions" />
 
         <div class="filter-wrapper">
           <BaseSelect v-model="period" :searchable="false">
@@ -163,14 +161,21 @@ import {
   CoinsIcon, ShapesIcon
 } from 'lucide-vue-next'
 import { apiFetch } from '../api'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
+import { useToastStore } from '../stores/toast'
 import BaseLoader from '../components/BaseLoader.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import BaseSwitch from '../components/BaseSwitch.vue'
 
-const toastStore = useToastStore() // NOVÉ: Inicializace storu
+const toastStore = useToastStore()
 const isLoading = ref(true)
 const period = ref('month')
 const scope = ref('me')
+
+const scopeOptions = [
+  { value: 'me', label: 'Moje' },
+  { value: 'global', label: 'Globální' }
+]
+
 const statsData = ref({
   beers: [], breweries: [], locations: [], days: [],
   collector: { unique_count: 0, total_count: 0 },
@@ -201,7 +206,6 @@ const fetchDetailedStats = async () => {
       statsData.value = res.data
     }
   } catch (error) {
-    // NOVÉ: Použití globálního toastu
     toastStore.showToast('Nepodařilo se načíst statistiky.', 'toast-error')
   } finally {
     isLoading.value = false
@@ -230,9 +234,6 @@ onMounted(() => fetchDetailedStats())
 }
 
 .header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
-.scope-toggle { display: flex; background: var(--bg-panel); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
-.scope-toggle button { padding: 0.5rem 1.5rem; border-radius: 7px; border: none; background: none; color: var(--text-muted); font-weight: 700; cursor: pointer; transition: all 0.2s; }
-.scope-toggle button.active { background: var(--primary); color: #1e293b; box-shadow: var(--shadow-sm); }
 .filter-wrapper { width: 220px; }
 
 .stats-grid-detailed { 
@@ -301,7 +302,6 @@ onMounted(() => fetchDetailedStats())
 
 @media (max-width: 800px) {
   .header-actions { flex-direction: column; align-items: stretch; }
-  .scope-toggle button { flex: 1; }
   .filter-wrapper { width: 100%; }
   
   .stats-grid-detailed { grid-template-columns: 1fr; }
