@@ -21,6 +21,11 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->id)) {
     try {
+        // PŘIDÁNO: Zjištění ID pivovaru PŘED smazáním piva
+        $stmtBrew = $db->prepare("SELECT brewery_id FROM beers WHERE id = ?");
+        $stmtBrew->execute([$data->id]);
+        $brew = $stmtBrew->fetch();
+
         // Nejprve smažeme záznamy o konzumaci tohoto piva
         $db->prepare("DELETE FROM consumptions WHERE beer_id = ?")->execute([$data->id]);
         
@@ -28,6 +33,17 @@ if (!empty($data->id)) {
         $stmt = $db->prepare($query);
         
         if($stmt->execute([$data->id])) {
+            
+            // PŘIDÁNO: Přepočet statistik pivovaru po smazání piva
+            if ($brew && $brew['brewery_id']) {
+                $brewId = $brew['brewery_id'];
+                try {
+                    $db->prepare("UPDATE breweries SET total_beers_in_catalog = (SELECT COUNT(id) FROM beers WHERE brewery_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(c.rating_beer, 0)), 1) FROM consumptions c JOIN beers b ON c.beer_id = b.id WHERE b.brewery_id = ?) WHERE id = ?")->execute([$brewId, $brewId, $brewId]);
+                } catch (PDOException $e) {
+                    error_log("Chyba při přepočtu pivovaru po smazání piva (delete_beer): " . $e->getMessage());
+                }
+            }
+
             echo json_encode(["status" => "success", "message" => "Pivo bylo odstraněno z katalogu."]);
         } else {
             http_response_code(500);

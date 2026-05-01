@@ -172,11 +172,12 @@ import BaseCheckbox from '../BaseCheckbox.vue'
 import GeoLocateButton from '../GeoLocateButton.vue'
 import { apiFetch } from '../../api'
 
+// PŘIDÁNO: Načtení katalogu přímo z modálu
+import { useCatalogStore } from '../../stores/catalog'
+const catalogStore = useCatalogStore()
+
 const props = defineProps({ 
   show: Boolean, 
-  breweries: Array,
-  beers: Array, 
-  locations: Array, 
   form: Object 
 })
 
@@ -198,7 +199,6 @@ const magicMessageType = ref('')
 const magicAction = ref('')
 const scannedAiData = ref(null)
 
-// Pomocná funkce pro vyčištění textu (odstraní diakritiku, mezery, převede na malá písmena)
 const normalizeStr = (str) => {
   if (!str) return '';
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -234,23 +234,21 @@ const processMagicScan = async (event) => {
       } else {
          const aiBeerNorm = normalizeStr(ai.beer_name);
          
-         // 1. Pokus: Hledáme pivo se stejným ID pivovaru
-         let matchingBeer = props.beers.find(b => {
+         // ZMĚNA: Hledání probíhá nad catalogStore.allBeers
+         let matchingBeer = catalogStore.allBeers.find(b => {
             const bNameNorm = normalizeStr(b.name);
             return b.brewery_id == ai.brewery_id &&
                    (bNameNorm === aiBeerNorm || bNameNorm.includes(aiBeerNorm) || aiBeerNorm.includes(bNameNorm));
          })
 
-         // 2. Záchranný pokus: AI se mohla splést v ID pivovaru. Hledáme čistě podle názvu v celé databázi.
          if (!matchingBeer && aiBeerNorm.length > 3) {
-            matchingBeer = props.beers.find(b => {
+            matchingBeer = catalogStore.allBeers.find(b => {
                const bNameNorm = normalizeStr(b.name);
                return bNameNorm === aiBeerNorm || bNameNorm.includes(aiBeerNorm) || aiBeerNorm.includes(bNameNorm);
             })
-            // Pokud jsme ho našli, vnutíme AI správné ID pivovaru z databáze
             if (matchingBeer) {
                ai.brewery_id = matchingBeer.brewery_id;
-               ai.brewery_name = props.breweries.find(br => br.id == matchingBeer.brewery_id)?.name || ai.brewery_name;
+               ai.brewery_name = catalogStore.allBreweries.find(br => br.id == matchingBeer.brewery_id)?.name || ai.brewery_name;
             }
          }
 
@@ -364,7 +362,7 @@ const autodetectLocation = () => {
       let nearestLoc = null
       let minDistance = Infinity
 
-      props.locations.forEach(loc => {
+      catalogStore.allLocations.forEach(loc => {
         if (loc.lat && loc.lng) {
           const dist = calculateDistance(lat, lng, loc.lat, loc.lng)
           if (dist < minDistance) {
@@ -395,17 +393,18 @@ const autodetectLocation = () => {
 
 const sortByFavorite = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0);
 
+// ZMĚNA: Přepojení na catalogStore.all* pole
 const sortedLocations = computed(() => {
-  return [...props.locations].sort(sortByFavorite);
+  return [...catalogStore.allLocations].sort(sortByFavorite);
 })
 
 const sortedBreweries = computed(() => {
-  return [...props.breweries].sort(sortByFavorite);
+  return [...catalogStore.allBreweries].sort(sortByFavorite);
 })
 
 const sortedBeers = computed(() => {
   if (!props.form.brewery_id) return []
-  const filtered = props.beers.filter(b => b.brewery_id == props.form.brewery_id)
+  const filtered = catalogStore.allBeers.filter(b => b.brewery_id == props.form.brewery_id)
   return [...filtered].sort(sortByFavorite)
 })
 
@@ -414,7 +413,7 @@ watch(() => props.form.brewery_id, () => {
 })
 
 const showCareRating = computed(() => {
-  const loc = props.locations.find(l => l.id == props.form.location_id)
+  const loc = catalogStore.allLocations.find(l => l.id == props.form.location_id)
   return loc ? loc.type === 'hospoda' : false
 })
 

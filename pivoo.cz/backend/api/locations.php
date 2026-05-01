@@ -13,6 +13,25 @@ $db = (new Database())->getConnection();
 
 if ($db) {
     try {
+        // PŘIDÁNO: Kompaktní režim pro plnění selectů ve formulářích
+        if (isset($_GET['compact']) && $_GET['compact'] == 1) {
+            $includeAll = isset($_GET['include_all']) && $_GET['include_all'] == 1;
+            $where = "loc.is_approved = 1";
+            if (!$includeAll) { 
+                $where .= " AND loc.type != 'jine'"; 
+            }
+            
+            $query = "SELECT loc.id, loc.name, loc.type, loc.city, IF(fav.id IS NOT NULL, 1, 0) as is_favorite 
+                      FROM locations loc 
+                      LEFT JOIN user_favorites fav ON loc.id = fav.entity_id AND fav.entity_type = 'location' AND fav.user_id = :uid 
+                      WHERE $where ORDER BY loc.name ASC";
+            $stmt = $db->prepare($query);
+            $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            echo json_encode(["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+            exit();
+        }
+
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 30;
         $offset = ($page - 1) * $limit;
@@ -22,7 +41,6 @@ if ($db) {
         $country = $_GET['country'] ?? '';
         $sort = $_GET['sort'] ?? 'name_asc';
         
-        // Pokud include_all není 1, budeme filtrovat pryč 'jine'
         $includeAll = isset($_GET['include_all']) && $_GET['include_all'] == 1;
 
         $whereParts = ["loc.is_approved = 1"];
@@ -53,7 +71,7 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(DISTINCT loc.id) as total FROM locations loc LEFT JOIN countries c ON loc.country_id = c.id $whereSql";
+        $countQuery = "SELECT COUNT(loc.id) as total FROM locations loc LEFT JOIN countries c ON loc.country_id = c.id $whereSql";
         $countParams = $params;
         unset($countParams[':uid']);
         $countStmt = $db->prepare($countQuery);
@@ -66,8 +84,8 @@ if ($db) {
             case 'name_desc': $orderBy .= ", loc.name DESC"; break;
             case 'city_asc': $orderBy .= ", loc.city ASC"; break;
             case 'city_desc': $orderBy .= ", loc.city DESC"; break;
-            case 'rating_desc': $orderBy .= ", avg_rating DESC"; break;
-            case 'rating_asc': $orderBy .= ", avg_rating ASC"; break;
+            case 'rating_desc': $orderBy .= ", loc.avg_rating DESC"; break;
+            case 'rating_asc': $orderBy .= ", loc.avg_rating ASC"; break;
             case 'newest': $orderBy .= ", loc.created_at DESC"; break;
             case 'oldest': $orderBy .= ", loc.created_at ASC"; break;
             case 'name_asc': 
@@ -75,17 +93,13 @@ if ($db) {
         }
 
         $query = "SELECT loc.*, c.name_cz as country, c.code as country_code,
-                         ROUND(AVG(NULLIF(cons.rating_beer, 0)), 1) as avg_rating, 
-                         COUNT(cons.id) as total_visits,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite
                   FROM locations loc
                   LEFT JOIN countries c ON loc.country_id = c.id
-                  LEFT JOIN consumptions cons ON loc.id = cons.location_id
                   LEFT JOIN user_favorites fav ON loc.id = fav.entity_id 
                        AND fav.entity_type = 'location' 
                        AND fav.user_id = :uid
                   $whereSql
-                  GROUP BY loc.id
                   ORDER BY $orderBy
                   LIMIT :limit OFFSET :offset";
                   

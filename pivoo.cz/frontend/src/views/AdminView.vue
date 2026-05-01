@@ -232,7 +232,10 @@
     </div>
 
     <DeleteConfirmModal :show="deleteModal.show" @close="deleteModal.show = false" @confirm="handleDelete" />
-    <AddBeerModal :show="modals.beer" :isEditing="isEditing" :breweries="breweries" :styles="styles" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
+    
+    <!-- ZMĚNA: AddBeerModal už nepotřebuje prop breweries a styles -->
+    <AddBeerModal :show="modals.beer" :isEditing="isEditing" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
+    
     <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :countries="countries" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
     <AddLocationModal :show="modals.location" :isEditing="isEditing" :countries="countries" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
     
@@ -412,11 +415,13 @@ const filteredCurrentItems = computed(() => {
   return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
 })
 
+// ZMĚNA: Sloučení podniků teď využívá catalogStore.allLocations místo samotných locations, 
+// abychom mohli sloučit s kterýmkoliv podnikem z databáze, nejen s prvními 30.
 const mergeTargetOptions = computed(() => {
   if (!mergeForm.value.source) return []
-  return locations.value
+  return catalogStore.allLocations
     .filter(l => l.id !== mergeForm.value.source.id)
-    .sort((a, b) => a.name.localeCompare(b.name, 'cs'))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
 })
 
 const totalPages = computed(() => {
@@ -718,34 +723,22 @@ const handleDelete = async () => {
   .mobile-only { display: block; }
   .combined-meta { display: flex !important; }
   .desktop-only { display: none !important; }
-
+  
   .admin-table thead { display: none; }
   .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
   
-  .admin-table tr { 
-    margin-bottom: 1.25rem; border: 1px solid var(--border); border-radius: 12px; 
-    padding: 1rem; background: var(--bg-panel); box-shadow: var(--shadow-sm);
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-  }
-  .admin-table tr:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
-
-  .admin-table td { border: none; padding: 0.4rem 0; display: flex; align-items: center; }
+  .admin-table tr { margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-app); padding: 1rem; }
+  .admin-table td { text-align: left; padding: 0.5rem 0; border: none; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .admin-table td::before { content: attr(data-label); font-weight: 700; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
   
-  .user-cell, .main-item-cell { width: 100%; align-items: flex-start; }
-  .user-info, .item-text { display: flex; flex-direction: column; gap: 0.1rem; width: 100%; }
-  .user-info strong, .item-text strong { font-size: 1.05rem; color: var(--text-main); }
-  .user-info small, .item-text small { color: var(--text-muted); font-size: 0.85rem; }
+  .td-content { flex: 1; min-width: 0; display: flex; justify-content: flex-end; }
   
-  .email-text { font-size: 0.9rem; color: var(--text-muted); padding-left: 52px; margin-bottom: 0.5rem; }
-
-  .admin-table td[data-label="Akce"] {
-    margin-top: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border);
-    justify-content: center;
-  }
-  .action-buttons { width: 100%; justify-content: space-around; }
-  .action-buttons button { flex: 1; max-width: 50px; }
-
-  .admin-table td::before { display: none; }
-  .admin-section-footer { flex-direction: column; gap: 1rem; align-items: center; }
+  .admin-table td[data-label="Uživatel"]::before,
+  .admin-table td[data-label="Název"]::before { display: none; }
+  .admin-table td[data-label="Uživatel"] .td-content,
+  .admin-table td[data-label="Název"] .td-content { justify-content: flex-start; }
+  
+  .action-buttons { width: 100%; justify-content: flex-start; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .action-buttons button { flex: 1; }
 }
 </style>

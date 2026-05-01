@@ -45,6 +45,11 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->id)) {
     try {
+        // PŘIDÁNO: Získání starých hodnot pro případ, že uživatel mění pivo nebo podnik
+        $stmtOld = $db->prepare("SELECT beer_id, location_id FROM consumptions WHERE id = ? AND user_id = ?");
+        $stmtOld->execute([$data->id, $user['user_id']]);
+        $oldCons = $stmtOld->fetch();
+
         // ÚPRAVA: Přidány sloupce currency a original_price do UPDATE dotazu
         $query = "UPDATE consumptions 
                   SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, currency = ?, original_price = ?, is_free = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ?, consumed_at = ? 
@@ -98,6 +103,29 @@ if (!empty($data->id)) {
             $is_free, $rating_beer, $rating_care,
             $note, $packaging, $consumed_at, $data->id, $user['user_id']
         ])) {
+            
+            // PŘIDÁNO: Přepočet denormalizovaných dat po úpravě zápisu
+            $beerIdsToRecalc = array_unique(array_filter([$oldCons ? $oldCons['beer_id'] : null, $beer_id]));
+            $locIdsToRecalc = array_unique(array_filter([$oldCons ? $oldCons['location_id'] : null, $location_id]));
+            
+            try {
+                foreach ($beerIdsToRecalc as $bid) {
+                    $db->prepare("UPDATE beers SET total_checkins = (SELECT COUNT(id) FROM consumptions WHERE beer_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE beer_id = ?) WHERE id = ?")->execute([$bid, $bid, $bid]);
+                    
+                    $stmtBrew = $db->prepare("SELECT brewery_id FROM beers WHERE id = ?");
+                    $stmtBrew->execute([$bid]);
+                    $brew = $stmtBrew->fetch();
+                    if ($brew && $brew['brewery_id']) {
+                        $db->prepare("UPDATE breweries SET avg_rating = (SELECT ROUND(AVG(NULLIF(c.rating_beer, 0)), 1) FROM consumptions c JOIN beers b ON c.beer_id = b.id WHERE b.brewery_id = ?) WHERE id = ?")->execute([$brew['brewery_id'], $brew['brewery_id']]);
+                    }
+                }
+                foreach ($locIdsToRecalc as $lid) {
+                    $db->prepare("UPDATE locations SET total_visits = (SELECT COUNT(id) FROM consumptions WHERE location_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE location_id = ?) WHERE id = ?")->execute([$lid, $lid, $lid]);
+                }
+            } catch (PDOException $e) {
+                error_log("Chyba při přepočtu statistik po updatu (update_checkin): " . $e->getMessage());
+            }
+
             // ZMĚNA: Vracíme vypočítané cenové údaje zpět na frontend
             echo json_encode([
                 "status" => "success", 

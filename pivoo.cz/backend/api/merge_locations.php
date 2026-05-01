@@ -47,6 +47,13 @@ if (!empty($data->source_id) && !empty($data->target_id)) {
         // Potvrzení transakce
         $db->commit();
 
+        // PŘIDÁNO: Přepočet statistik pro cílovou lokaci po přesunu záznamů
+        try {
+            $db->prepare("UPDATE locations SET total_visits = (SELECT COUNT(id) FROM consumptions WHERE location_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE location_id = ?) WHERE id = ?")->execute([$data->target_id, $data->target_id, $data->target_id]);
+        } catch (PDOException $e) {
+            error_log("Chyba při přepočtu (merge_locations): " . $e->getMessage());
+        }
+
         echo json_encode(["status" => "success", "message" => "Podniky byly úspěšně sloučeny. Záznamy byly přesunuty a duplicita byla smazána."]);
 
     } catch (Exception $e) {

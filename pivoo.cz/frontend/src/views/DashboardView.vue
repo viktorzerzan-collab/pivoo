@@ -33,9 +33,6 @@
 
     <CheckInModal 
       :show="isModalOpen" 
-      :breweries="breweries" 
-      :beers="beers" 
-      :locations="locations" 
       :form="form" 
       @close="isModalOpen = false" 
       @submit="submitCheckIn"
@@ -46,9 +43,6 @@
     
     <EditCheckInModal 
       :show="isEditModalOpen" 
-      :breweries="breweries" 
-      :beers="beers" 
-      :locations="locations" 
       :form="editForm" 
       @close="isEditModalOpen = false" 
       @submit="submitEdit" 
@@ -81,8 +75,6 @@
     <AddBeerModal 
       :show="isAddBeerModalOpen" 
       :isEditing="false" 
-      :breweries="breweries" 
-      :styles="styles" 
       :form="beerForm" 
       @close="isAddBeerModalOpen = false" 
       @submit="submitNewBeer" 
@@ -111,9 +103,9 @@ import AddBeerModal from '../components/modals/AddBeerModal.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
-const { beers, breweries, locations, stats, history, countries, styles, isLoading } = storeToRefs(catalogStore)
+// ZMĚNA: Přidáno vytažení all* kolekcí, aby bylo možné dohledat názvy i z jiných stran
+const { beers, breweries, locations, allBeers, allBreweries, allLocations, stats, history, countries, styles, isLoading } = storeToRefs(catalogStore)
 
-// ÚPRAVA: Odstraněna nesmyslná podmínka s getHours() === 0, která o půlnoci vracela leden.
 const currentMonthName = computed(() => {
   const months = ['lednu', 'únoru', 'březnu', 'dubnu', 'květnu', 'červnu', 'červenci', 'srpnu', 'září', 'říjnu', 'listopadu', 'prosinci']
   return months[new Date().getMonth()]
@@ -150,7 +142,6 @@ const handleMagicAddBrewery = (aiData) => {
   isModalOpen.value = false
   pendingAiData.value = aiData
   
-  // ZMĚNA: Mapování kompletních metadat z AI do formuláře pivovaru
   breweryForm.value = { 
     name: aiData.brewery_name, 
     city: aiData.brewery_metadata?.city || '', 
@@ -278,7 +269,8 @@ const submitNewLocation = async () => {
 
 const openEditModal = (record) => {
   selectedEditRecordId.value = record.id
-  const currentBeer = beers.value.find(b => b.id == record.beer_id)
+  // ZMĚNA: Přiřazení a hledání pivovaru využívá allBeers
+  const currentBeer = allBeers.value.find(b => b.id == record.beer_id)
   const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''
   editForm.value = { ...record, consumed_at: record.consumed_at || '', brewery_id: Number(prefillBreweryId), beer_id: Number(record.beer_id), location_id: Number(record.location_id), quantity: Number(record.quantity), is_free: !!Number(record.is_free), currency: record.currency || 'CZK', original_price: record.original_price || record.price }
   isEditModalOpen.value = true
@@ -290,9 +282,10 @@ const submitCheckIn = async () => {
     if (res.status === 'success') { 
       isModalOpen.value = false
       
-      const beer = beers.value.find(b => b.id == form.value.beer_id)
-      const brewery = breweries.value.find(b => b.id == form.value.brewery_id)
-      const loc = locations.value.find(l => l.id == form.value.location_id)
+      // ZMĚNA: Dohledání textových názvů používá kompletní pole "all*", takže najde cokoliv
+      const beer = allBeers.value.find(b => b.id == form.value.beer_id)
+      const brewery = allBreweries.value.find(b => b.id == form.value.brewery_id)
+      const loc = allLocations.value.find(l => l.id == form.value.location_id)
       
       const newCheckin = {
          id: res.id,
@@ -326,9 +319,10 @@ const submitEdit = async () => {
     if (res.status === 'success') { 
        isEditModalOpen.value = false
        
-       const beer = beers.value.find(b => b.id == editForm.value.beer_id)
-       const brewery = breweries.value.find(b => b.id == editForm.value.brewery_id)
-       const loc = locations.value.find(l => l.id == editForm.value.location_id)
+       // ZMĚNA: Dohledání textových názvů používá kompletní pole "all*", takže najde cokoliv
+       const beer = allBeers.value.find(b => b.id == editForm.value.beer_id)
+       const brewery = allBreweries.value.find(b => b.id == editForm.value.brewery_id)
+       const loc = allLocations.value.find(l => l.id == editForm.value.location_id)
        
        catalogStore.updateCheckinLocally({
            id: selectedEditRecordId.value,

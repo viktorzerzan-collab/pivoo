@@ -111,6 +111,26 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
             $consumed_at
         ])) {
             $new_id = $db->lastInsertId();
+
+            // PŘIDÁNO: Přepočet denormalizovaných dat po novém zápisu
+            try {
+                // Přepočet piva
+                $db->prepare("UPDATE beers SET total_checkins = (SELECT COUNT(id) FROM consumptions WHERE beer_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE beer_id = ?) WHERE id = ?")->execute([$data->beer_id, $data->beer_id, $data->beer_id]);
+                
+                // Přepočet pivovaru
+                $stmtBrew = $db->prepare("SELECT brewery_id FROM beers WHERE id = ?");
+                $stmtBrew->execute([$data->beer_id]);
+                $brew = $stmtBrew->fetch();
+                if ($brew && $brew['brewery_id']) {
+                    $db->prepare("UPDATE breweries SET avg_rating = (SELECT ROUND(AVG(NULLIF(c.rating_beer, 0)), 1) FROM consumptions c JOIN beers b ON c.beer_id = b.id WHERE b.brewery_id = ?) WHERE id = ?")->execute([$brew['brewery_id'], $brew['brewery_id']]);
+                }
+                
+                // Přepočet lokace
+                $db->prepare("UPDATE locations SET total_visits = (SELECT COUNT(id) FROM consumptions WHERE location_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE location_id = ?) WHERE id = ?")->execute([$data->location_id, $data->location_id, $data->location_id]);
+            } catch (PDOException $e) {
+                error_log("Chyba při přepočtu statistik (checkin): " . $e->getMessage());
+            }
+
             // ZMĚNA: Vracíme vypočítané cenové údaje zpět na frontend
             echo json_encode([
                 "status" => "success", 

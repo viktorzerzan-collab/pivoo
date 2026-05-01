@@ -5,10 +5,13 @@ import { apiFetch } from '../api'
 export const useCatalogStore = defineStore('catalog', {
   state: () => ({
     beers: [],
+    allBeers: [], // PŘIDÁNO: Kompaktní seznam pro selecty
     beersPagination: null,
     breweries: [],
+    allBreweries: [], // PŘIDÁNO: Kompaktní seznam pro selecty
     breweriesPagination: null,
     locations: [],
+    allLocations: [], // PŘIDÁNO: Kompaktní seznam pro selecty
     locationsPagination: null,
     styles: [],      
     countries: [],   
@@ -19,7 +22,6 @@ export const useCatalogStore = defineStore('catalog', {
     error: null,
   }),
   actions: {
-    // Načtení základních dat (ponechán pouze parametr 'silent' pro skryté načtení u stolu v hospodě)
     async fetchAllData(silent = false) {
       if (this.isLoading && !silent) return
       
@@ -28,19 +30,23 @@ export const useCatalogStore = defineStore('catalog', {
       
       try {
         const results = await Promise.allSettled([
-          apiFetch('/beers.php?limit=2000'),
-          apiFetch('/breweries.php?limit=2000'),   
-          apiFetch('/locations.php?limit=2000&include_all=1'),   
+          apiFetch('/beers.php'),
+          apiFetch('/breweries.php'),   
+          apiFetch('/locations.php?include_all=1'),   
           apiFetch('/styles.php'),      
           apiFetch('/countries.php'),   
-          // ÚPRAVA: Přidán parametr period=month pro widget na dashboardu
           apiFetch('/stats.php?period=month'),
-          apiFetch('/history.php')
+          apiFetch('/history.php'),
+          // PŘIDÁNO: Paralelní stažení odlehčených (compact) dat pro formuláře
+          apiFetch('/beers.php?compact=1'),
+          apiFetch('/breweries.php?compact=1'),
+          apiFetch('/locations.php?compact=1&include_all=1')
         ])
 
         const [
           beersRes, breweriesRes, locationsRes, 
-          stylesRes, countriesRes, statsRes, historyRes
+          stylesRes, countriesRes, statsRes, historyRes,
+          allBeersRes, allBreweriesRes, allLocationsRes
         ] = results
 
         if (beersRes.status === 'fulfilled' && beersRes.value.status === 'success') this.beers = beersRes.value.data
@@ -51,6 +57,11 @@ export const useCatalogStore = defineStore('catalog', {
         if (statsRes.status === 'fulfilled' && statsRes.value.status === 'success') this.stats = statsRes.value.data
         if (historyRes.status === 'fulfilled' && historyRes.value.status === 'success') this.history = historyRes.value.data
 
+        // PŘIDÁNO: Uložení kompaktních dat do storu
+        if (allBeersRes.status === 'fulfilled' && allBeersRes.value.status === 'success') this.allBeers = allBeersRes.value.data
+        if (allBreweriesRes.status === 'fulfilled' && allBreweriesRes.value.status === 'success') this.allBreweries = allBreweriesRes.value.data
+        if (allLocationsRes.status === 'fulfilled' && allLocationsRes.value.status === 'success') this.allLocations = allLocationsRes.value.data
+
       } catch (err) {
         if (!silent) this.error = 'Došlo ke kritické chybě při načítání dat.'
         console.error('Fetch error:', err)
@@ -59,18 +70,20 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // Lokální aktualizace katalogů
+    // PŘIDÁNO: Uložení i do all* polí pro okamžitou viditelnost nově přidaných položek v menu
     addBeerLocally(beer) {
       this.beers.unshift(beer)
+      this.allBeers.unshift({ id: beer.id, name: beer.name, brewery_id: beer.brewery_id, is_favorite: beer.is_favorite || 0 })
     },
     addBreweryLocally(brewery) {
       this.breweries.unshift(brewery)
+      this.allBreweries.unshift({ id: brewery.id, name: brewery.name, is_favorite: brewery.is_favorite || 0 })
     },
     addLocationLocally(location) {
       this.locations.unshift(location)
+      this.allLocations.unshift({ id: location.id, name: location.name, type: location.type, city: location.city, is_favorite: location.is_favorite || 0 })
     },
     
-    // Lokální aktualizace historie a statistik
     addCheckinLocally(record) {
       this.history.unshift(record)
       if (this.history.length > 12) this.history.pop()
@@ -93,7 +106,6 @@ export const useCatalogStore = defineStore('catalog', {
       this.history = this.history.filter(r => r.id !== id)
     },
 
-    // Načítání piv s podporou filtrů a stránkování
     async fetchBeers(params = {}, append = false) {
       this.isLoading = !append
       try {
@@ -112,7 +124,6 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // Načítání pivovarů s podporou filtrů a stránkování
     async fetchBreweries(params = {}, append = false) {
       this.isLoading = !append
       try {
@@ -131,7 +142,6 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // Načítání lokací s podporou filtrů a stránkování
     async fetchLocations(params = {}, append = false) {
       this.isLoading = !append
       try {
@@ -150,7 +160,6 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // Metoda pro přepínání oblíbených položek
     async toggleFavorite(entityId, entityType) {
       try {
         const res = await apiFetch('/toggle_favorite.php', {
@@ -163,12 +172,22 @@ export const useCatalogStore = defineStore('catalog', {
         
         if (res.status === 'success') {
           const listMap = { 'beer': 'beers', 'brewery': 'breweries', 'location': 'locations' }
+          // PŘIDÁNO: Mapování pro aktualizaci hvězdičky i v select seznamech
+          const allListMap = { 'beer': 'allBeers', 'brewery': 'allBreweries', 'location': 'allLocations' }
+          
           const listName = listMap[entityType]
+          const allListName = allListMap[entityType]
           
           const item = this[listName].find(i => i.id == entityId)
           if (item) {
             item.is_favorite = res.is_favorite ? 1 : 0
           }
+
+          const allItem = this[allListName].find(i => i.id == entityId)
+          if (allItem) {
+            allItem.is_favorite = res.is_favorite ? 1 : 0
+          }
+
           return true
         }
       } catch (error) {

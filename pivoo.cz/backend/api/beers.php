@@ -13,6 +13,19 @@ $db = (new Database())->getConnection();
 
 if ($db) {
     try {
+        // PŘIDÁNO: Kompaktní režim pro plnění selectů ve formulářích
+        if (isset($_GET['compact']) && $_GET['compact'] == 1) {
+            $query = "SELECT b.id, b.name, b.brewery_id, IF(fav.id IS NOT NULL, 1, 0) as is_favorite 
+                      FROM beers b 
+                      LEFT JOIN user_favorites fav ON b.id = fav.entity_id AND fav.entity_type = 'beer' AND fav.user_id = :uid 
+                      WHERE b.is_approved = 1 ORDER BY b.name ASC";
+            $stmt = $db->prepare($query);
+            $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            echo json_encode(["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+            exit();
+        }
+
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 12;
         $offset = ($page - 1) * $limit;
@@ -75,6 +88,7 @@ if ($db) {
         $totalItems = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         $totalPages = ceil($totalItems / $limit);
 
+        // ZMĚNA: Úprava třídění pro avg_rating tak, aby brala přímo b.avg_rating
         $orderBy = "is_favorite DESC"; 
         switch ($sort) {
             case 'name_desc': $orderBy .= ", b.name DESC"; break;
@@ -82,8 +96,8 @@ if ($db) {
             case 'brewery_desc': $orderBy .= ", br.name DESC"; break;
             case 'style_asc': $orderBy .= ", bs.name ASC"; break;
             case 'style_desc': $orderBy .= ", bs.name DESC"; break;
-            case 'rating_desc': $orderBy .= ", avg_rating DESC"; break;
-            case 'rating_asc': $orderBy .= ", avg_rating ASC"; break;
+            case 'rating_desc': $orderBy .= ", b.avg_rating DESC"; break;
+            case 'rating_asc': $orderBy .= ", b.avg_rating ASC"; break;
             case 'abv_desc': $orderBy .= ", b.abv DESC"; break;
             case 'abv_asc': $orderBy .= ", b.abv ASC"; break;
             case 'epm_desc': $orderBy .= ", b.epm DESC"; break;
@@ -96,20 +110,17 @@ if ($db) {
             default: $orderBy .= ", b.name ASC"; break;
         }
 
+        // ZMĚNA: Odstranění LEFT JOIN na consumptions a GROUP BY
         $query = "SELECT b.*, br.name as brewery_name, br.lat as brewery_lat, br.lng as brewery_lng, c.name_cz as brewery_country, c.code as brewery_country_code, bs.name as style,
-                         ROUND(AVG(NULLIF(cons.rating_beer, 0)), 1) as avg_rating, 
-                         COUNT(cons.id) as total_checkins,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite
                   FROM beers b
                   LEFT JOIN breweries br ON b.brewery_id = br.id
                   LEFT JOIN countries c ON br.country_id = c.id
                   LEFT JOIN beer_styles bs ON b.style_id = bs.id
-                  LEFT JOIN consumptions cons ON b.id = cons.beer_id
                   LEFT JOIN user_favorites fav ON b.id = fav.entity_id 
                        AND fav.entity_type = 'beer' 
                        AND fav.user_id = :uid
                   $whereSql
-                  GROUP BY b.id
                   ORDER BY $orderBy
                   LIMIT :limit OFFSET :offset";
                   

@@ -13,6 +13,19 @@ $db = (new Database())->getConnection();
 
 if ($db) {
     try {
+        // PŘIDÁNO: Kompaktní režim pro plnění selectů ve formulářích
+        if (isset($_GET['compact']) && $_GET['compact'] == 1) {
+            $query = "SELECT br.id, br.name, IF(fav.id IS NOT NULL, 1, 0) as is_favorite 
+                      FROM breweries br 
+                      LEFT JOIN user_favorites fav ON br.id = fav.entity_id AND fav.entity_type = 'brewery' AND fav.user_id = :uid 
+                      WHERE br.is_approved = 1 ORDER BY br.name ASC";
+            $stmt = $db->prepare($query);
+            $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            echo json_encode(["status" => "success", "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+            exit();
+        }
+
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 30;
         $offset = ($page - 1) * $limit;
@@ -47,7 +60,7 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(DISTINCT br.id) as total FROM breweries br LEFT JOIN countries c ON br.country_id = c.id $whereSql";
+        $countQuery = "SELECT COUNT(br.id) as total FROM breweries br LEFT JOIN countries c ON br.country_id = c.id $whereSql";
         $countParams = $params;
         unset($countParams[':uid']);
         $countStmt = $db->prepare($countQuery);
@@ -60,8 +73,8 @@ if ($db) {
             case 'name_desc': $orderBy .= ", br.name DESC"; break;
             case 'city_asc': $orderBy .= ", br.city ASC"; break;
             case 'city_desc': $orderBy .= ", br.city DESC"; break;
-            case 'rating_desc': $orderBy .= ", avg_rating DESC"; break;
-            case 'rating_asc': $orderBy .= ", avg_rating ASC"; break;
+            case 'rating_desc': $orderBy .= ", br.avg_rating DESC"; break;
+            case 'rating_asc': $orderBy .= ", br.avg_rating ASC"; break;
             case 'newest': $orderBy .= ", br.created_at DESC"; break;
             case 'oldest': $orderBy .= ", br.created_at ASC"; break;
             case 'name_asc': 
@@ -69,18 +82,13 @@ if ($db) {
         }
 
         $query = "SELECT br.*, c.name_cz as country, c.code as country_code,
-                         ROUND(AVG(NULLIF(cons.rating_beer, 0)), 1) as avg_rating, 
-                         COUNT(DISTINCT b.id) as total_beers_in_catalog,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite
                   FROM breweries br
                   LEFT JOIN countries c ON br.country_id = c.id
-                  LEFT JOIN beers b ON br.id = b.brewery_id
-                  LEFT JOIN consumptions cons ON b.id = cons.beer_id
                   LEFT JOIN user_favorites fav ON br.id = fav.entity_id 
                        AND fav.entity_type = 'brewery' 
                        AND fav.user_id = :uid
                   $whereSql
-                  GROUP BY br.id
                   ORDER BY $orderBy
                   LIMIT :limit OFFSET :offset";
                   

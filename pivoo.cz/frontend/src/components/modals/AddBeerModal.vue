@@ -19,14 +19,16 @@
           <BaseInput v-model="form.name" label="Název piva *" required />
           
           <div class="form-row">
-            <BaseSelect v-model="form.brewery_id" label="Pivovar *" required class="half">
+            <!-- ZMĚNA: Napojení na catalogStore.allBreweries a přidání searchable -->
+            <BaseSelect v-model="form.brewery_id" label="Pivovar *" required class="half" searchable>
               <option disabled value="">-- Vyber pivovar --</option>
-              <option v-for="brewery in breweries" :key="brewery.id" :value="brewery.id">{{ brewery.name }}</option>
+              <option v-for="brewery in catalogStore.allBreweries" :key="brewery.id" :value="brewery.id">{{ brewery.name }}</option>
             </BaseSelect>
 
-            <BaseSelect v-model="form.style_id" label="Styl *" required class="half">
+            <!-- ZMĚNA: Napojení na catalogStore.styles -->
+            <BaseSelect v-model="form.style_id" label="Styl *" required class="half" searchable>
               <option disabled value="">-- Vyber styl --</option>
-              <option v-for="style in styles" :key="style.id" :value="style.id">{{ style.name }}</option>
+              <option v-for="style in catalogStore.styles" :key="style.id" :value="style.id">{{ style.name }}</option>
             </BaseSelect>
           </div>
         </div>
@@ -81,18 +83,19 @@
 </template>
 
 <script setup>
-// PŘIDÁNO: SparklesIcon pro magický banner
 import { BeerIcon, SparklesIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
 
+// PŘIDÁNO: Načtení katalogu přímo z modálu
+import { useCatalogStore } from '../../stores/catalog'
+const catalogStore = useCatalogStore()
+
 defineProps({
   show: Boolean,
   isEditing: Boolean,
-  breweries: Array,
-  styles: Array,
   form: Object
 })
 defineEmits(['close', 'submit'])
@@ -115,7 +118,6 @@ defineEmits(['close', 'submit'])
 .custom-checkbox input:checked + .checkbox-box { background-color: var(--primary); border-color: var(--primary); }
 .custom-checkbox input:checked + .checkbox-box::after { content: ""; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px; border: solid #1e293b; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
 
-/* PŘIDÁNO: Styly pro magický banner */
 .magic-banner {
   display: flex;
   align-items: center;

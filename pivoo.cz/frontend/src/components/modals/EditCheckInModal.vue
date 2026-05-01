@@ -10,14 +10,14 @@
 
         <BaseSelect v-model="form.location_id" label="Kde to bylo?" searchable required>
           <option disabled value="">-- Vyber lokaci --</option>
-          <option v-for="loc in locations" :key="loc.id" :value="loc.id">
+          <option v-for="loc in catalogStore.allLocations" :key="loc.id" :value="loc.id">
             {{ loc.name }}
           </option>
         </BaseSelect>
 
         <BaseSelect v-model="form.brewery_id" label="Pivovar" searchable required>
           <option disabled value="">-- Vyber pivovar --</option>
-          <option v-for="brewery in breweries" :key="brewery.id" :value="brewery.id">
+          <option v-for="brewery in catalogStore.allBreweries" :key="brewery.id" :value="brewery.id">
             {{ brewery.name }}
           </option>
         </BaseSelect>
@@ -138,11 +138,12 @@ import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
 import BaseCheckbox from '../BaseCheckbox.vue'
 
+// PŘIDÁNO: Načtení katalogu přímo z modálu
+import { useCatalogStore } from '../../stores/catalog'
+const catalogStore = useCatalogStore()
+
 const props = defineProps({ 
   show: Boolean, 
-  breweries: Array,
-  beers: Array, 
-  locations: Array, 
   form: Object 
 })
 defineEmits(['close', 'submit'])
@@ -184,24 +185,23 @@ watch(() => props.show, (isOpen) => {
       customVolume.value = currentVol
     }
 
-    // ZMĚNA: Pokud měna u starého záznamu chybí, nastavíme CZK
     if (!props.form.currency) {
       props.form.currency = 'CZK'
     }
-    // Pokud original_price chybí (starý záznam), naplníme ji stávající cenou
     if (!props.form.original_price && props.form.price) {
       props.form.original_price = props.form.price
     }
   }
 })
 
+// ZMĚNA: Přepojení na catalogStore.allBeers
 const filteredBeers = computed(() => {
   if (!props.form.brewery_id) return []
-  return props.beers.filter(b => b.brewery_id == props.form.brewery_id)
+  return catalogStore.allBeers.filter(b => b.brewery_id == props.form.brewery_id)
 })
 
 const showCareRating = computed(() => {
-  const loc = props.locations.find(l => l.id == props.form.location_id)
+  const loc = catalogStore.allLocations.find(l => l.id == props.form.location_id)
   return loc ? loc.type === 'hospoda' : false
 })
 
