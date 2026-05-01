@@ -37,6 +37,9 @@
               <router-link to="/profile" class="dropdown-item">
                 <UserIcon :size="16" /> Můj profil
               </router-link>
+              <router-link to="/wishlist" class="dropdown-item">
+                <BookmarkIcon :size="16" /> Můj wishlist
+              </router-link>
               <router-link v-if="isAdmin" to="/admin" class="dropdown-item">
                 <ShieldAlertIcon :size="16" /> Administrace
               </router-link>
@@ -85,11 +88,10 @@ import { storeToRefs } from 'pinia'
 import { 
   BeerIcon, LayoutDashboardIcon, FactoryIcon, MapPinIcon,
   ShieldAlertIcon, LogOutIcon, UserIcon, ChevronDownIcon,
-  BarChart3Icon
+  BarChart3Icon, BookmarkIcon
 } from 'lucide-vue-next'
 
 import { useAuthStore } from '../stores/auth'
-// IMPORT NOVÉ KOMPONENTY
 import ThemeToggleButton from './ThemeToggleButton.vue'
 
 defineProps({
@@ -137,8 +139,6 @@ const handleLogout = () => {
 
 .logo { display: flex; align-items: center; font-size: 1.5rem; font-weight: 800; color: #fff; text-decoration: none; }
 .logo svg { filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3)); }
-
-/* .theme-toggle-btn styly byly odstraněny, nyní jsou v ThemeToggleButton.vue */
 
 .main-nav { display: flex; gap: 0.5rem; }
 .nav-link { display: flex; align-items: center; gap: 0.4rem; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s ease; }

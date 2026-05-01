@@ -11,10 +11,16 @@
         <div class="text-content">
           <div class="title-row">
             <h3 class="card-title">{{ brewery.name }}</h3>
-            <FavoriteButton 
-              :is-favorite="brewery.is_favorite" 
-              @toggle="toggleFav" 
-            />
+            <div class="action-wrap">
+              <FavoriteButton 
+                :is-favorite="brewery.is_favorite" 
+                @toggle="toggleFav" 
+              />
+              <WishlistButton 
+                :is-wishlist="brewery.is_wishlist" 
+                @toggle="toggleWishlist" 
+              />
+            </div>
           </div>
           
           <p class="card-subtitle">
@@ -59,6 +65,7 @@
 import { FactoryIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import FavoriteButton from './FavoriteButton.vue'
+import WishlistButton from './WishlistButton.vue'
 import CountryFlag from './CountryFlag.vue'
 import DistanceDisplay from './DistanceDisplay.vue'
 import { useCatalogStore } from '../stores/catalog'
@@ -71,6 +78,7 @@ const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
 
 const toggleFav = () => { catalogStore.toggleFavorite(props.brewery.id, 'brewery') }
+const toggleWishlist = () => { catalogStore.toggleWishlist(props.brewery.id, 'brewery') }
 
 const formatLocation = (brewery) => {
   let loc = brewery.city || '';
@@ -117,6 +125,7 @@ const formatLocation = (brewery) => {
 
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.action-wrap { display: flex; align-items: center; gap: 0.25rem; }
 .card-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.1rem; }
 .meta-item { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

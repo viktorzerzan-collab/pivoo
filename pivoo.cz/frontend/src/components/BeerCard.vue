@@ -13,6 +13,10 @@
                 :is-favorite="beer.is_favorite" 
                 @toggle="toggleFav" 
               />
+              <WishlistButton 
+                :is-wishlist="beer.is_wishlist" 
+                @toggle="toggleWishlist" 
+              />
             </div>
           </div>
           
@@ -84,6 +88,7 @@ import {
 } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import FavoriteButton from './FavoriteButton.vue'
+import WishlistButton from './WishlistButton.vue'
 import CountryFlag from './CountryFlag.vue'
 import BaseTooltip from './BaseTooltip.vue'
 import { useCatalogStore } from '../stores/catalog'
@@ -93,7 +98,9 @@ const props = defineProps({ beer: Object })
 defineEmits(['showDetail'])
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
+
 const toggleFav = () => { catalogStore.toggleFavorite(props.beer.id, 'beer') }
+const toggleWishlist = () => { catalogStore.toggleWishlist(props.beer.id, 'beer') }
 </script>
 
 <style scoped>
@@ -131,6 +138,7 @@ const toggleFav = () => { catalogStore.toggleFavorite(props.beer.id, 'beer') }
 
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .card-title { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.action-wrap { display: flex; align-items: center; gap: 0.25rem; }
 
 /* OPRAVA: Pojistka pro dlouhé názvy pivovaru */
 .brewery-line { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; min-width: 0; }

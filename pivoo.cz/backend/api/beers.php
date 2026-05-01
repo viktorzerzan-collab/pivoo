@@ -13,11 +13,14 @@ $db = (new Database())->getConnection();
 
 if ($db) {
     try {
-        // PŘIDÁNO: Kompaktní režim pro plnění selectů ve formulářích
+        // Kompaktní režim pro plnění selectů ve formulářích
         if (isset($_GET['compact']) && $_GET['compact'] == 1) {
-            $query = "SELECT b.id, b.name, b.brewery_id, IF(fav.id IS NOT NULL, 1, 0) as is_favorite 
+            $query = "SELECT b.id, b.name, b.brewery_id, 
+                             IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
+                             IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                       FROM beers b 
                       LEFT JOIN user_favorites fav ON b.id = fav.entity_id AND fav.entity_type = 'beer' AND fav.user_id = :uid 
+                      LEFT JOIN user_wishlists wl ON b.id = wl.entity_id AND wl.entity_type = 'beer' AND wl.user_id = :uid
                       WHERE b.is_approved = 1 ORDER BY b.name ASC";
             $stmt = $db->prepare($query);
             $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
@@ -88,7 +91,6 @@ if ($db) {
         $totalItems = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
         $totalPages = ceil($totalItems / $limit);
 
-        // ZMĚNA: Úprava třídění pro avg_rating tak, aby brala přímo b.avg_rating
         $orderBy = "is_favorite DESC"; 
         switch ($sort) {
             case 'name_desc': $orderBy .= ", b.name DESC"; break;
@@ -110,9 +112,9 @@ if ($db) {
             default: $orderBy .= ", b.name ASC"; break;
         }
 
-        // ZMĚNA: Odstranění LEFT JOIN na consumptions a GROUP BY
         $query = "SELECT b.*, br.name as brewery_name, br.lat as brewery_lat, br.lng as brewery_lng, c.name_cz as brewery_country, c.code as brewery_country_code, bs.name as style,
-                         IF(fav.id IS NOT NULL, 1, 0) as is_favorite
+                         IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
+                         IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                   FROM beers b
                   LEFT JOIN breweries br ON b.brewery_id = br.id
                   LEFT JOIN countries c ON br.country_id = c.id
@@ -120,6 +122,9 @@ if ($db) {
                   LEFT JOIN user_favorites fav ON b.id = fav.entity_id 
                        AND fav.entity_type = 'beer' 
                        AND fav.user_id = :uid
+                  LEFT JOIN user_wishlists wl ON b.id = wl.entity_id 
+                       AND wl.entity_type = 'beer' 
+                       AND wl.user_id = :uid
                   $whereSql
                   ORDER BY $orderBy
                   LIMIT :limit OFFSET :offset";

@@ -20,7 +20,6 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
       meta: { requiresAuth: true }
     },
-    // PŘIDÁNO: Nová cesta pro statistiky
     {
       path: '/statistics',
       name: 'statistics',
@@ -51,6 +50,13 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true }
     },
+    // PŘIDÁNO: Nová cesta pro Wishlist
+    {
+      path: '/wishlist', 
+      name: 'wishlist',
+      component: () => import('../views/WishlistView.vue'),
+      meta: { requiresAuth: true }
+    },
     {
       path: '/admin',
       name: 'admin',
@@ -63,11 +69,12 @@ const router = createRouter({
 router.beforeEach((to, from) => {
   const titleMap = {
     'dashboard': 'Nástěnka',
-    'statistics': 'Moje statistiky', // Přidáno do mapy titulků
+    'statistics': 'Moje statistiky',
     'beers': 'Katalog piv',
     'breweries': 'Pivovary',
     'locations': 'Podniky',
     'profile': 'Můj profil',
+    'wishlist': 'Můj Wishlist', // Přidáno do mapy titulků
     'admin': 'Administrace',
     'login': 'Přihlášení',
     'register': 'Registrace'

@@ -112,7 +112,7 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
         ])) {
             $new_id = $db->lastInsertId();
 
-            // PŘIDÁNO: Přepočet denormalizovaných dat po novém zápisu
+            // PŘIDÁNO: Přepočet denormalizovaných dat po novém zápisu a promazání wishlistu
             try {
                 // Přepočet piva
                 $db->prepare("UPDATE beers SET total_checkins = (SELECT COUNT(id) FROM consumptions WHERE beer_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE beer_id = ?) WHERE id = ?")->execute([$data->beer_id, $data->beer_id, $data->beer_id]);
@@ -127,8 +127,17 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
                 
                 // Přepočet lokace
                 $db->prepare("UPDATE locations SET total_visits = (SELECT COUNT(id) FROM consumptions WHERE location_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE location_id = ?) WHERE id = ?")->execute([$data->location_id, $data->location_id, $data->location_id]);
+
+                // NOVÉ: Automatické odstranění z wishlistu
+                $db->prepare("DELETE FROM user_wishlists WHERE user_id = ? AND entity_id = ? AND entity_type = 'beer'")->execute([$user['user_id'], $data->beer_id]);
+                $db->prepare("DELETE FROM user_wishlists WHERE user_id = ? AND entity_id = ? AND entity_type = 'location'")->execute([$user['user_id'], $data->location_id]);
+                
+                if ($brew && $brew['brewery_id']) {
+                    $db->prepare("DELETE FROM user_wishlists WHERE user_id = ? AND entity_id = ? AND entity_type = 'brewery'")->execute([$user['user_id'], $brew['brewery_id']]);
+                }
+                
             } catch (PDOException $e) {
-                error_log("Chyba při přepočtu statistik (checkin): " . $e->getMessage());
+                error_log("Chyba při přepočtu statistik nebo úpravě wishlistu (checkin): " . $e->getMessage());
             }
 
             // ZMĚNA: Vracíme vypočítané cenové údaje zpět na frontend

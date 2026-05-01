@@ -13,7 +13,7 @@ $db = (new Database())->getConnection();
 
 if ($db) {
     try {
-        // PŘIDÁNO: Kompaktní režim pro plnění selectů ve formulářích
+        // Kompaktní režim pro plnění selectů ve formulářích
         if (isset($_GET['compact']) && $_GET['compact'] == 1) {
             $includeAll = isset($_GET['include_all']) && $_GET['include_all'] == 1;
             $where = "loc.is_approved = 1";
@@ -21,9 +21,12 @@ if ($db) {
                 $where .= " AND loc.type != 'jine'"; 
             }
             
-            $query = "SELECT loc.id, loc.name, loc.type, loc.city, IF(fav.id IS NOT NULL, 1, 0) as is_favorite 
+            $query = "SELECT loc.id, loc.name, loc.type, loc.city, 
+                             IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
+                             IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                       FROM locations loc 
                       LEFT JOIN user_favorites fav ON loc.id = fav.entity_id AND fav.entity_type = 'location' AND fav.user_id = :uid 
+                      LEFT JOIN user_wishlists wl ON loc.id = wl.entity_id AND wl.entity_type = 'location' AND wl.user_id = :uid
                       WHERE $where ORDER BY loc.name ASC";
             $stmt = $db->prepare($query);
             $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
@@ -93,12 +96,16 @@ if ($db) {
         }
 
         $query = "SELECT loc.*, c.name_cz as country, c.code as country_code,
-                         IF(fav.id IS NOT NULL, 1, 0) as is_favorite
+                         IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
+                         IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                   FROM locations loc
                   LEFT JOIN countries c ON loc.country_id = c.id
                   LEFT JOIN user_favorites fav ON loc.id = fav.entity_id 
                        AND fav.entity_type = 'location' 
                        AND fav.user_id = :uid
+                  LEFT JOIN user_wishlists wl ON loc.id = wl.entity_id 
+                       AND wl.entity_type = 'location' 
+                       AND wl.user_id = :uid
                   $whereSql
                   ORDER BY $orderBy
                   LIMIT :limit OFFSET :offset";

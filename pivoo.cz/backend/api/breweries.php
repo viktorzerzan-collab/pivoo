@@ -13,11 +13,14 @@ $db = (new Database())->getConnection();
 
 if ($db) {
     try {
-        // PŘIDÁNO: Kompaktní režim pro plnění selectů ve formulářích
+        // Kompaktní režim pro plnění selectů ve formulářích
         if (isset($_GET['compact']) && $_GET['compact'] == 1) {
-            $query = "SELECT br.id, br.name, IF(fav.id IS NOT NULL, 1, 0) as is_favorite 
+            $query = "SELECT br.id, br.name, 
+                             IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
+                             IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                       FROM breweries br 
                       LEFT JOIN user_favorites fav ON br.id = fav.entity_id AND fav.entity_type = 'brewery' AND fav.user_id = :uid 
+                      LEFT JOIN user_wishlists wl ON br.id = wl.entity_id AND wl.entity_type = 'brewery' AND wl.user_id = :uid
                       WHERE br.is_approved = 1 ORDER BY br.name ASC";
             $stmt = $db->prepare($query);
             $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
@@ -82,12 +85,16 @@ if ($db) {
         }
 
         $query = "SELECT br.*, c.name_cz as country, c.code as country_code,
-                         IF(fav.id IS NOT NULL, 1, 0) as is_favorite
+                         IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
+                         IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                   FROM breweries br
                   LEFT JOIN countries c ON br.country_id = c.id
                   LEFT JOIN user_favorites fav ON br.id = fav.entity_id 
                        AND fav.entity_type = 'brewery' 
                        AND fav.user_id = :uid
+                  LEFT JOIN user_wishlists wl ON br.id = wl.entity_id 
+                       AND wl.entity_type = 'brewery' 
+                       AND wl.user_id = :uid
                   $whereSql
                   ORDER BY $orderBy
                   LIMIT :limit OFFSET :offset";

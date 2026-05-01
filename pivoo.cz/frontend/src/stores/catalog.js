@@ -73,15 +73,15 @@ export const useCatalogStore = defineStore('catalog', {
     // PŘIDÁNO: Uložení i do all* polí pro okamžitou viditelnost nově přidaných položek v menu
     addBeerLocally(beer) {
       this.beers.unshift(beer)
-      this.allBeers.unshift({ id: beer.id, name: beer.name, brewery_id: beer.brewery_id, is_favorite: beer.is_favorite || 0 })
+      this.allBeers.unshift({ id: beer.id, name: beer.name, brewery_id: beer.brewery_id, is_favorite: beer.is_favorite || 0, is_wishlist: beer.is_wishlist || 0 })
     },
     addBreweryLocally(brewery) {
       this.breweries.unshift(brewery)
-      this.allBreweries.unshift({ id: brewery.id, name: brewery.name, is_favorite: brewery.is_favorite || 0 })
+      this.allBreweries.unshift({ id: brewery.id, name: brewery.name, is_favorite: brewery.is_favorite || 0, is_wishlist: brewery.is_wishlist || 0 })
     },
     addLocationLocally(location) {
       this.locations.unshift(location)
-      this.allLocations.unshift({ id: location.id, name: location.name, type: location.type, city: location.city, is_favorite: location.is_favorite || 0 })
+      this.allLocations.unshift({ id: location.id, name: location.name, type: location.type, city: location.city, is_favorite: location.is_favorite || 0, is_wishlist: location.is_wishlist || 0 })
     },
     
     addCheckinLocally(record) {
@@ -172,7 +172,6 @@ export const useCatalogStore = defineStore('catalog', {
         
         if (res.status === 'success') {
           const listMap = { 'beer': 'beers', 'brewery': 'breweries', 'location': 'locations' }
-          // PŘIDÁNO: Mapování pro aktualizaci hvězdičky i v select seznamech
           const allListMap = { 'beer': 'allBeers', 'brewery': 'allBreweries', 'location': 'allLocations' }
           
           const listName = listMap[entityType]
@@ -192,6 +191,41 @@ export const useCatalogStore = defineStore('catalog', {
         }
       } catch (error) {
         console.error('Chyba při přepínání oblíbených:', error)
+      }
+      return false
+    },
+
+    async toggleWishlist(entityId, entityType) {
+      try {
+        const res = await apiFetch('/toggle_wishlist.php', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            entity_id: entityId, 
+            entity_type: entityType 
+          })
+        })
+        
+        if (res.status === 'success') {
+          const listMap = { 'beer': 'beers', 'brewery': 'breweries', 'location': 'locations' }
+          const allListMap = { 'beer': 'allBeers', 'brewery': 'allBreweries', 'location': 'allLocations' }
+          
+          const listName = listMap[entityType]
+          const allListName = allListMap[entityType]
+          
+          const item = this[listName].find(i => i.id == entityId)
+          if (item) {
+            item.is_wishlist = res.is_wishlist ? 1 : 0
+          }
+
+          const allItem = this[allListName].find(i => i.id == entityId)
+          if (allItem) {
+            allItem.is_wishlist = res.is_wishlist ? 1 : 0
+          }
+
+          return true
+        }
+      } catch (error) {
+        console.error('Chyba při přepínání wishlistu:', error)
       }
       return false
     }
