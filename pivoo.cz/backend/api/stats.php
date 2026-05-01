@@ -19,7 +19,10 @@ $period = isset($_GET['period']) ? $_GET['period'] : 'all';
 $dateCondition = "";
 
 if ($period === 'month') {
-    $dateCondition = " AND consumed_at >= DATE_FORMAT(NOW() ,'%Y-%m-01 00:00:00')";
+    date_default_timezone_set('Europe/Prague');
+    $currentYear = date('Y');
+    $currentMonth = date('m');
+    $dateCondition = " AND YEAR(consumed_at) = $currentYear AND MONTH(consumed_at) = $currentMonth";
 }
 
 if ($db) {

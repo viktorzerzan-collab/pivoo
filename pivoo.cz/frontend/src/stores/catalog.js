@@ -33,7 +33,8 @@ export const useCatalogStore = defineStore('catalog', {
           apiFetch('/locations.php?limit=2000&include_all=1'),   
           apiFetch('/styles.php'),      
           apiFetch('/countries.php'),   
-          apiFetch('/stats.php'),
+          // ÚPRAVA: Přidán parametr period=month pro widget na dashboardu
+          apiFetch('/stats.php?period=month'),
           apiFetch('/history.php')
         ])
 

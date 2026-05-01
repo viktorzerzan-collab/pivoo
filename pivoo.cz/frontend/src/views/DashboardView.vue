@@ -113,9 +113,10 @@ const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
 const { beers, breweries, locations, stats, history, countries, styles, isLoading } = storeToRefs(catalogStore)
 
+// ÚPRAVA: Odstraněna nesmyslná podmínka s getHours() === 0, která o půlnoci vracela leden.
 const currentMonthName = computed(() => {
   const months = ['lednu', 'únoru', 'březnu', 'dubnu', 'květnu', 'červnu', 'červenci', 'srpnu', 'září', 'říjnu', 'listopadu', 'prosinci']
-  return months[new Date().getHours() === 0 ? 0 : new Date().getMonth()]
+  return months[new Date().getMonth()]
 })
 
 const isModalOpen = ref(false)

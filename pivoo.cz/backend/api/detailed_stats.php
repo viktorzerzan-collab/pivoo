@@ -20,10 +20,14 @@ $allowed_scopes = ['me', 'global'];
 $scope = isset($_GET['scope']) && in_array($_GET['scope'], $allowed_scopes) ? $_GET['scope'] : 'me';
 
 $dateCondition = "";
+date_default_timezone_set('Europe/Prague');
+$currentYear = date('Y');
+
 if ($period === 'month') {
-    $dateCondition = " AND consumed_at >= DATE_FORMAT(NOW() ,'%Y-%m-01 00:00:00')";
+    $currentMonth = date('m');
+    $dateCondition = " AND YEAR(consumed_at) = $currentYear AND MONTH(consumed_at) = $currentMonth";
 } elseif ($period === 'year') {
-    $dateCondition = " AND consumed_at >= DATE_FORMAT(NOW() ,'%Y-01-01 00:00:00')";
+    $dateCondition = " AND YEAR(consumed_at) = $currentYear";
 }
 
 $userCondition = ($scope === 'global') ? "1=1" : "c.user_id = :uid";
