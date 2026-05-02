@@ -149,6 +149,12 @@
     "unsupported": "Twoja przeglądarka nie obsługuje geolokalizacji.",
     "failed": "Nie udało się ustalić twojej lokalizacji."
   },
+  "currencies": {
+    "CZK": "CZK - Korona czeska",
+    "EUR": "EUR - Euro",
+    "PLN": "PLN - Złoty polski",
+    "GBP": "GBP - Funt szterling"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Na pewno usunąć?",
@@ -356,6 +362,7 @@
       "username_placeholder": "Np. Jan88",
       "email": "E-mail",
       "email_placeholder": "jan@kowalski.pl",
+      "currency": "Domyślna waluta",
       "birthdate": "Data urodzenia",
       "password": "Hasło",
       "password_placeholder": "••••••••",
@@ -384,6 +391,8 @@
       "theme_manual_desc": "Z górnego paska",
       "theme_auto": "Automatyczny",
       "theme_auto_desc": "W zależności od pory dnia",
+      "currency_title": "Domyślna waluta",
+      "currency_desc": "Wybierz domyślną walutę, w której zazwyczaj wprowadzasz swoje wydatki. Kurs wymiany dla konsumpcji zagranicznej zostanie przeliczony na podstawie bieżącego dnia.",
       "password_title": "Zmień hasło",
       "old_password": "Obecne hasło",
       "new_password": "Nowe hasło",

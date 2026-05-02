@@ -60,6 +60,24 @@
 
       <div class="panel-card">
         <div class="panel-header">
+          <h3><CoinsIcon :size="20" class="panel-icon" /> {{ $t('views.profile.currency_title') }}</h3>
+        </div>
+        <div class="theme-settings">
+          <p class="settings-desc">{{ $t('views.profile.currency_desc') }}</p>
+          
+          <div class="theme-options-grid" style="grid-template-columns: 1fr; margin-top: 0.5rem;">
+            <BaseSelect v-model="currencyForm.default_currency" @change="saveCurrencySettings">
+              <option value="CZK">{{ $t('currencies.CZK') }}</option>
+              <option value="EUR">{{ $t('currencies.EUR') }}</option>
+              <option value="PLN">{{ $t('currencies.PLN') }}</option>
+              <option value="GBP">{{ $t('currencies.GBP') }}</option>
+            </BaseSelect>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header">
           <h3><KeyIcon :size="20" class="panel-icon" /> {{ $t('views.profile.password_title') }}</h3>
         </div>
         <form @submit.prevent="handlePasswordChange" class="profile-form">
@@ -108,13 +126,14 @@
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import { UserIcon, KeyIcon, Trash2Icon, PaletteIcon, MonitorIcon, ClockIcon } from 'lucide-vue-next'
+import { UserIcon, KeyIcon, Trash2Icon, PaletteIcon, MonitorIcon, ClockIcon, CoinsIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast' 
 import BaseInput from '../components/BaseInput.vue'
+import BaseSelect from '../components/BaseSelect.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseFileUpload from '../components/BaseFileUpload.vue'
 import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
@@ -127,6 +146,8 @@ const { user } = storeToRefs(authStore)
 
 const passForm = ref({ old_password: '', new_password: '', new_password_confirm: '' })
 const themeForm = ref({ theme_mode: 'manual' })
+const currencyForm = ref({ default_currency: user.value?.default_currency || 'CZK' })
+
 const isDeleteModalOpen = ref(false)
 const isRemoveAvatarModalOpen = ref(false)
 const deletePassword = ref('')
@@ -153,6 +174,27 @@ const saveThemeSettings = async () => {
       toastStore.showToast(result.message || t('toast.theme_saved')) 
     }
   } catch (error) { toastStore.showToast(t('toast.theme_error'), 'toast-error') }
+}
+
+const saveCurrencySettings = async () => {
+  try {
+    const result = await apiFetch('/update_profile.php', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        action: 'update_currency',
+        default_currency: currencyForm.value.default_currency 
+      })
+    })
+    
+    if (result.status === 'success') {
+      authStore.updateUser({ default_currency: currencyForm.value.default_currency })
+      toastStore.showToast(result.message) 
+    } else {
+      toastStore.showToast(result.message, 'toast-error')
+    }
+  } catch (error) { 
+    toastStore.showToast(t('toast.communication_error'), 'toast-error') 
+  }
 }
 
 const handleAvatarUpload = async () => {

@@ -61,8 +61,8 @@ try {
         }
     }
 
-    // 2. OVĚŘENÍ UŽIVATELE
-    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference, is_banned 
+    // 2. OVĚŘENÍ UŽIVATELE (Změna: přidáno default_currency)
+    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference, is_banned, default_currency 
               FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $db->prepare($query);
     $stmt->execute([$username, $username]);
@@ -88,7 +88,8 @@ try {
             "role" => $user['role'],
             "avatar" => $user['avatar'],
             "theme_mode" => $user['theme_mode'] ?? 'manual',
-            "theme_preference" => $user['theme_preference'] ?? 'light'
+            "theme_preference" => $user['theme_preference'] ?? 'light',
+            "default_currency" => $user['default_currency'] ?? 'CZK'
         ];
 
         $token = JwtHandler::encode([
@@ -124,7 +125,6 @@ try {
         echo json_encode(["status" => "error", "message" => "Neplatné přihlašovací údaje."]);
     }
 } catch (Throwable $e) {
-    // ZMĚNA: Skrytí skutečné chyby
     error_log("DB Error (login): " . $e->getMessage());
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při přihlášení."]);

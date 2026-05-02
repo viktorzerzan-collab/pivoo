@@ -26,7 +26,10 @@
       </div>
       <div class="stat-info">
         <span class="stat-label">{{ $t('stats.total_spent') }}</span>
-        <span class="stat-value">{{ totalPrice }} Kč</span>
+        <span class="stat-value">
+          <template v-if="isLoadingRate">...</template>
+          <template v-else>{{ convertedPrice }} {{ userCurrency }}</template>
+        </span>
       </div>
     </div>
 
@@ -47,8 +50,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { BeerIcon, DropletsIcon, CoinsIcon, HeartIcon } from 'lucide-vue-next'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const props = defineProps({
   stats: {
@@ -57,8 +63,42 @@ const props = defineProps({
   }
 })
 
-const totalPrice = computed(() => {
-  return props.stats?.total_price ? Math.round(Number(props.stats.total_price)) : 0
+const userCurrency = computed(() => authStore.defaultCurrency || 'CZK')
+const exchangeRate = ref(1.0)
+const isLoadingRate = ref(false)
+
+const fetchRate = async () => {
+  if (userCurrency.value === 'CZK') {
+    exchangeRate.value = 1.0;
+    return;
+  }
+  isLoadingRate.value = true;
+  try {
+    const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/czk.json`);
+    const data = await res.json();
+    const rate = data.czk[userCurrency.value.toLowerCase()];
+    if (rate) {
+      exchangeRate.value = rate;
+    }
+  } catch (e) {
+    console.error("Nepodařilo se načíst kurz pro statistiky:", e);
+  } finally {
+    isLoadingRate.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchRate()
+})
+
+watch(userCurrency, () => {
+  fetchRate()
+})
+
+const convertedPrice = computed(() => {
+  if (!props.stats?.total_price) return 0;
+  const priceInCzk = Number(props.stats.total_price);
+  return Math.round(priceInCzk * exchangeRate.value);
 })
 </script>
 

@@ -88,11 +88,8 @@
             >
               <option value="CZK">CZK</option>
               <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
               <option value="PLN">PLN</option>
-              <option value="HUF">HUF</option>
               <option value="GBP">GBP</option>
-              <option value="AUD">AUD</option>
             </BaseSelect>
           </div>
           <div class="half">
@@ -140,7 +137,10 @@ import StarRating from '../StarRating.vue'
 import BaseCheckbox from '../BaseCheckbox.vue'
 
 import { useCatalogStore } from '../../stores/catalog'
+import { useAuthStore } from '../../stores/auth'
+
 const catalogStore = useCatalogStore()
+const authStore = useAuthStore()
 const { t } = useI18n()
 
 const props = defineProps({ 
@@ -187,7 +187,7 @@ watch(() => props.show, (isOpen) => {
     }
 
     if (!props.form.currency) {
-      props.form.currency = 'CZK'
+      props.form.currency = authStore.defaultCurrency || 'CZK'
     }
     if (!props.form.original_price && props.form.price) {
       props.form.original_price = props.form.price

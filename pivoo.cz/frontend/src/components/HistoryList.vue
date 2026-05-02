@@ -34,11 +34,11 @@
               <template v-else>
                 <template v-if="record.currency && record.currency !== 'CZK'">
                   <span class="price-total">{{ record.original_price * record.quantity }} {{ record.currency }}</span>
-                  <small class="unit">({{ Math.round(record.price * record.quantity) }} Kč {{ $t('history.total') }})</small>
+                  <small class="unit">({{ Math.round(record.price * record.quantity) }} CZK {{ $t('history.total') }})</small>
                 </template>
                 <template v-else>
-                  <span class="price-total">{{ record.price * record.quantity }} Kč</span>
-                  <small class="unit">({{ record.price }} Kč/{{ $t('history.per_piece') }})</small>
+                  <span class="price-total">{{ record.price * record.quantity }} CZK</span>
+                  <small class="unit">({{ record.price }} CZK/{{ $t('history.per_piece') }})</small>
                 </template>
               </template>
             </div>

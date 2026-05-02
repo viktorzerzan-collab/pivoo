@@ -19,6 +19,32 @@ $data = json_decode(file_get_contents("php://input"));
 // Zjištění akce (výchozí je změna hesla pro zachování zpětné kompatibility)
 $action = isset($data->action) ? $data->action : 'change_password';
 
+// --- AKCE: AKTUALIZACE MĚNY ---
+if ($action === 'update_currency') {
+    $currency = isset($data->default_currency) ? strtoupper(trim($data->default_currency)) : null;
+    $allowed = ['CZK', 'EUR', 'PLN', 'GBP'];
+    
+    if ($currency && in_array($currency, $allowed)) {
+        try {
+            $update = $db->prepare("UPDATE users SET default_currency = ? WHERE id = ?");
+            if ($update->execute([$currency, $user['user_id']])) {
+                echo json_encode(["status" => "success", "message" => "Výchozí měna byla uložena."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["status" => "error", "message" => "Chyba při ukládání měny do databáze."]);
+            }
+        } catch (Exception $e) {
+            error_log("DB Error (update_profile currency): " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Interní chyba serveru."]);
+        }
+    } else {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Neplatná měna."]);
+    }
+    exit();
+}
+
 // --- AKCE: AKTUALIZACE VZHLEDU ---
 if ($action === 'update_theme') {
     $mode = isset($data->theme_mode) ? $data->theme_mode : null;

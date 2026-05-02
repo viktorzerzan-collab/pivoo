@@ -149,6 +149,12 @@
     "unsupported": "Your browser does not support geolocation.",
     "failed": "Failed to get your location."
   },
+  "currencies": {
+    "CZK": "CZK - Czech Koruna",
+    "EUR": "EUR - Euro",
+    "PLN": "PLN - Polish Złoty",
+    "GBP": "GBP - British Pound"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Delete permanently?",
@@ -356,6 +362,7 @@
       "username_placeholder": "E.g., John88",
       "email": "E-mail",
       "email_placeholder": "john@doe.com",
+      "currency": "Default currency",
       "birthdate": "Date of birth",
       "password": "Password",
       "password_placeholder": "••••••••",
@@ -384,6 +391,8 @@
       "theme_manual_desc": "By top bar",
       "theme_auto": "Automatic",
       "theme_auto_desc": "By time of day",
+      "currency_title": "Default currency",
+      "currency_desc": "Choose the default currency in which you usually enter your expenses. The exchange rate for foreign consumption will be calculated based on the current day.",
       "password_title": "Change password",
       "old_password": "Current password",
       "new_password": "New password",
@@ -561,7 +570,7 @@
     "visits": "{count}x visit",
     "unique_beers": "unique beers out of {total} total",
     "diversity_percent": "Diversity: {percent} %",
-    "avg_price": "Avg price",
+    "avg_price": "Average price",
     "min_price": "Cheapest",
     "max_price": "Most expensive"
   },
@@ -569,7 +578,7 @@
     "locations": {
       "Doma": "At home",
       "V parku": "In the park",
-      "Na návštěvě": "Visiting friends",
+      "Na návštěvě": "Visiting",
       "V práci": "At work",
       "Ve vlaku": "On the train",
       "Venku": "Outside",
@@ -580,12 +589,12 @@
       "pivoteka": "Beer shop",
       "obchod": "Store",
       "jine": "Other",
-      "kavarna": "Cafe"
+      "kavarna": "Café"
     },
     "fermentation": {
-      "spodní": "Bottom fermented",
-      "svrchní": "Top fermented",
-      "spontánní": "Spontaneously fermented",
+      "spodní": "Bottom-fermented",
+      "svrchní": "Top-fermented",
+      "spontánní": "Spontaneous fermentation",
       "smíšené": "Mixed fermentation"
     },
     "styles": {
@@ -600,7 +609,7 @@
       "Nízkoalkoholické / Nealko": "Low Alcohol / Non-Alcoholic",
       "Silné pivo": "Strong Beer",
       "Smoked (Nakouřené)": "Smoked Beer",
-      "Sour (Kyseláč)": "Sour Ale",
+      "Sour (Kyseláč)": "Sour (Sour Ale)",
       "Kojelánské": "Kojelánské",
       "Vánoční speciál": "Christmas Special"
     }

@@ -18,6 +18,14 @@ try {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $birthdate = $_POST['birthdate'] ?? '';
+    
+    // Přidáno zpracování výchozí měny s fallbackem na CZK
+    $default_currency = strtoupper(trim($_POST['default_currency'] ?? 'CZK'));
+    $allowed_currencies = ['CZK', 'EUR', 'PLN', 'GBP'];
+    
+    if (!in_array($default_currency, $allowed_currencies)) {
+        $default_currency = 'CZK';
+    }
 
     if (empty($username) || empty($first_name) || empty($last_name) || empty($email) || empty($password) || empty($birthdate)) {
         http_response_code(400);
@@ -122,10 +130,11 @@ try {
         exit();
     }
 
-    $query = "INSERT INTO users (username, first_name, last_name, email, birthdate, password_hash, role, avatar, theme_mode, theme_preference) 
-              VALUES (?, ?, ?, ?, ?, ?, 'user', ?, 'manual', 'light')";
+    // Upravený dotaz pro vložení default_currency
+    $query = "INSERT INTO users (username, first_name, last_name, email, birthdate, password_hash, role, avatar, theme_mode, theme_preference, default_currency) 
+              VALUES (?, ?, ?, ?, ?, ?, 'user', ?, 'manual', 'light', ?)";
     $insert = $db_connection->prepare($query);
-    $insert->execute([$username, $first_name, $last_name, $email, $birthdate, $password_hash, $avatar_filename]);
+    $insert->execute([$username, $first_name, $last_name, $email, $birthdate, $password_hash, $avatar_filename, $default_currency]);
 
     echo json_encode(["status" => "success", "message" => "Registrace úspěšná."]);
 

@@ -9,31 +9,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// Pomocná funkce pro zjištění kurzu z ČNB (stejná jako u zápisu)
-function getCnbRate($currency, $dateStr) {
+// Pomocná funkce pro zjištění kurzu z fawazahmed0/currency-api
+function getExchangeRate($currency, $dateStr) {
     if ($currency === 'CZK') return 1.0;
 
-    $date = date("d.m.Y", strtotime($dateStr));
-    $url = "https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt?date=" . $date;
+    $date = date("Y-m-d", strtotime($dateStr));
+    $currencyLower = strtolower($currency);
+    
+    $url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{$date}/v1/currencies/{$currencyLower}.json";
 
     $ctx = stream_context_create(['http' => ['timeout' => 5]]);
     $content = @file_get_contents($url, false, $ctx);
 
+    if (!$content) {
+        $url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/{$currencyLower}.json";
+        $content = @file_get_contents($url, false, $ctx);
+    }
+
     if (!$content) return null;
 
-    $lines = explode("\n", $content);
-    foreach ($lines as $line) {
-        if (strpos($line, '|' . $currency . '|') !== false) {
-            $parts = explode('|', $line);
-            if (count($parts) >= 5) {
-                $amount = (float)$parts[2];
-                $rateRaw = str_replace(',', '.', $parts[4]);
-                $rate = (float)$rateRaw;
-                
-                return ($amount > 0) ? ($rate / $amount) : null;
-            }
-        }
+    $data = json_decode($content, true);
+    if (isset($data[$currencyLower]['czk'])) {
+        return (float)$data[$currencyLower]['czk'];
     }
+    
     return null;
 }
 
@@ -45,12 +44,10 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->id)) {
     try {
-        // PŘIDÁNO: Získání starých hodnot pro případ, že uživatel mění pivo nebo podnik
         $stmtOld = $db->prepare("SELECT beer_id, location_id FROM consumptions WHERE id = ? AND user_id = ?");
         $stmtOld->execute([$data->id, $user['user_id']]);
         $oldCons = $stmtOld->fetch();
 
-        // ÚPRAVA: Přidány sloupce currency a original_price do UPDATE dotazu
         $query = "UPDATE consumptions 
                   SET beer_id = ?, location_id = ?, volume = ?, quantity = ?, price = ?, currency = ?, original_price = ?, is_free = ?, rating_beer = ?, rating_care = ?, note = ?, packaging = ?, consumed_at = ? 
                   WHERE id = ? AND user_id = ?";
@@ -64,7 +61,6 @@ if (!empty($data->id)) {
         
         $is_free = (!empty($data->is_free) && $data->is_free) ? 1 : 0;
         
-        // ZMĚNA: Zpracování měny a zadané (původní) ceny
         $currency = !empty($data->currency) ? $data->currency : 'CZK';
         $original_price = (!empty($data->original_price) && $data->original_price !== '') ? (float)$data->original_price : null;
         
@@ -72,7 +68,7 @@ if (!empty($data->id)) {
 
         $czk_price = null;
 
-        // Logika pro výpočet korun z aktuálního kurzu ČNB
+        // Logika pro výpočet korun z aktuálního kurzu
         if ($is_free) {
             $original_price = null;
             $czk_price = null;
@@ -80,12 +76,12 @@ if (!empty($data->id)) {
             if ($currency === 'CZK') {
                 $czk_price = $original_price;
             } else {
-                $rate = getCnbRate($currency, $consumed_at ? $consumed_at : date("Y-m-d H:i:s"));
+                $rate = getExchangeRate($currency, $consumed_at ? $consumed_at : date("Y-m-d H:i:s"));
                 if ($rate !== null) {
                     $czk_price = round($original_price * $rate, 2);
                 } else {
                     http_response_code(500);
-                    echo json_encode(["status" => "error", "message" => "Nepodařilo se získat kurz z ČNB pro přepočet. Zkuste to prosím znovu nebo použijte CZK."]);
+                    echo json_encode(["status" => "error", "message" => "Nepodařilo se získat kurz z API pro přepočet měn. Zkuste to prosím znovu nebo použijte CZK."]);
                     exit();
                 }
             }
@@ -99,12 +95,11 @@ if (!empty($data->id)) {
 
         if ($stmt->execute([
             $beer_id, $location_id, $volume, $quantity, 
-            $czk_price, $currency, $original_price, // Nové proměnné pro cenu
+            $czk_price, $currency, $original_price, 
             $is_free, $rating_beer, $rating_care,
             $note, $packaging, $consumed_at, $data->id, $user['user_id']
         ])) {
             
-            // PŘIDÁNO: Přepočet denormalizovaných dat po úpravě zápisu
             $beerIdsToRecalc = array_unique(array_filter([$oldCons ? $oldCons['beer_id'] : null, $beer_id]));
             $locIdsToRecalc = array_unique(array_filter([$oldCons ? $oldCons['location_id'] : null, $location_id]));
             
@@ -126,7 +121,6 @@ if (!empty($data->id)) {
                 error_log("Chyba při přepočtu statistik po updatu (update_checkin): " . $e->getMessage());
             }
 
-            // ZMĚNA: Vracíme vypočítané cenové údaje zpět na frontend
             echo json_encode([
                 "status" => "success", 
                 "message" => "Záznam byl úspěšně upraven.",

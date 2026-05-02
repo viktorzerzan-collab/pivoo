@@ -149,6 +149,12 @@
     "unsupported": "Dein Browser unterstützt keine Geolokalisierung.",
     "failed": "Dein Standort konnte nicht ermittelt werden."
   },
+  "currencies": {
+    "CZK": "CZK - Tschechische Krone",
+    "EUR": "EUR - Euro",
+    "PLN": "PLN - Polnischer Złoty",
+    "GBP": "GBP - Britisches Pfund"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Wirklich löschen?",
@@ -356,6 +362,7 @@
       "username_placeholder": "Z. B. Max88",
       "email": "E-Mail",
       "email_placeholder": "max@mustermann.de",
+      "currency": "Standardwährung",
       "birthdate": "Geburtsdatum",
       "password": "Passwort",
       "password_placeholder": "••••••••",
@@ -384,6 +391,8 @@
       "theme_manual_desc": "Nach oberer Leiste",
       "theme_auto": "Automatisch",
       "theme_auto_desc": "Nach Tageszeit",
+      "currency_title": "Standardwährung",
+      "currency_desc": "Wähle die Standardwährung, in der du deine Ausgaben normalerweise eingibst. Der Wechselkurs für den Verbrauch im Ausland wird auf Basis des aktuellen Tages berechnet.",
       "password_title": "Passwort ändern",
       "old_password": "Aktuelles Passwort",
       "new_password": "Neues Passwort",

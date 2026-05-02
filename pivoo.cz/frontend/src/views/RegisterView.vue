@@ -19,7 +19,16 @@
         </div>
 
         <BaseInput v-model="form.username" :label="$t('views.register.username')" :placeholder="$t('views.register.username_placeholder')" required />
-        <BaseInput v-model="form.email" type="email" :label="$t('views.register.email')" :placeholder="$t('views.register.email_placeholder')" required />
+        
+        <div class="form-row">
+          <BaseInput v-model="form.email" type="email" :label="$t('views.register.email')" :placeholder="$t('views.register.email_placeholder')" required />
+          <BaseSelect v-model="form.default_currency" :label="$t('views.register.currency')" required>
+            <option value="CZK">{{ $t('currencies.CZK') }}</option>
+            <option value="EUR">{{ $t('currencies.EUR') }}</option>
+            <option value="PLN">{{ $t('currencies.PLN') }}</option>
+            <option value="GBP">{{ $t('currencies.GBP') }}</option>
+          </BaseSelect>
+        </div>
         
         <BaseDatePicker v-model="form.birthdate" :label="$t('views.register.birthdate')" required />
 
@@ -53,6 +62,7 @@ import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 import BaseFileUpload from '../components/BaseFileUpload.vue'
 import BaseDatePicker from '../components/BaseDatePicker.vue' 
+import BaseSelect from '../components/BaseSelect.vue' 
 
 const router = useRouter()
 const toastStore = useToastStore() 
@@ -62,7 +72,8 @@ const isLoading = ref(false)
 const avatarFile = ref(null)
 const form = ref({
   first_name: '', last_name: '', username: '', 
-  email: '', birthdate: '', password: '', password_confirm: ''
+  email: '', birthdate: '', password: '', password_confirm: '',
+  default_currency: 'CZK'
 })
 
 const handleRegister = async () => {

@@ -149,6 +149,12 @@
     "unsupported": "Váš prohlížeč nepodporuje geolokaci.",
     "failed": "Nepodařilo se zjistit vaši polohu."
   },
+  "currencies": {
+    "CZK": "CZK - Koruna česká",
+    "EUR": "EUR - Euro",
+    "PLN": "PLN - Złoty polský",
+    "GBP": "GBP - Libra šterlinků"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Opravdu smazat?",
@@ -356,6 +362,7 @@
       "username_placeholder": "Např. Honza88",
       "email": "E-mail",
       "email_placeholder": "jan@novak.cz",
+      "currency": "Výchozí měna",
       "birthdate": "Datum narození",
       "password": "Heslo",
       "password_placeholder": "••••••••",
@@ -384,6 +391,8 @@
       "theme_manual_desc": "Podle horní lišty",
       "theme_auto": "Automatický",
       "theme_auto_desc": "Dle denní doby",
+      "currency_title": "Výchozí měna",
+      "currency_desc": "Zvolte si výchozí měnu, ve které běžně zadáváte útratu. Kurz se při zahraniční spotřebě přepočítá dle aktuálního dne.",
       "password_title": "Změna hesla",
       "old_password": "Současné heslo",
       "new_password": "Nové heslo",

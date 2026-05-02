@@ -120,11 +120,8 @@
             >
               <option value="CZK">CZK</option>
               <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
               <option value="PLN">PLN</option>
-              <option value="HUF">HUF</option>
               <option value="GBP">GBP</option>
-              <option value="AUD">AUD</option>
             </BaseSelect>
           </div>
           <div class="half">
@@ -174,7 +171,10 @@ import GeoLocateButton from '../GeoLocateButton.vue'
 import { apiFetch } from '../../api'
 
 import { useCatalogStore } from '../../stores/catalog'
+import { useAuthStore } from '../../stores/auth'
+
 const catalogStore = useCatalogStore()
+const authStore = useAuthStore()
 const { t } = useI18n()
 
 const props = defineProps({ 
@@ -325,7 +325,7 @@ watch(() => props.show, (newVal) => {
     }
 
     if (!props.form.currency) {
-      props.form.currency = 'CZK'
+      props.form.currency = authStore.defaultCurrency || 'CZK'
     }
   }
 })
