@@ -49,7 +49,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-// Lokální stav pro typ (kvůli přepínání viditelnosti hesla)
 const currentType = ref(props.type)
 
 watch(() => props.type, (newType) => {
@@ -86,24 +85,22 @@ const toggleVisibility = () => {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--bg-panel);
   color: var(--text-main);
   font-size: 0.95rem;
   font-family: inherit;
   transition: all 0.3s ease;
   outline: none;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+  box-shadow: none;
 }
 
-/* Specifický styling pro textarea */
 .base-textarea {
   min-height: 100px;
-  resize: vertical; /* Povolí pouze vertikální změnu velikosti */
+  resize: vertical;
   line-height: 1.5;
 }
 
-/* Autofill v prohlížečích */
 .base-input:-webkit-autofill,
 .base-input:-webkit-autofill:hover, 
 .base-input:-webkit-autofill:focus, 
@@ -143,12 +140,11 @@ const toggleVisibility = () => {
   color: var(--text-main) !important;
 }
 
-/* Custom scrollbar pro textarea, aby ladila s aplikací */
 .base-textarea::-webkit-scrollbar {
   width: 8px;
 }
 .base-textarea::-webkit-scrollbar-thumb {
   background-color: var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 </style>

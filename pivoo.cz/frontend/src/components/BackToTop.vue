@@ -46,7 +46,7 @@ onUnmounted(() => {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  z-index: 105; /* Zvýšeno nad 100, aby se případně nepodsunulo pod menu */
+  z-index: 105;
 }
 
 .back-to-top-btn {
@@ -60,7 +60,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-floating);
   transition: all 0.3s ease;
   padding: 0;
 }
@@ -76,7 +76,6 @@ onUnmounted(() => {
 .back-to-top-btn:hover {
   background-color: var(--primary-hover);
   transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 .back-to-top-btn:active {
@@ -94,10 +93,8 @@ onUnmounted(() => {
   transform: translateY(20px);
 }
 
-/* PŘIDÁNO: Posunutí tlačítka nahoru na mobilních zařízeních */
 @media (max-width: 900px) {
   .back-to-top-wrapper {
-    /* Odsazení o výšku spodního menu (zhruba 4rem) + trochu místa (1rem) + safe area pro iPhony */
     bottom: calc(5rem + env(safe-area-inset-bottom));
     right: 1rem;
   }

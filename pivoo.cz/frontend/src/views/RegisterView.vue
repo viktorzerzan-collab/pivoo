@@ -46,7 +46,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserPlusIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
+import { useToastStore } from '../stores/toast' 
 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
@@ -54,7 +54,7 @@ import BaseFileUpload from '../components/BaseFileUpload.vue'
 import BaseDatePicker from '../components/BaseDatePicker.vue' 
 
 const router = useRouter()
-const toastStore = useToastStore() // NOVÉ: Inicializace storu
+const toastStore = useToastStore() 
 const isLoading = ref(false)
 
 const avatarFile = ref(null)
@@ -106,19 +106,19 @@ const handleRegister = async () => {
   justify-content: center; 
   background-color: var(--bg-app); 
   padding: 1rem; 
-  transition: background-color 0.5s ease;
+  transition: background-color 0.3s ease;
 }
 
 .auth-card { 
   background: var(--bg-panel); 
   padding: 3rem 2.5rem; 
-  border-radius: 16px; 
-  box-shadow: var(--shadow-md); 
+  border-radius: var(--radius-md); 
+  box-shadow: var(--shadow-floating); 
   width: 100%; 
   max-width: 700px; 
   text-align: center; 
   border: 1px solid var(--border); 
-  transition: background-color 0.5s ease, border-color 0.5s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .logo-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
@@ -129,7 +129,7 @@ const handleRegister = async () => {
   color: var(--text-main); 
   letter-spacing: -0.025em; 
   margin: 0; 
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .auth-subtitle { 
@@ -137,7 +137,7 @@ const handleRegister = async () => {
   font-size: 1rem; 
   margin-bottom: 2rem; 
   margin-top: 0.25rem; 
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .auth-form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
@@ -150,7 +150,7 @@ const handleRegister = async () => {
   text-align: center; 
   color: var(--text-muted); 
   font-size: 0.95rem; 
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .auth-footer-link a { 

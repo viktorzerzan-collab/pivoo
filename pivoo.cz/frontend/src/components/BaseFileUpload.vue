@@ -55,7 +55,6 @@ const triggerFileInput = () => {
   }
 }
 
-// Funkce pro kompresi obrázku na straně klienta
 const compressImage = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -67,7 +66,7 @@ const compressImage = (file) => {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const max_size = 1000 // Maximální šířka nebo výška bude 1000px
+        const max_size = 1000
 
         if (width > height) {
           if (width > max_size) {
@@ -86,13 +85,11 @@ const compressImage = (file) => {
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Převod na WebP s 80% kvalitou
         canvas.toBlob((blob) => {
           if (!blob) {
             reject(new Error('Chyba při kompresi.'))
             return
           }
-          // Vytvoření nového File objektu
           const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".webp"
           const newFile = new File([blob], newFileName, {
             type: 'image/webp',
@@ -112,7 +109,6 @@ const handleFileChange = async (event) => {
   error.value = ''
   
   if (file) {
-    // Kontrola, zda jde o obrázek
     if (!file.type.startsWith('image/')) {
       error.value = 'Vybraný soubor není obrázek.'
       if (fileInput.value) fileInput.value.value = ''
@@ -121,10 +117,8 @@ const handleFileChange = async (event) => {
 
     isCompressing.value = true
     try {
-      // Provedeme kompresi
       const compressedFile = await compressImage(file)
       
-      // I po kompresi zkontrolujeme velikost (pro jistotu)
       if (compressedFile.size > props.maxSizeMB * 1024 * 1024) {
         error.value = `I po kompresi je soubor příliš velký. Maximum je ${props.maxSizeMB} MB.`
         fileName.value = ''
@@ -144,13 +138,11 @@ const handleFileChange = async (event) => {
       error.value = 'Nepodařilo se zpracovat a zkomprimovat obrázek.'
     } finally {
       isCompressing.value = false
-      // Reset inputu, aby šel nahrát stejný soubor znovu, pokud by si to uživatel rozmyslel
       if (fileInput.value) fileInput.value.value = ''
     }
   }
 }
 
-// Uvolnění paměti při zničení komponenty
 onUnmounted(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
@@ -159,13 +151,14 @@ onUnmounted(() => {
 <style scoped>
 .file-upload-wrapper { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
 
-.upload-label { font-weight: 600; color: var(--text-main); font-size: 0.9rem; transition: color 0.5s ease; }
+.upload-label { font-weight: 600; color: var(--text-main); font-size: 0.9rem; transition: color 0.3s ease; }
 
 .upload-container {
   position: relative;
   display: flex; align-items: center; justify-content: center;
   min-height: 80px;
-  border-radius: 12px; border: 2px dashed var(--border); 
+  border-radius: var(--radius-md); 
+  border: 2px dashed var(--border); 
   background-color: var(--bg-app);
   cursor: pointer; transition: all 0.3s ease;
   overflow: hidden;
@@ -210,8 +203,8 @@ onUnmounted(() => {
   display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.5rem;
 }
 
-.upload-icon { color: var(--text-muted); transition: color 0.5s ease; }
-.file-name { color: var(--text-muted); font-size: 0.9rem; transition: color 0.5s ease; }
+.upload-icon { color: var(--text-muted); transition: color 0.3s ease; }
+.file-name { color: var(--text-muted); font-size: 0.9rem; transition: color 0.3s ease; }
 
 .image-preview { width: 100%; height: 150px; position: relative; }
 .image-preview img { width: 100%; height: 100%; object-fit: cover; }

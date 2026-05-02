@@ -78,11 +78,9 @@ import OpeningHoursInput from '../OpeningHoursInput.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Přidáno ruční načítání obrázků pro Leaflet z dist složky
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
-// OPRAVENO: Import store pro zjišťování duplicit (přidáno ../ navíc)
 import { useCatalogStore } from '../../stores/catalog'
 
 const props = defineProps({
@@ -99,11 +97,9 @@ const map = ref(null)
 const marker = ref(null)
 const mapContainerRef = ref(null)
 
-// Stavy pro duplicity a geocoding
 const duplicateWarning = ref('')
 const isGeocoding = ref(false)
 
-// Vzorec pro výpočet vzdálenosti
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371
   const dLat = (lat2 - lat1) * Math.PI / 180
@@ -115,13 +111,12 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c
 }
 
-// Funkce pro kontrolu duplicit
 const checkDuplicates = (lat, lng) => {
   const duplicates = []
   catalogStore.locations.forEach(loc => {
-    if (loc.lat && loc.lng && loc.id !== props.form.id) { // Při úpravě ignorujeme sám sebe
+    if (loc.lat && loc.lng && loc.id !== props.form.id) { 
       const dist = calculateDistance(lat, lng, loc.lat, loc.lng)
-      if (dist <= 0.05) { // 50 metrů
+      if (dist <= 0.05) { 
         duplicates.push(loc.name)
       }
     }
@@ -134,9 +129,8 @@ const checkDuplicates = (lat, lng) => {
   }
 }
 
-// Zjišťování adresy z GPS přes Nominatim API
 const fetchAddressFromGPS = async (lat, lng) => {
-  if (props.isEditing) return // Při editaci nepřepisujeme ručně upravenou adresu
+  if (props.isEditing) return 
 
   isGeocoding.value = true
   try {
@@ -182,7 +176,6 @@ const initMap = () => {
     attribution: '© OpenStreetMap'
   }).addTo(map.value)
 
-  // Aplikování správných ikon pro Leaflet ve Vite
   const customIcon = L.icon({
     iconUrl: markerIconUrl,
     shadowUrl: markerShadowUrl,
@@ -223,7 +216,6 @@ watch(() => props.show, (isVisible) => {
     nextTick(() => {
       initMap()
       
-      // Pokud se modál otevře a přišly nám už souřadnice (např. z CheckIn modálu), rovnou načteme adresu
       if (!props.isEditing && props.form.lat && props.form.lng) {
         checkDuplicates(props.form.lat, props.form.lng)
         fetchAddressFromGPS(props.form.lat, props.form.lng)
@@ -250,13 +242,12 @@ onBeforeUnmount(() => destroyMap())
 </script>
 
 <style scoped>
-.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--blue); }
 .add-form { display: flex; flex-direction: column; gap: 1rem; }
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 
-/* Styly pro varování před duplicitou */
 .duplicate-warning {
   display: flex;
   align-items: flex-start;
@@ -264,7 +255,7 @@ onBeforeUnmount(() => destroyMap())
   background-color: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.4);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #d97706;
 }
 .warning-icon { flex-shrink: 0; margin-top: 2px; }
@@ -277,7 +268,7 @@ onBeforeUnmount(() => destroyMap())
 .admin-map-element {
   height: 250px;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   z-index: 1;
 }

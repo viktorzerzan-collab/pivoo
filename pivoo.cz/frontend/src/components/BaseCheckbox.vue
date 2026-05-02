@@ -57,7 +57,7 @@ defineEmits(['update:modelValue'])
   width: 22px;
   background-color: var(--bg-panel);
   border: 2px solid var(--border);
-  border-radius: 6px;
+  border-radius: 4px; /* Ostrý, ale jemný radius pro checkbox */
   transition: all 0.2s ease;
 }
 
@@ -91,8 +91,6 @@ defineEmits(['update:modelValue'])
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-main);
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
-
-/* Podpora pro tmavý režim je zajištěna skrze CSS proměnné */
 </style>

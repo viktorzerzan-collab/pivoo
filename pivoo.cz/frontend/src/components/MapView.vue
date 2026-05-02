@@ -96,7 +96,6 @@ const updateMarkers = () => {
     }
   })
 
-  // Automatický zoom podle špendlíků
   if (hasValidCoords) {
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 })
   }
@@ -152,10 +151,10 @@ onUnmounted(() => {
 .map-container-wrapper {
   height: 600px;
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: none;
   position: relative;
 }
 
@@ -168,26 +167,32 @@ onUnmounted(() => {
   z-index: 400;
   background-color: var(--bg-panel);
   color: var(--text-main);
-  border: 2px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 0.6rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-floating);
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
-.btn-locate:hover { border-color: var(--primary); }
+.btn-locate:hover { 
+  border-color: var(--primary); 
+  color: var(--primary-hover);
+}
+
 .spinning { animation: spin 1.5s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 :deep(.leaflet-popup-content-wrapper) {
   background: var(--bg-panel);
   color: var(--text-main);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 5px;
+  box-shadow: var(--shadow-floating);
 }
 
 :deep(.map-popup) {
@@ -205,7 +210,7 @@ onUnmounted(() => {
   color: #1e293b;
   border: none;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
   cursor: pointer;
   font-size: 0.8rem;

@@ -38,10 +38,10 @@ defineEmits(['update:modelValue'])
   display: inline-flex;
   background-color: var(--border);
   padding: 0.375rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   gap: 0.25rem;
   flex-wrap: wrap;
-  transition: background-color 0.5s ease;
+  transition: background-color 0.3s ease;
 }
 
 .base-switch.is-full-width {
@@ -62,17 +62,17 @@ defineEmits(['update:modelValue'])
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 0.95rem;
   color: var(--text-muted);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .switch-btn:hover:not(.active) {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(128, 128, 128, 0.1);
 }
 
 .switch-btn.active {

@@ -33,11 +33,11 @@ const toggleRating = (star) => {
   cursor: pointer; 
   color: var(--border); 
   user-select: none; 
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 .star { 
   transition: color 0.2s, transform 0.1s; 
-  text-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+  text-shadow: none; 
 }
 .star:hover { 
   transform: scale(1.15); 

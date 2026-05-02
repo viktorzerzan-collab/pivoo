@@ -647,7 +647,7 @@ const handleDelete = async () => {
 .admin-header { margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
-.admin-section { display: flex; flex-direction: column; flex: 1; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-sm); transition: background-color 0.5s ease; }
+.admin-section { display: flex; flex-direction: column; flex: 1; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2rem; transition: background-color 0.3s ease; }
 
 .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; gap: 2rem; }
 .header-info { display: flex; flex-direction: column; gap: 1.25rem; flex: 1; }
@@ -666,7 +666,7 @@ const handleDelete = async () => {
 .admin-table tr:hover td { background-color: var(--card-hover-bg); }
 
 .section-icon { 
-  width: 42px; height: 42px; border-radius: 10px; display: flex; 
+  width: 42px; height: 42px; border-radius: var(--radius-sm); display: flex; 
   align-items: center; justify-content: center; flex-shrink: 0;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -718,7 +718,7 @@ const handleDelete = async () => {
   .admin-table thead { display: none; }
   .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
   
-  .admin-table tr { margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-app); padding: 1rem; }
+  .admin-table tr { margin-bottom: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-app); padding: 1rem; }
   .admin-table td { text-align: left; padding: 0.5rem 0; border: none; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
   .admin-table td::before { content: attr(data-label); font-weight: 700; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
   

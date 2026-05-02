@@ -19,7 +19,6 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
-// NOVÉ: Import globální toast komponenty
 import AppToast from './components/AppToast.vue'
 import BackToTop from './components/BackToTop.vue'
 import { useAuthStore } from './stores/auth'
@@ -109,17 +108,25 @@ onUnmounted(() => {
   --danger: #ef4444;
   --danger-hover: #dc2626;
 
-  /* SVĚTLÝ REŽIM (Výchozí) */
-  --bg-app: #f1f5f9;
+  /* SVĚTLÝ REŽIM */
+  --bg-app: #f8fafc;
   --bg-panel: #ffffff;
   --text-main: #1e293b;
   --text-muted: #64748b;
   --border: #e2e8f0;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --card-hover-bg: #f8fafc;
+  
+  /* Plochý design - zrušení stínů u standardních prvků */
+  --shadow: none;
+  --shadow-floating: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  
+  --card-hover-bg: #f1f5f9;
   
   --scrollbar-thumb: #cbd5e1;
   --scrollbar-thumb-hover: #94a3b8;
+
+  /* Sjednocené zaoblení */
+  --radius-sm: 8px;
+  --radius-md: 12px;
 }
 
 /* --- TMAVÝ REŽIM --- */
@@ -129,7 +136,10 @@ html.dark-mode {
   --text-main: #f1f5f9;
   --text-muted: #94a3b8;
   --border: #334155;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  
+  --shadow: none;
+  --shadow-floating: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  
   --card-hover-bg: #242f42;
   
   --scrollbar-thumb: #475569;
@@ -174,17 +184,16 @@ html {
 
 ::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 4px solid transparent; 
   background-clip: content-box;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover);
 }
 
-/* PŘIDÁNO: Logika pro zmrazení pozadí při otevřeném modálu */
 body.modal-open {
   overflow: hidden;
 }
@@ -197,7 +206,7 @@ html, body, #app {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.5s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* --- 2. LAYOUT A PŘECHODY --- */
@@ -207,7 +216,7 @@ html, body, #app {
   min-height: 100vh; 
   background-color: var(--bg-app);
   color: var(--text-main);
-  transition: background-color 0.5s ease, color 0.5s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .main-content { flex: 1 0 auto; display: flex; flex-direction: column; }
@@ -222,30 +231,28 @@ button, .base-button {
   align-items: center;
   justify-content: center;
   padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  border: 1px solid transparent;
   font-size: 0.95rem;
-  box-shadow: var(--shadow);
+  box-shadow: none;
   line-height: 1.2;
 }
 
-button:active { transform: scale(0.98); }
-
 button.btn-primary { background-color: var(--primary); color: #1e293b; }
-button.btn-primary:hover { background-color: var(--primary-hover); }
+button.btn-primary:hover, button.btn-primary:active { background-color: var(--primary-hover); }
 
 button.btn-add { background-color: var(--blue); color: white; }
-button.btn-add:hover { background-color: var(--blue-hover); }
+button.btn-add:hover, button.btn-add:active { background-color: var(--blue-hover); }
 
 button.btn-edit { background-color: var(--orange); color: white; }
-button.btn-edit:hover { background-color: var(--orange-hover); }
+button.btn-edit:hover, button.btn-edit:active { background-color: var(--orange-hover); }
 
 button.btn-danger { background-color: var(--danger); color: white; }
-button.btn-danger:hover { background-color: var(--danger-hover); }
+button.btn-danger:hover, button.btn-danger:active { background-color: var(--danger-hover); }
 
 button svg { width: 18px; height: 18px; stroke-width: 2.5; }
 button:not(.is-icon-only):not(.btn-close) svg { margin-right: 0.5rem; }
@@ -254,7 +261,7 @@ button.is-icon-only { padding: 0.6rem; width: 38px; height: 38px; }
 /* --- 4. ZAVÍRACÍ KŘÍŽKY --- */
 button.btn-close {
   background: none !important;
-  box-shadow: none !important;
+  border: none !important;
   padding: 0.25rem !important;
   color: var(--text-muted) !important;
   width: auto !important;
@@ -262,13 +269,13 @@ button.btn-close {
 }
 button.btn-close:hover {
   color: var(--text-main) !important;
-  background: rgba(255,255,255,0.05) !important;
+  background: rgba(128,128,128,0.1) !important;
 }
 
 /* --- 5. OSTATNÍ KOMPONENTY A ODZNAČKY --- */
 .badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
-.badge.admin { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-.badge.user { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.badge.admin { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; }
+.badge.user { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: #3b82f6; }
 
 /* --- 6. TOAST NOTIFIKACE A ANIMACE --- */
 .toast-notification {
@@ -277,10 +284,11 @@ button.btn-close:hover {
   left: 50%;
   transform: translateX(-50%);
   padding: 1rem 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: white;
+  font-weight: 600;
   z-index: 9999;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-floating);
 }
 .toast-success { background-color: #10b981; }
 .toast-error { background-color: #ef4444; }

@@ -113,8 +113,6 @@
     <AddBeerModal 
       :show="isAddModalOpen" 
       :isEditing="false" 
-      :breweries="breweries" 
-      :styles="styles" 
       :form="beerForm" 
       @close="isAddModalOpen = false" 
       @submit="submitBeer" 
@@ -391,7 +389,7 @@ const openDetail = async (beer) => {
 <style scoped>
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
-.panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; position: relative; z-index: 20; }
+.panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 1.5rem; position: relative; z-index: 20; }
 .filters-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; cursor: pointer; user-select: none; }
 .filters-title { display: flex; align-items: center; gap: 0.75rem; }
 .filters-title h3 { margin: 0; font-size: 1.1rem; color: var(--text-main); }
@@ -439,7 +437,6 @@ const openDetail = async (beer) => {
 }
 .filter-chip:hover {
   background-color: var(--primary-hover);
-  transform: scale(1.05);
 }
 
 .results-bar { 

@@ -103,7 +103,6 @@ import AddBeerModal from '../components/modals/AddBeerModal.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
-// ZMĚNA: Přidáno vytažení all* kolekcí, aby bylo možné dohledat názvy i z jiných stran
 const { beers, breweries, locations, allBeers, allBreweries, allLocations, stats, history, countries, styles, isLoading } = storeToRefs(catalogStore)
 
 const currentMonthName = computed(() => {
@@ -269,7 +268,6 @@ const submitNewLocation = async () => {
 
 const openEditModal = (record) => {
   selectedEditRecordId.value = record.id
-  // ZMĚNA: Přiřazení a hledání pivovaru využívá allBeers
   const currentBeer = allBeers.value.find(b => b.id == record.beer_id)
   const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''
   editForm.value = { ...record, consumed_at: record.consumed_at || '', brewery_id: Number(prefillBreweryId), beer_id: Number(record.beer_id), location_id: Number(record.location_id), quantity: Number(record.quantity), is_free: !!Number(record.is_free), currency: record.currency || 'CZK', original_price: record.original_price || record.price }
@@ -282,7 +280,6 @@ const submitCheckIn = async () => {
     if (res.status === 'success') { 
       isModalOpen.value = false
       
-      // ZMĚNA: Dohledání textových názvů používá kompletní pole "all*", takže najde cokoliv
       const beer = allBeers.value.find(b => b.id == form.value.beer_id)
       const brewery = allBreweries.value.find(b => b.id == form.value.brewery_id)
       const loc = allLocations.value.find(l => l.id == form.value.location_id)
@@ -319,7 +316,6 @@ const submitEdit = async () => {
     if (res.status === 'success') { 
        isEditModalOpen.value = false
        
-       // ZMĚNA: Dohledání textových názvů používá kompletní pole "all*", takže najde cokoliv
        const beer = allBeers.value.find(b => b.id == editForm.value.beer_id)
        const brewery = allBreweries.value.find(b => b.id == editForm.value.brewery_id)
        const loc = allLocations.value.find(l => l.id == editForm.value.location_id)
@@ -358,11 +354,11 @@ const executeDelete = async () => {
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
 .btn-add { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; font-weight: 600; }
 .dashboard-content { display: flex; flex-direction: column; gap: 2rem; }
-.panel-card { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.5s ease, border-color 0.5s ease; }
-.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.5s ease; }
-.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.5s ease; }
+.panel-card { background: var(--bg-panel); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.3s ease, border-color 0.3s ease; }
+.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.3s ease; }
+.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.3s ease; }
 .panel-icon { color: var(--primary); }
-.empty-dashboard { text-align: center; color: var(--text-muted); padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: color 0.5s ease; }
+.empty-dashboard { text-align: center; color: var(--text-muted); padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: color 0.3s ease; }
 @media (max-width: 600px) {
   .section-actions .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
   .panel-card { padding: 1rem; }

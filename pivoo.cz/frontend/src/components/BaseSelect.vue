@@ -69,7 +69,7 @@ const props = defineProps({
   label: String,
   placeholder: { type: String, default: '-- Vyberte --' },
   disabled: Boolean,
-  searchable: { type: Boolean, default: false } // Povoluje vyhledávání
+  searchable: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -82,7 +82,6 @@ const parsedOptions = ref([])
 const searchQuery = ref('')
 const searchInputRef = ref(null)
 
-// Funkce pro parsování <option> prvků ze slotu
 const updateOptionsFromSlots = () => {
   if (!slotContainer.value) return
   
@@ -94,13 +93,11 @@ const updateOptionsFromSlots = () => {
   }))
 }
 
-// Najdeme text aktuálně vybrané položky
 const selectedLabel = computed(() => {
   const active = parsedOptions.value.find(opt => opt.value == props.modelValue)
   return active ? active.label : null
 })
 
-// Filtrované možnosti na základě vyhledávání
 const filteredOptions = computed(() => {
   if (!props.searchable || !searchQuery.value) return parsedOptions.value
   
@@ -114,7 +111,6 @@ const toggleDropdown = () => {
   if (!props.disabled) {
     isOpen.value = !isOpen.value
     
-    // Pokud se dropdown otevírá a je zapnuté hledání, zaostříme kurzor do inputu
     if (isOpen.value && props.searchable) {
       nextTick(() => {
         if (searchInputRef.value) searchInputRef.value.focus()
@@ -129,21 +125,18 @@ const selectOption = (option) => {
   isOpen.value = false
 }
 
-// Zavření při kliknutí mimo komponent a vyčištění vyhledávání
 const handleClickOutside = (event) => {
   if (selectRef.value && !selectRef.value.contains(event.target)) {
     isOpen.value = false
   }
 }
 
-// Při zavření menu resetujeme vyhledávání
 watch(isOpen, (newVal) => {
   if (!newVal) {
-    setTimeout(() => { searchQuery.value = '' }, 200) // Zpoždění kvůli plynulosti animace
+    setTimeout(() => { searchQuery.value = '' }, 200)
   }
 })
 
-// Sledujeme změny ve slotu
 const observer = new MutationObserver(updateOptionsFromSlots)
 
 onMounted(() => {
@@ -188,7 +181,7 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-panel);
   color: var(--text-main);
   font-size: 0.95rem;
@@ -197,7 +190,7 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   justify-content: space-between;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: var(--shadow);
+  box-shadow: none;
   outline: none;
 }
 
@@ -246,20 +239,19 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   right: 0;
   background-color: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
   z-index: 1000;
   display: flex;
   flex-direction: column;
 }
 
-/* STYL VYHLEDÁVACÍHO POLE */
 .search-container {
   position: relative;
   padding: 0.5rem;
   border-bottom: 1px solid var(--border);
   background-color: var(--bg-panel);
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .search-icon {
@@ -274,7 +266,7 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   width: 100%;
   padding: 0.6rem 0.6rem 0.6rem 2.2rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-app);
   color: var(--text-main);
   font-size: 0.9rem;
@@ -297,7 +289,7 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 
 .option-item {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -336,16 +328,14 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   font-size: 0.9rem;
 }
 
-/* Scrollbar menu */
 .options-list::-webkit-scrollbar {
   width: 6px;
 }
 .options-list::-webkit-scrollbar-thumb {
   background-color: var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
-/* ANIMACE */
 .dropdown-slide-enter-active, .dropdown-slide-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }

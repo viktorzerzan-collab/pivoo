@@ -131,7 +131,7 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
-.app-header { background-color: #1e293b; color: white; padding: 0.75rem 2rem; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 50; }
+.app-header { background-color: #1e293b; color: white; padding: 0.75rem 2rem; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 50; }
 .header-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; width: 100%; }
 
 .header-left { display: flex; align-items: center; gap: 2rem; }
@@ -141,7 +141,7 @@ const handleLogout = () => {
 .logo svg { filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3)); }
 
 .main-nav { display: flex; gap: 0.5rem; }
-.nav-link { display: flex; align-items: center; gap: 0.4rem; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s ease; }
+.nav-link { display: flex; align-items: center; gap: 0.4rem; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 1rem; border-radius: var(--radius-sm); transition: all 0.2s ease; }
 .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.05); }
 .nav-link.router-link-active { color: var(--primary); background-color: rgba(255, 255, 255, 0.1); }
 
@@ -154,7 +154,7 @@ const handleLogout = () => {
 .dropdown-arrow { color: #94a3b8; transition: transform 0.2s; }
 .dropdown-arrow.rotated { transform: rotate(180deg); }
 
-.dropdown-menu { position: absolute; top: calc(100% + 5px); right: 0; background: var(--bg-panel); border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); min-width: 160px; padding: 0.5rem 0; border: 1px solid var(--border); transform-origin: top right; transition: background-color 0.5s ease, border-color 0.5s ease; }
+.dropdown-menu { position: absolute; top: calc(100% + 5px); right: 0; background: var(--bg-panel); border-radius: var(--radius-md); box-shadow: var(--shadow-floating); min-width: 160px; padding: 0.5rem 0; border: 1px solid var(--border); transform-origin: top right; transition: background-color 0.3s ease, border-color 0.3s ease; }
 
 .dropdown-item { 
   display: flex; 
@@ -182,7 +182,7 @@ const handleLogout = () => {
 .logout-item { color: var(--danger); }
 .logout-item:hover { background-color: rgba(239, 68, 68, 0.05); color: var(--danger-hover); }
 
-.dropdown-divider { height: 1px; background-color: var(--border); margin: 0.25rem 0; transition: background-color 0.5s ease; }
+.dropdown-divider { height: 1px; background-color: var(--border); margin: 0.25rem 0; transition: background-color 0.3s ease; }
 
 .dropdown-fade-enter-active, .dropdown-fade-leave-active { transition: all 0.2s ease; }
 .dropdown-fade-enter-from, .dropdown-fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-10px); }

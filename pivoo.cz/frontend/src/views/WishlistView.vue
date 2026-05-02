@@ -138,7 +138,7 @@ onMounted(async () => {
   padding: 4rem 2rem;
   background: var(--bg-panel);
   border: 1px dashed var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: var(--text-muted);
   font-size: 1.1rem;
   font-style: italic;

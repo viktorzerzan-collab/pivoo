@@ -26,7 +26,6 @@ const props = defineProps({
 })
 defineEmits(['close'])
 
-// LOGIKA PRO ZMRAZENÍ POZADÍ
 watch(() => props.show, (isShown) => {
   if (isShown) {
     document.body.classList.add('modal-open')
@@ -35,7 +34,6 @@ watch(() => props.show, (isShown) => {
   }
 }, { immediate: true })
 
-// Pro jistotu odstraníme třídu při odstranění komponenty
 onUnmounted(() => {
   document.body.classList.remove('modal-open')
 })
@@ -59,12 +57,12 @@ onUnmounted(() => {
   color: var(--text-main);
   width: 100%;
   max-width: 500px;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: background-color 0.5s ease, color 0.5s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .modal-header {
@@ -73,14 +71,14 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border);
-  transition: border-color 0.5s ease;
+  transition: border-color 0.3s ease;
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
   color: var(--text-main);
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .modal-body {

@@ -69,23 +69,22 @@ defineProps({
   form: Object,
   isCurrentUser: { type: Boolean, default: false }
 })
-// PŘIDÁNO: Nová událost 'remove-avatar'
+
 defineEmits(['close', 'submit', 'remove-avatar'])
 </script>
 
 <style scoped>
-.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--orange); }
 
 .ui-divider { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 .section-subtitle { margin: 0 0 1rem 0; font-size: 1.1rem; color: var(--text-main); font-weight: 700; }
 
-/* Styly pro avatar sekci */
 .avatar-moderation-section { display: flex; flex-direction: column; }
-.avatar-present { display: flex; align-items: center; gap: 1.5rem; background: var(--bg-app); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); }
+.avatar-present { display: flex; align-items: center; gap: 1.5rem; background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
 .avatar-preview { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 2px solid var(--border); flex-shrink: 0; }
 .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-empty { display: flex; align-items: center; gap: 1rem; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-app); padding: 1rem; border-radius: 12px; border: 1px dashed var(--border); }
+.avatar-empty { display: flex; align-items: center; gap: 1rem; color: var(--text-muted); font-size: 0.95rem; background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md); border: 1px dashed var(--border); }
 .avatar-placeholder { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-panel); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
 
 .add-form { display: flex; flex-direction: column; gap: 1.25rem; }

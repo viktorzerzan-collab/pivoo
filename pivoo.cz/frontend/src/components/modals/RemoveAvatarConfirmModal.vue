@@ -31,7 +31,7 @@ import BaseButton from '../BaseButton.vue'
 defineProps({
   show: Boolean,
   user: Object,
-  isCurrentUser: { type: Boolean, default: false } // Přidána nová prop
+  isCurrentUser: { type: Boolean, default: false } 
 })
 
 defineEmits(['close', 'confirm'])
@@ -52,14 +52,13 @@ defineEmits(['close', 'confirm'])
   color: var(--text-muted); 
   font-size: 1.05rem; 
   text-align: center; 
-  transition: color 0.5s ease; 
+  transition: color 0.3s ease; 
   line-height: 1.5;
 }
 .modal-desc strong { color: var(--text-main); }
 
 .button-group { display: flex; gap: 1rem; }
 
-/* Styl pro sekundární tlačítko */
 :deep(.secondary) {
   background-color: var(--bg-app);
   color: var(--text-main);

@@ -172,7 +172,6 @@ import BaseCheckbox from '../BaseCheckbox.vue'
 import GeoLocateButton from '../GeoLocateButton.vue'
 import { apiFetch } from '../../api'
 
-// PŘIDÁNO: Načtení katalogu přímo z modálu
 import { useCatalogStore } from '../../stores/catalog'
 const catalogStore = useCatalogStore()
 
@@ -191,7 +190,6 @@ const locationMessage = ref('')
 const locationMessageType = ref('')
 const tempCoords = ref(null)
 
-// --- AI SKEN ETIKETY STAVY A LOGIKA ---
 const magicInput = ref(null)
 const isScanning = ref(false)
 const magicMessage = ref('')
@@ -234,7 +232,6 @@ const processMagicScan = async (event) => {
       } else {
          const aiBeerNorm = normalizeStr(ai.beer_name);
          
-         // ZMĚNA: Hledání probíhá nad catalogStore.allBeers
          let matchingBeer = catalogStore.allBeers.find(b => {
             const bNameNorm = normalizeStr(b.name);
             return b.brewery_id == ai.brewery_id &&
@@ -393,7 +390,6 @@ const autodetectLocation = () => {
 
 const sortByFavorite = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0);
 
-// ZMĚNA: Přepojení na catalogStore.all* pole
 const sortedLocations = computed(() => {
   return [...catalogStore.allLocations].sort(sortByFavorite);
 })
@@ -425,7 +421,7 @@ watch(() => props.form.location_id, () => {
 </script>
 
 <style scoped>
-.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--primary); }
 .checkin-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
@@ -433,7 +429,7 @@ watch(() => props.form.location_id, () => {
 
 .location-detect-wrapper { display: flex; align-items: flex-end; gap: 0.5rem; }
 
-.location-message { font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; margin-top: -0.5rem; }
+.location-message { font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-weight: 600; margin-top: -0.5rem; }
 .location-message.success { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
 .location-message.warning { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); display: flex; justify-content: space-between; align-items: center; }
 .location-message.error { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
@@ -441,10 +437,9 @@ watch(() => props.form.location_id, () => {
 .add-loc-link { color: var(--blue); text-decoration: underline; cursor: pointer; }
 .add-loc-link:hover { color: var(--blue-hover); }
 
-/* --- AI SKEN CSS --- */
 .magic-scan-wrapper { margin-bottom: 0.5rem; margin-top: 0.5rem; }
 .hidden-input { display: none; }
-.magic-message { font-size: 0.85rem; padding: 0.75rem; border-radius: 8px; font-weight: 600; margin-top: -0.5rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.magic-message { font-size: 0.85rem; padding: 0.75rem; border-radius: var(--radius-sm); font-weight: 600; margin-top: -0.5rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .magic-message.success { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
 .magic-message.warning { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
 .magic-message.error { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
@@ -455,7 +450,7 @@ watch(() => props.form.location_id, () => {
 
 .align-end { align-items: flex-end; }
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
-.input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.5s ease; }
+.input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.3s ease; }
 
 @media (max-width: 600px) { 
   .form-row { flex-direction: column; gap: 1.25rem; } 

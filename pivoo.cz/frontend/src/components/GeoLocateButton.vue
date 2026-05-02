@@ -37,7 +37,7 @@ defineEmits(['locate'])
   background-color: var(--bg-panel); 
   color: var(--text-muted); 
   border: 1px solid var(--border); 
-  border-radius: 10px; 
+  border-radius: var(--radius-sm); 
   cursor: pointer; 
   transition: all 0.2s ease;
   padding: 0 !important; 

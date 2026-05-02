@@ -34,7 +34,6 @@
         <div v-if="!localValue[day.id].closed" class="intervals-list">
           <div v-for="(interval, index) in localValue[day.id].intervals" :key="index" class="interval-row">
             <div class="time-inputs">
-              <!-- Odstraněn atribut required pro volitelné zadání otevírací doby -->
               <input 
                 type="time" 
                 v-model="interval.from"
@@ -72,7 +71,6 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { XIcon } from 'lucide-vue-next'
-// IMPORT TOOLTIPU
 import BaseTooltip from './BaseTooltip.vue'
 
 const props = defineProps({
@@ -190,7 +188,7 @@ const emitUpdate = () => {
   gap: 0.75rem;
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1rem;
 }
 
@@ -257,7 +255,7 @@ const emitUpdate = () => {
   gap: 0.4rem;
   background: var(--bg-app);
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
 
@@ -282,7 +280,7 @@ const emitUpdate = () => {
   color: white;
   border: none;
   padding: 0.2rem 0.6rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
@@ -300,12 +298,11 @@ const emitUpdate = () => {
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .btn-remove-interval:hover {
   background: var(--danger-hover);
-  transform: scale(1.1);
 }
 
 .btn-remove-interval :deep(svg) {

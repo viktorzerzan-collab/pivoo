@@ -70,7 +70,6 @@ import OpeningHoursInput from '../OpeningHoursInput.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Přidáno ruční načítání obrázků pro Leaflet z dist složky
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
@@ -109,7 +108,6 @@ const initMap = () => {
     attribution: '© OpenStreetMap'
   }).addTo(map.value)
 
-  // Aplikování správných ikon pro Leaflet ve Vite
   const customIcon = L.icon({
     iconUrl: markerIconUrl,
     shadowUrl: markerShadowUrl,
@@ -156,7 +154,7 @@ onBeforeUnmount(() => destroyMap())
 </script>
 
 <style scoped>
-.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--blue); }
 .add-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
@@ -167,13 +165,12 @@ onBeforeUnmount(() => destroyMap())
 .admin-map-element {
   height: 250px;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   z-index: 1;
 }
 .coords-display { font-family: monospace; font-size: 0.8rem; margin-top: 5px; color: var(--text-muted); }
 
-/* PŘIDÁNO: Styly pro magický banner */
 .magic-banner {
   display: flex;
   align-items: center;
@@ -182,7 +179,7 @@ onBeforeUnmount(() => destroyMap())
   border: 1px solid rgba(139, 92, 246, 0.3);
   color: #8b5cf6;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0.5rem;

@@ -47,13 +47,13 @@ import { useRouter } from 'vue-router'
 import { LogInIcon, BeerIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
+import { useToastStore } from '../stores/toast' 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const toastStore = useToastStore() // NOVÉ: Inicializace storu
+const toastStore = useToastStore() 
 
 const username = ref('')
 const password = ref('')
@@ -75,7 +75,6 @@ const handleLogin = async () => {
       authStore.login(result.user, result.token)
       router.push('/dashboard')
     } else {
-      // NOVÉ: Použití globálního toastu místo banneru
       toastStore.showToast(result.message || 'Chyba přihlášení.', 'toast-error')
     }
   } catch (error) {
@@ -95,19 +94,19 @@ const handleLogin = async () => {
   justify-content: center;
   background-color: var(--bg-app);
   padding: 1rem;
-  transition: background-color 0.5s ease;
+  transition: background-color 0.3s ease;
 }
 
 .auth-card {
   background: var(--bg-panel);
   padding: 3.5rem 2.5rem;
-  border-radius: 16px;
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
   width: 100%;
   max-width: 700px;
   text-align: center;
   border: 1px solid var(--border);
-  transition: background-color 0.5s ease, border-color 0.5s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .logo-container {
@@ -123,7 +122,7 @@ const handleLogin = async () => {
   color: var(--text-main);
   letter-spacing: -0.05em;
   margin: 0;
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .auth-subtitle {
@@ -131,7 +130,7 @@ const handleLogin = async () => {
   font-size: 1.1rem;
   margin-bottom: 2.5rem;
   margin-top: 0.25rem;
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .auth-form {
@@ -146,7 +145,7 @@ const handleLogin = async () => {
   text-align: center;
   color: var(--text-muted);
   font-size: 0.95rem;
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .auth-footer-link a {

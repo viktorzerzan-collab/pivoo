@@ -25,7 +25,6 @@ defineProps({
     type: String,
     required: true
   },
-  // Možnosti: 'top', 'bottom', 'left', 'right', 'top-end'
   position: {
     type: String,
     default: 'top'
@@ -45,16 +44,16 @@ const show = ref(false)
 
 .tooltip-box {
   position: absolute;
-  background-color: #1e293b; /* Tmavá barva pro dobrý kontrast v obou režimech */
+  background-color: #1e293b; 
   color: #f8fafc;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.4rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   z-index: 9999;
   pointer-events: none;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-floating);
   letter-spacing: 0.02em;
 }
 
@@ -65,7 +64,7 @@ const show = ref(false)
   border-style: solid;
 }
 
-/* POZICE: TOP (Výchozí - středová) */
+/* POZICE: TOP */
 .tooltip-box.top {
   bottom: calc(100% + 8px);
   left: 50%;
@@ -79,14 +78,14 @@ const show = ref(false)
   border-color: #1e293b transparent transparent transparent;
 }
 
-/* PŘIDÁNO - POZICE: TOP-END (Zarovnáno doprava, vhodné k okrajům modálů) */
+/* POZICE: TOP-END */
 .tooltip-box.top-end {
   bottom: calc(100% + 8px);
-  right: -6px; /* Jemně přečnívá, aby opticky lícovalo s tlačítkem */
+  right: -6px; 
 }
 .tooltip-box.top-end .tooltip-arrow {
   bottom: -4px;
-  right: 18px; /* Šipka ukazuje zhruba doprostřed 44px širokého tlačítka */
+  right: 18px; 
   border-width: 5px 5px 0 5px;
   border-color: #1e293b transparent transparent transparent;
 }
@@ -144,7 +143,6 @@ const show = ref(false)
   opacity: 0;
 }
 
-/* Jemný pohyb podle pozice při animaci */
 .tooltip-fade-enter-from.top { transform: translate(-50%, 5px); }
 .tooltip-fade-enter-from.top-end { transform: translateY(5px); }
 .tooltip-fade-enter-from.bottom { transform: translate(-50%, -5px); }

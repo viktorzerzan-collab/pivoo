@@ -53,7 +53,6 @@ import {
   ChevronsLeftIcon, 
   ChevronsRightIcon 
 } from 'lucide-vue-next'
-// IMPORT TOOLTIPU
 import BaseTooltip from './BaseTooltip.vue'
 
 defineProps({
@@ -72,7 +71,6 @@ const emit = defineEmits(['update:currentPage'])
 const changePage = (newPage) => {
   emit('update:currentPage', newPage)
   
-  // Hladké odskrolování na samotný začátek stránky
   window.scrollTo({
     top: 0,
     left: 0,
@@ -98,13 +96,13 @@ const changePage = (newPage) => {
   width: 40px;
   height: 40px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background-color: var(--bg-panel);
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .page-btn svg {

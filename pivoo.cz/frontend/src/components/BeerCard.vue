@@ -107,21 +107,19 @@ const toggleWishlist = () => { catalogStore.toggleWishlist(props.beer.id, 'beer'
 .card { 
   background: var(--bg-panel); 
   border: 1px solid var(--border); 
-  border-radius: 12px; 
+  border-radius: var(--radius-md); 
   display: flex; 
   flex-direction: column; 
-  box-shadow: var(--shadow-sm); 
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background-color 0.5s ease; 
+  box-shadow: none; 
+  transition: border-color 0.2s, background-color 0.3s ease; 
   height: 100%; 
   position: relative; 
   z-index: 1;
 }
 
-.card.is-fav { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.card.is-fav { border-color: var(--primary); outline: 1px solid var(--primary); }
 
 .card:hover { 
-  transform: translateY(-3px); 
-  box-shadow: var(--shadow-md); 
   border-color: var(--primary); 
   background-color: var(--card-hover-bg); 
   z-index: 10;
@@ -130,17 +128,15 @@ const toggleWishlist = () => { catalogStore.toggleWishlist(props.beer.id, 'beer'
 .card-body { padding: 1.25rem; flex-grow: 1; }
 .card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 
-.icon-wrapper { padding: 0.75rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
+.icon-wrapper { padding: 0.75rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
 .beer-bg { background: #1e293b; }
 
-/* OPRAVA: Přidáno min-width: 0 */
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
 
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .card-title { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .action-wrap { display: flex; align-items: center; gap: 0.25rem; }
 
-/* OPRAVA: Pojistka pro dlouhé názvy pivovaru */
 .brewery-line { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; min-width: 0; }
 .brewery-name { font-size: 0.9rem; color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
@@ -153,7 +149,7 @@ const toggleWishlist = () => { catalogStore.toggleWishlist(props.beer.id, 'beer'
   background: var(--bg-app); 
   border: 1px solid var(--border); 
   padding: 3px 8px; 
-  border-radius: 6px; 
+  border-radius: var(--radius-sm); 
   font-size: 0.7rem; 
   font-weight: 700; 
   color: var(--text-muted); 

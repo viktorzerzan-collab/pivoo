@@ -62,7 +62,7 @@ const updateMax = (val) => emit('update:modelValue', { ...props.modelValue, max:
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-main);
-  transition: color 0.5s ease;
+  transition: color 0.3s ease;
 }
 
 .range-inputs {
@@ -82,12 +82,12 @@ const updateMax = (val) => emit('update:modelValue', { ...props.modelValue, max:
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-panel);
   color: var(--text-main);
   font-size: 0.95rem;
   transition: all 0.3s ease;
-  box-shadow: var(--shadow);
+  box-shadow: none;
   outline: none;
 }
 

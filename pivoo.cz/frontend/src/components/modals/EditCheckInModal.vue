@@ -138,7 +138,6 @@ import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
 import BaseCheckbox from '../BaseCheckbox.vue'
 
-// PŘIDÁNO: Načtení katalogu přímo z modálu
 import { useCatalogStore } from '../../stores/catalog'
 const catalogStore = useCatalogStore()
 
@@ -194,7 +193,6 @@ watch(() => props.show, (isOpen) => {
   }
 })
 
-// ZMĚNA: Přepojení na catalogStore.allBeers
 const filteredBeers = computed(() => {
   if (!props.form.brewery_id) return []
   return catalogStore.allBeers.filter(b => b.brewery_id == props.form.brewery_id)
@@ -213,7 +211,7 @@ watch(() => props.form.location_id, () => {
 </script>
 
 <style scoped>
-.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--orange); }
 .checkin-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
@@ -222,7 +220,7 @@ watch(() => props.form.location_id, () => {
 .align-end { align-items: flex-end; }
 
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
-.input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.5s ease; }
+.input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.3s ease; }
 
 @media (max-width: 600px) { 
   .form-row { flex-direction: column; gap: 1.25rem; } 

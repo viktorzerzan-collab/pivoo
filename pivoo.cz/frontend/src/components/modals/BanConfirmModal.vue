@@ -36,7 +36,6 @@ const props = defineProps({
 
 defineEmits(['close', 'confirm'])
 
-// Pokud aktuálně uživatel NENÍ zabanovaný, tak akce, kterou chceme provést, je "Banning" (blokování)
 const isBanning = computed(() => !props.user?.is_banned)
 </script>
 
@@ -57,14 +56,13 @@ const isBanning = computed(() => !props.user?.is_banned)
   color: var(--text-muted); 
   font-size: 1.05rem; 
   text-align: center; 
-  transition: color 0.5s ease; 
+  transition: color 0.3s ease; 
   line-height: 1.5; 
 }
 .modal-desc strong { color: var(--text-main); }
 
 .button-group { display: flex; gap: 1rem; }
 
-/* Styl pro sekundární tlačítko */
 :deep(.secondary) {
   background-color: var(--bg-app);
   color: var(--text-main);

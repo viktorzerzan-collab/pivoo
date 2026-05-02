@@ -107,17 +107,17 @@ const formatDate = (dateStr) => {
 .history-card {
   background: var(--bg-app);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
   min-width: 0;
   width: 100%;
+  box-shadow: none;
 }
 
 .history-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow);
+  background-color: var(--card-hover-bg);
   border-color: var(--primary);
 }
 
@@ -273,7 +273,7 @@ const formatDate = (dateStr) => {
   width: 32px;
   height: 32px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .text-truncate {

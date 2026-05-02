@@ -7,7 +7,7 @@
       </h2>
     </template>
     <template #body>
-      <p class="modal-desc">Tento zápis bude nenávratně odstraněn.</p>
+      <p class="modal-desc">Tento záznam bude nenávratně odstraněn.</p>
       <div class="button-group">
          <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">Zrušit</BaseButton>
          <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm')">Ano, smazat</BaseButton>
@@ -28,10 +28,9 @@ defineEmits(['close', 'confirm'])
 <style scoped>
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.5rem; }
 .danger-text { color: var(--danger); }
-.modal-desc { margin-bottom: 2rem; color: var(--text-muted); font-size: 1.1rem; text-align: center; transition: color 0.5s ease; }
+.modal-desc { margin-bottom: 2rem; color: var(--text-muted); font-size: 1.1rem; text-align: center; transition: color 0.3s ease; }
 .button-group { display: flex; gap: 1rem; }
 
-/* Definice pro sekundární tlačítko v rámci potvrzovacího dialogu, pokud BaseButton.vue nemá variant="secondary" */
 :deep(.secondary) {
   background-color: var(--bg-app);
   color: var(--text-main);

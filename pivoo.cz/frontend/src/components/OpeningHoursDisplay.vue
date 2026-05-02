@@ -74,7 +74,6 @@ const toggleDetails = () => {
   showDetails.value = !showDetails.value
 }
 
-// Pomocná funkce pro formátování intervalů do jednoho řádku
 const formatIntervals = (intervals) => {
   if (!intervals || intervals.length === 0) return ''
   return intervals
@@ -88,11 +87,9 @@ const parsedHours = computed(() => {
   try {
     const parsed = typeof props.openingHours === 'string' ? JSON.parse(props.openingHours) : props.openingHours
     
-    // Transformace dat pro podporu více intervalů a zpětnou kompatibilitu
     const transformed = {}
     Object.keys(parsed).forEach(dayId => {
       const dayData = parsed[dayId]
-      // Pokud data obsahují přímo from/to (starý formát), převedeme je na pole intervalů
       if (dayData.from !== undefined || dayData.to !== undefined) {
         transformed[dayId] = {
           closed: dayData.closed,
@@ -120,7 +117,6 @@ const todaySchedule = computed(() => {
   return parsedHours.value[currentDayId.value]
 })
 
-// Vylepšený výpočet "Otevřeno" pro více intervalů
 const isOpenNow = computed(() => {
   if (!todaySchedule.value || todaySchedule.value.closed || !todaySchedule.value.intervals) return false
   
@@ -140,7 +136,6 @@ const isOpenNow = computed(() => {
     const [toH, toM] = to.split(':').map(Number)
     const toTotal = toH * 60 + toM
 
-    // Případ standardní i přes půlnoc (např. 18:00 - 02:00)
     if (fromTotal <= toTotal) {
       return nowMinutesTotal >= fromTotal && nowMinutesTotal <= toTotal
     } else {
@@ -169,7 +164,7 @@ const isOpenNow = computed(() => {
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
-  border-radius: 20px;
+  border-radius: 99px; /* Tvar pilulky zůstává zachován */
   background: var(--bg-panel);
   border: 1px solid var(--border);
   cursor: pointer;
@@ -229,10 +224,10 @@ const isOpenNow = computed(() => {
   margin-top: 0.5rem;
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.75rem;
   min-width: 260px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-floating);
   z-index: 50;
   display: flex;
   flex-direction: column;

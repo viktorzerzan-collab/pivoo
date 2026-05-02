@@ -112,7 +112,7 @@ import { UserIcon, KeyIcon, Trash2Icon, PaletteIcon, MonitorIcon, ClockIcon } fr
 import { apiFetch } from '../api'
 
 import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast' // NOVÉ: Import storu
+import { useToastStore } from '../stores/toast' 
 import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseFileUpload from '../components/BaseFileUpload.vue'
@@ -120,7 +120,7 @@ import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmMo
 
 const router = useRouter()
 const authStore = useAuthStore()
-const toastStore = useToastStore() // NOVÉ: Inicializace storu
+const toastStore = useToastStore() 
 const { user } = storeToRefs(authStore)
 
 const passForm = ref({ old_password: '', new_password: '', new_password_confirm: '' })
@@ -148,7 +148,7 @@ const saveThemeSettings = async () => {
     
     if (result.status === 'success') {
       authStore.updateUser({ theme_mode: themeForm.value.theme_mode })
-      toastStore.showToast(result.message) // NOVÉ: Použití storu
+      toastStore.showToast(result.message) 
     }
   } catch (error) { toastStore.showToast('Chyba při ukládání nastavení.', 'toast-error') }
 }
@@ -168,7 +168,7 @@ const handleAvatarUpload = async () => {
     if (result.status === 'success') {
       authStore.updateUser({ avatar: result.avatar })
       avatarFile.value = null
-      toastStore.showToast(result.message) // NOVÉ: Použití storu
+      toastStore.showToast(result.message) 
     } else { toastStore.showToast(result.message, 'toast-error') }
   } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
 }
@@ -185,14 +185,14 @@ const executeAvatarRemove = async () => {
     if (result.status === 'success') {
       authStore.updateUser({ avatar: null })
       isRemoveAvatarModalOpen.value = false
-      toastStore.showToast(result.message) // NOVÉ: Použití storu
+      toastStore.showToast(result.message) 
     }
   } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
 }
 
 const handlePasswordChange = async () => {
   if (passForm.value.new_password !== passForm.value.new_password_confirm) {
-    toastStore.showToast('Nová hesla se neshodují.', 'toast-error') // NOVÉ: Použití storu
+    toastStore.showToast('Nová hesla se neshodují.', 'toast-error') 
     return
   }
   try {
@@ -206,7 +206,7 @@ const handlePasswordChange = async () => {
     })
     
     if (result.status === 'success') {
-      toastStore.showToast(result.message) // NOVÉ: Použití storu
+      toastStore.showToast(result.message) 
       passForm.value = { old_password: '', new_password: '', new_password_confirm: '' }
     } else { toastStore.showToast(result.message, 'toast-error') }
   } catch (error) { toastStore.showToast('Chyba komunikace se serverem.', 'toast-error') }
@@ -228,32 +228,32 @@ const handleAccountDeletion = async () => {
 
 <style scoped>
 .profile-content { display: flex; flex-direction: column; gap: 2rem; max-width: 800px; margin: 0 auto; }
-.panel-card { background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 1.5rem; transition: background-color 0.5s ease, border-color 0.5s ease; }
-.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; }
-.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); }
+.panel-card { background: var(--bg-panel); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.3s ease, border-color 0.3s ease; }
+.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.3s ease; }
+.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.3s ease; }
 .panel-icon { color: var(--primary); }
 
 .user-info-card { display: flex; align-items: center; gap: 2.5rem; padding: 2.5rem; }
 .avatar-section { flex-shrink: 0; }
-.avatar-large { width: 150px; height: 150px; border-radius: 50%; background: var(--bg-app); display: flex; align-items: center; justify-content: center; border: 4px solid var(--primary); overflow: hidden; box-shadow: var(--shadow-md); }
+.avatar-large { width: 150px; height: 150px; border-radius: 50%; background: var(--bg-app); display: flex; align-items: center; justify-content: center; border: 4px solid var(--primary); overflow: hidden; box-shadow: none; transition: background-color 0.3s ease; }
 .avatar-img { width: 100%; height: 100%; object-fit: cover; }
 
 .user-details { flex-grow: 1; display: flex; flex-direction: column; gap: 1.5rem; }
-.user-main-info h3 { margin: 0; font-size: 1.75rem; color: var(--text-main); }
-.user-main-info p { margin: 0.25rem 0 0.75rem; color: var(--text-muted); font-size: 1.1rem; }
+.user-main-info h3 { margin: 0; font-size: 1.75rem; color: var(--text-main); transition: color 0.3s ease; }
+.user-main-info p { margin: 0.25rem 0 0.75rem; color: var(--text-muted); font-size: 1.1rem; transition: color 0.3s ease; }
 
 .avatar-actions-grid { display: flex; flex-direction: column; gap: 1rem; max-width: 350px; }
 .btn-group { display: flex; gap: 0.75rem; }
 
 .theme-settings { display: flex; flex-direction: column; gap: 1.5rem; }
-.settings-desc { color: var(--text-muted); margin: 0; font-size: 0.95rem; }
+.settings-desc { color: var(--text-muted); margin: 0; font-size: 0.95rem; transition: color 0.3s ease; }
 
 .theme-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .theme-option {
   position: relative;
   cursor: pointer;
   border: 2px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1.25rem;
   transition: all 0.2s ease;
   background: var(--bg-app);
@@ -261,10 +261,10 @@ const handleAccountDeletion = async () => {
 .theme-option input { position: absolute; opacity: 0; }
 .theme-option.active { border-color: var(--primary); background: rgba(250, 204, 21, 0.1); }
 .option-content { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
-.option-icon { color: var(--text-muted); margin-bottom: 0.5rem; }
+.option-icon { color: var(--text-muted); margin-bottom: 0.5rem; transition: color 0.3s ease; }
 .active .option-icon { color: var(--primary); }
-.option-content span { font-weight: 700; color: var(--text-main); }
-.option-content small { color: var(--text-muted); font-size: 0.8rem; }
+.option-content span { font-weight: 700; color: var(--text-main); transition: color 0.3s ease; }
+.option-content small { color: var(--text-muted); font-size: 0.8rem; transition: color 0.3s ease; }
 
 .profile-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .danger-zone { border: 1px solid #fca5a5; background: rgba(239, 68, 68, 0.05); }

@@ -84,24 +84,22 @@ const handleSubmit = () => {
     new_password: form.value.password 
   })
   
-  // Po úspěšném emitování vyčistíme formulář
   form.value = { password: '', password_confirm: '' }
 }
 
-// Vyčistit chybu, pokud uživatel začne znovu psát
 watch(() => form.value.password, () => error.value = '')
 watch(() => form.value.password_confirm, () => error.value = '')
 </script>
 
 <style scoped>
-.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.5s ease; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--orange); }
 .add-form { display: flex; flex-direction: column; gap: 1.25rem; }
 
 .user-info-banner {
   background-color: var(--bg-app);
   padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.95rem;
   color: var(--text-main);
   border: 1px solid var(--border);

@@ -98,14 +98,13 @@ const weekDays = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
 const currentMonth = ref(new Date().getMonth())
 const currentYear = ref(new Date().getFullYear())
 
-// ÚPRAVA: Roky začínají aktuálním rokem a jdou 100 let zpět
 const yearOptions = computed(() => {
   const currentY = new Date().getFullYear()
   const years = []
   for (let i = currentY - 100; i <= currentY; i++) {
     years.push(i)
   }
-  return years.reverse() // Aktuální rok bude nahoře
+  return years.reverse() 
 })
 
 watch(() => props.modelValue, (newVal) => {
@@ -197,20 +196,19 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 <style scoped>
 .base-date-picker { position: relative; display: flex; flex-direction: column; gap: 0.5rem; width: 100%; text-align: left; }
-.base-label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); transition: color 0.5s ease; }
+.base-label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); transition: color 0.3s ease; }
 
 .input-wrapper { position: relative; cursor: pointer; }
-.input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; transition: color 0.5s ease; }
-.base-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border); border-radius: 10px; background-color: var(--bg-panel); font-size: 0.95rem; font-family: inherit; color: var(--text-main); cursor: pointer; outline: none; transition: all 0.3s ease; }
+.input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; transition: color 0.3s ease; }
+.base-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background-color: var(--bg-panel); font-size: 0.95rem; font-family: inherit; color: var(--text-main); cursor: pointer; outline: none; transition: all 0.3s ease; box-shadow: none; }
 .input-wrapper:hover .base-input { border-color: var(--primary); }
 
-.calendar-popover { position: absolute; top: calc(100% + 0.5rem); left: 0; width: 310px; background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-md); padding: 1rem; z-index: 100; transition: all 0.3s ease; }
+.calendar-popover { position: absolute; top: calc(100% + 0.5rem); left: 0; width: 310px; background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-floating); padding: 1rem; z-index: 100; transition: all 0.3s ease; }
 .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; color: var(--text-main); gap: 0.5rem; }
 
-.cal-btn { background: none; border: none; padding: 0.25rem; cursor: pointer; border-radius: 6px; display: flex; align-items: center; color: var(--text-muted); transition: all 0.2s; }
+.cal-btn { background: none; border: none; padding: 0.25rem; cursor: pointer; border-radius: var(--radius-sm); display: flex; align-items: center; color: var(--text-muted); transition: all 0.2s; }
 .cal-btn:hover { background-color: var(--border); color: var(--text-main); }
 
-/* --- STYLIZACE MINI SELECTŮ --- */
 .date-selectors { display: flex; gap: 0.4rem; align-items: center; flex: 1; justify-content: center; }
 .custom-select-mini { position: relative; }
 
@@ -220,7 +218,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   background-color: var(--bg-app);
   color: var(--text-main);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem; font-weight: 700;
   cursor: pointer; transition: all 0.2s ease;
   white-space: nowrap;
@@ -233,8 +231,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   position: absolute; top: calc(100% + 5px); left: 50%; transform: translateX(-50%);
   background-color: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
   z-index: 1001;
   max-height: 200px; overflow-y: auto;
   list-style: none; padding: 0.4rem; margin: 0;
@@ -242,7 +240,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 }
 
 .options-menu-mini li {
-  padding: 0.5rem 0.75rem; border-radius: 6px;
+  padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);
   cursor: pointer; font-size: 0.85rem; font-weight: 500;
   color: var(--text-main); transition: all 0.2s ease;
   text-align: left;
@@ -250,18 +248,15 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 .options-menu-mini li:hover { background-color: var(--card-hover-bg); color: var(--primary); }
 .options-menu-mini li.is-selected { background-color: rgba(250, 204, 21, 0.1); color: var(--primary); font-weight: 700; }
 
-/* Scrollbar pro menu */
 .options-menu-mini::-webkit-scrollbar { width: 4px; }
-.options-menu-mini::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
+.options-menu-mini::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: var(--radius-sm); }
 
-/* Animace dropdownu */
 .dropdown-slide-enter-active, .dropdown-slide-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .dropdown-slide-enter-from, .dropdown-slide-leave-to { opacity: 0; transform: translate(-50%, -10px); }
 
-/* --- KALENDÁŘ --- */
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; text-align: center; }
 .cal-day-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.25rem; }
-.cal-day { padding: 0.4rem 0; font-size: 0.9rem; font-weight: 500; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.cal-day { padding: 0.4rem 0; font-size: 0.9rem; font-weight: 500; color: var(--text-main); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; }
 .cal-day:not(.is-empty):hover { background-color: var(--border); }
 .cal-day.is-empty { cursor: default; }
 

@@ -94,21 +94,19 @@ const formatLocation = (location) => {
 .card { 
   background: var(--bg-panel); 
   border: 1px solid var(--border); 
-  border-radius: 12px; 
+  border-radius: var(--radius-md); 
   display: flex; 
   flex-direction: column; 
-  box-shadow: var(--shadow-sm); 
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; 
+  box-shadow: none; 
+  transition: border-color 0.2s, background-color 0.3s ease; 
   height: 100%; 
   position: relative; 
   z-index: 1;
 }
 
-.card.is-fav { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.card.is-fav { border-color: var(--primary); outline: 1px solid var(--primary); }
 
 .card:hover { 
-  transform: translateY(-3px); 
-  box-shadow: var(--shadow-md); 
   border-color: var(--primary); 
   background-color: var(--card-hover-bg); 
   z-index: 10; 
@@ -117,7 +115,7 @@ const formatLocation = (location) => {
 .card-body { padding: 1.25rem; flex-grow: 1; }
 .card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 
-.icon-wrapper { padding: 0.75rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.icon-wrapper { padding: 0.75rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
 .location-bg { background: #1e293b; }
 
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; flex: 1; }
