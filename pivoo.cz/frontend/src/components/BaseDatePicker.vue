@@ -9,7 +9,7 @@
         readonly 
         :value="formattedDate" 
         class="base-input custom-input" 
-        placeholder="Vyberte datum"
+        :placeholder="$t('datepicker.placeholder')"
       />
     </div>
 
@@ -80,6 +80,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: String,
@@ -87,13 +88,15 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
+const { t, tm } = useI18n()
+
 const isOpen = ref(false)
 const isMonthOpen = ref(false)
 const isYearOpen = ref(false)
 const pickerRef = ref(null)
 
-const monthNames = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec']
-const weekDays = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
+const monthNames = computed(() => tm('datepicker.months'))
+const weekDays = computed(() => tm('datepicker.days'))
 
 const currentMonth = ref(new Date().getMonth())
 const currentYear = ref(new Date().getFullYear())

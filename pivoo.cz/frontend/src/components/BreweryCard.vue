@@ -45,7 +45,7 @@
             <StarIcon :size="14" fill="#f59e0b" color="#f59e0b" />
             <span class="rating-value">{{ Number(brewery.avg_rating).toFixed(1) }}</span>
             <span class="count" v-if="brewery.total_beers_in_catalog">
-              ({{ brewery.total_beers_in_catalog }} piv)
+              ({{ brewery.total_beers_in_catalog }} {{ $t('cards.beers_count') }})
             </span>
           </div>
         </div>
@@ -55,7 +55,7 @@
     <div class="card-footer">
       <BaseButton variant="secondary" @click="$emit('showDetail', brewery)" class="full-width-btn">
         <template #icon><InfoIcon :size="16" /></template>
-        Detail pivovaru
+        {{ $t('cards.brewery_detail') }}
       </BaseButton>
     </div>
   </div>
@@ -63,6 +63,7 @@
 
 <script setup>
 import { FactoryIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseButton from './BaseButton.vue'
 import FavoriteButton from './FavoriteButton.vue'
 import WishlistButton from './WishlistButton.vue'
@@ -76,6 +77,7 @@ const props = defineProps({ brewery: Object })
 defineEmits(['showDetail'])
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const toggleFav = () => { catalogStore.toggleFavorite(props.brewery.id, 'brewery') }
 const toggleWishlist = () => { catalogStore.toggleWishlist(props.brewery.id, 'brewery') }
@@ -85,7 +87,7 @@ const formatLocation = (brewery) => {
   if (brewery.country) { 
     loc += loc ? ', ' + brewery.country : brewery.country; 
   }
-  return loc || 'Lokalita neznámá';
+  return loc || t('cards.unknown_location');
 }
 </script>
 

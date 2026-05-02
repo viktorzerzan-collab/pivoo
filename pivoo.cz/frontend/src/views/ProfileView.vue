@@ -15,15 +15,15 @@
             <h3>{{ user?.username }}</h3>
             <p>{{ user?.first_name }} {{ user?.last_name }}</p>
             <span class="badge" :class="user?.role === 'admin' ? 'admin' : 'user'">
-              {{ user?.role === 'admin' ? 'Administrátor' : 'Běžný pivař' }}
+              {{ user?.role === 'admin' ? $t('views.profile.admin_role') : $t('views.profile.user_role') }}
             </span>
           </div>
 
           <div class="avatar-actions-grid">
-            <BaseFileUpload v-model:file="avatarFile" placeholder="Klikni pro změnu fotky" />
+            <BaseFileUpload v-model:file="avatarFile" :placeholder="$t('views.profile.change_avatar')" />
             <div class="btn-group">
-              <button v-if="avatarFile" @click="handleAvatarUpload" class="btn-primary">Uložit novou fotku</button>
-              <button v-if="user?.avatar" @click="isRemoveAvatarModalOpen = true" class="btn-danger">Odstranit fotku</button>
+              <button v-if="avatarFile" @click="handleAvatarUpload" class="btn-primary">{{ $t('views.profile.save_avatar') }}</button>
+              <button v-if="user?.avatar" @click="isRemoveAvatarModalOpen = true" class="btn-danger">{{ $t('views.profile.delete_avatar') }}</button>
             </div>
           </div>
         </div>
@@ -31,18 +31,18 @@
 
       <div class="panel-card">
         <div class="panel-header">
-          <h3><PaletteIcon :size="20" class="panel-icon" /> Vzhled aplikace</h3>
+          <h3><PaletteIcon :size="20" class="panel-icon" /> {{ $t('views.profile.theme_title') }}</h3>
         </div>
         <div class="theme-settings">
-          <p class="settings-desc">Zvolte, jak má aplikace vypadat, nebo nechte přepínání na denní době.</p>
+          <p class="settings-desc">{{ $t('views.profile.theme_desc') }}</p>
           
           <div class="theme-options-grid">
             <label class="theme-option" :class="{ active: themeForm.theme_mode === 'manual' }">
               <input type="radio" v-model="themeForm.theme_mode" value="manual" @change="saveThemeSettings" />
               <div class="option-content">
                 <div class="option-icon"><MonitorIcon :size="24" /></div>
-                <span>Manuální</span>
-                <small>Podle horní lišty</small>
+                <span>{{ $t('views.profile.theme_manual') }}</span>
+                <small>{{ $t('views.profile.theme_manual_desc') }}</small>
               </div>
             </label>
 
@@ -50,8 +50,8 @@
               <input type="radio" v-model="themeForm.theme_mode" value="auto" @change="saveThemeSettings" />
               <div class="option-content">
                 <div class="option-icon"><ClockIcon :size="24" /></div>
-                <span>Automatický</span>
-                <small>Dle denní doby</small>
+                <span>{{ $t('views.profile.theme_auto') }}</span>
+                <small>{{ $t('views.profile.theme_auto_desc') }}</small>
               </div>
             </label>
           </div>
@@ -60,36 +60,36 @@
 
       <div class="panel-card">
         <div class="panel-header">
-          <h3><KeyIcon :size="20" class="panel-icon" /> Změna hesla</h3>
+          <h3><KeyIcon :size="20" class="panel-icon" /> {{ $t('views.profile.password_title') }}</h3>
         </div>
         <form @submit.prevent="handlePasswordChange" class="profile-form">
-          <BaseInput v-model="passForm.old_password" type="password" label="Současné heslo" required />
-          <BaseInput v-model="passForm.new_password" type="password" label="Nové heslo" required />
-          <BaseInput v-model="passForm.new_password_confirm" type="password" label="Potvrzení nového hesla" required />
+          <BaseInput v-model="passForm.old_password" type="password" :label="$t('views.profile.old_password')" required />
+          <BaseInput v-model="passForm.new_password" type="password" :label="$t('views.profile.new_password')" required />
+          <BaseInput v-model="passForm.new_password_confirm" type="password" :label="$t('views.profile.new_password_confirm')" required />
           <button type="submit" class="btn-primary" style="margin-top: 0.5rem; max-width: 250px;">
-            Změnit heslo
+            {{ $t('views.profile.password_title') }}
           </button>
         </form>
       </div>
 
       <div class="panel-card danger-zone">
         <div class="panel-header">
-          <h3 style="color: #ef4444;"><Trash2Icon :size="20" /> Nebezpečná zóna</h3>
+          <h3 style="color: #ef4444;"><Trash2Icon :size="20" /> {{ $t('views.profile.danger_zone') }}</h3>
         </div>
         <p class="danger-text">
-          Smazáním účtu nenávratně ztratíš svůj pivní deníček. Tato akce nelze vrátit zpět.
+          {{ $t('views.profile.danger_desc') }}
         </p>
-        <button class="btn-danger" @click="isDeleteModalOpen = true">Trvale smazat účet</button>
+        <button class="btn-danger" @click="isDeleteModalOpen = true">{{ $t('views.profile.delete_account') }}</button>
       </div>
     </div>
 
     <BaseModal :show="isDeleteModalOpen" @close="isDeleteModalOpen = false">
-      <template #header><h2 style="margin: 0; color: #ef4444;">Smazat účet?</h2></template>
+      <template #header><h2 style="margin: 0; color: #ef4444;">{{ $t('views.profile.delete_confirm_title') }}</h2></template>
       <template #body>
         <form @submit.prevent="handleAccountDeletion" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <p style="margin: 0; color: var(--text-muted);">Pro potvrzení smazání účtu prosím zadej své aktuální heslo.</p>
-          <BaseInput v-model="deletePassword" type="password" label="Tvé heslo *" required />
-          <button type="submit" class="btn-danger" style="margin-top: 0.5rem; width: 100%;">Ano, smazat vše</button>
+          <p style="margin: 0; color: var(--text-muted);">{{ $t('views.profile.delete_confirm_desc') }}</p>
+          <BaseInput v-model="deletePassword" type="password" :label="$t('views.profile.delete_password')" required />
+          <button type="submit" class="btn-danger" style="margin-top: 0.5rem; width: 100%;">{{ $t('views.profile.delete_submit') }}</button>
         </form>
       </template>
     </BaseModal>
@@ -109,6 +109,7 @@ import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { UserIcon, KeyIcon, Trash2Icon, PaletteIcon, MonitorIcon, ClockIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 
 import { useAuthStore } from '../stores/auth'
@@ -121,6 +122,7 @@ import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmMo
 const router = useRouter()
 const authStore = useAuthStore()
 const toastStore = useToastStore() 
+const { t } = useI18n()
 const { user } = storeToRefs(authStore)
 
 const passForm = ref({ old_password: '', new_password: '', new_password_confirm: '' })
@@ -148,9 +150,9 @@ const saveThemeSettings = async () => {
     
     if (result.status === 'success') {
       authStore.updateUser({ theme_mode: themeForm.value.theme_mode })
-      toastStore.showToast(result.message) 
+      toastStore.showToast(result.message || t('toast.theme_saved')) 
     }
-  } catch (error) { toastStore.showToast('Chyba při ukládání nastavení.', 'toast-error') }
+  } catch (error) { toastStore.showToast(t('toast.theme_error'), 'toast-error') }
 }
 
 const handleAvatarUpload = async () => {
@@ -170,7 +172,7 @@ const handleAvatarUpload = async () => {
       avatarFile.value = null
       toastStore.showToast(result.message) 
     } else { toastStore.showToast(result.message, 'toast-error') }
-  } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
+  } catch (error) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
 const executeAvatarRemove = async () => {
@@ -187,12 +189,12 @@ const executeAvatarRemove = async () => {
       isRemoveAvatarModalOpen.value = false
       toastStore.showToast(result.message) 
     }
-  } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
+  } catch (error) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
 const handlePasswordChange = async () => {
   if (passForm.value.new_password !== passForm.value.new_password_confirm) {
-    toastStore.showToast('Nová hesla se neshodují.', 'toast-error') 
+    toastStore.showToast(t('toast.passwords_mismatch'), 'toast-error') 
     return
   }
   try {
@@ -209,7 +211,7 @@ const handlePasswordChange = async () => {
       toastStore.showToast(result.message) 
       passForm.value = { old_password: '', new_password: '', new_password_confirm: '' }
     } else { toastStore.showToast(result.message, 'toast-error') }
-  } catch (error) { toastStore.showToast('Chyba komunikace se serverem.', 'toast-error') }
+  } catch (error) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
 const handleAccountDeletion = async () => {
@@ -222,7 +224,7 @@ const handleAccountDeletion = async () => {
     if (result.status === 'success') {
       isDeleteModalOpen.value = false; authStore.logout(); router.push('/')
     } else { toastStore.showToast(result.message, 'toast-error') }
-  } catch (error) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
+  } catch (error) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 </script>
 

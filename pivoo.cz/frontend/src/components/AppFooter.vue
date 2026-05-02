@@ -2,12 +2,12 @@
   <footer class="app-footer">
     <div class="footer-content">
       <div class="copyright">
-        &copy; 2026 <strong>Pivoo.cz</strong>. Všechna práva rezervována.
+        &copy; 2026 <strong>Pivoo.cz</strong>. {{ $t('footer.rights_reserved') }}
       </div>
       <div class="app-version">
-        <span>Verze {{ appVersion }}</span>
+        <span>{{ $t('footer.version') }} {{ appVersion }}</span>
         <span class="version-dot"></span>
-        <span>Build: {{ buildDate }}</span>
+        <span>{{ $t('footer.build') }} {{ buildDate }}</span>
       </div>
     </div>
   </footer>

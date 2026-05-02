@@ -2,15 +2,15 @@
   <div class="distance-display">
     <template v-if="lat && lng">
       <button v-if="!userLoc" class="distance-btn" @click.stop="getUserLocation(true)">
-        <NavigationIcon :size="14" /> Zjistit vzdálenost
+        <NavigationIcon :size="14" /> {{ $t('distance.get_distance') }}
       </button>
       <span v-else class="distance-text">
-        <NavigationIcon :size="14" /> {{ calculateDistance(userLoc.lat, userLoc.lng, lat, lng).toFixed(1) }} km od vás
+        <NavigationIcon :size="14" /> {{ calculateDistance(userLoc.lat, userLoc.lng, lat, lng).toFixed(1) }} km {{ $t('distance.from_you') }}
       </span>
     </template>
     <template v-else>
       <span class="distance-text text-muted">
-        <NavigationIcon :size="14" /> Poloha neznámá
+        <NavigationIcon :size="14" /> {{ $t('distance.unknown_location') }}
       </span>
     </template>
   </div>
@@ -19,16 +19,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { NavigationIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 defineProps({
   lat: [Number, String],
   lng: [Number, String]
 })
 
+const { t } = useI18n()
+
 // Sdílený stav pro polohu uživatele
 const userLoc = window.__pivooUserLoc || (window.__pivooUserLoc = ref(null))
 
-// Parametr showErrors určuje, zda chceme uživatele upozornit alertem při chybě (např. při kliknutí to chceme, při automatickém načtení ne)
 const getUserLocation = (showErrors = false) => {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -37,20 +39,18 @@ const getUserLocation = (showErrors = false) => {
       },
       (err) => {
         console.error(err)
-        if (showErrors) alert("Nepodařilo se zjistit vaši polohu. Zkontrolujte oprávnění v prohlížeči.")
+        if (showErrors) alert(t('distance.alert_failed'))
       }
     )
   } else {
-    if (showErrors) alert("Váš prohlížeč nepodporuje zjišťování polohy.")
+    if (showErrors) alert(t('distance.alert_unsupported'))
   }
 }
 
-// Kontrola při načtení komponenty, zda už náhodou nemáme oprávnění přiděleno z minula
 onMounted(() => {
   if (!userLoc.value && navigator.permissions) {
     navigator.permissions.query({ name: 'geolocation' }).then((result) => {
       if (result.state === 'granted') {
-        // Uživatel už polohu povolil v minulosti, zjistíme ji automaticky a potichu
         getUserLocation(false);
       }
     });
@@ -58,7 +58,7 @@ onMounted(() => {
 })
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Poloměr Země v km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +

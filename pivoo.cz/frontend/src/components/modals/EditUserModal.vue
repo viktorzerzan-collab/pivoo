@@ -3,12 +3,12 @@
     <template #header>
       <h2 class="modal-title">
         <UserCogIcon class="title-icon" :size="26" />
-        Upravit uživatele
+        {{ $t('modals.edit_user.title') }}
       </h2>
     </template>
     <template #body>
       <div class="avatar-moderation-section">
-        <h3 class="section-subtitle">Profilová fotka</h3>
+        <h3 class="section-subtitle">{{ $t('modals.edit_user.avatar_title') }}</h3>
         
         <div v-if="form.avatar" class="avatar-present">
           <div class="avatar-preview">
@@ -16,41 +16,41 @@
           </div>
           <BaseButton type="button" variant="danger" @click="$emit('remove-avatar', form.id)">
             <template #icon><Trash2Icon :size="16" /></template>
-            Smazat fotku
+            {{ $t('modals.edit_user.delete_avatar') }}
           </BaseButton>
         </div>
         
         <div v-else class="avatar-empty">
           <div class="avatar-placeholder"><UserIcon :size="32" color="var(--text-muted)" /></div>
-          <p>Uživatel nemá nahranou žádnou fotku.</p>
+          <p>{{ $t('modals.edit_user.no_avatar') }}</p>
         </div>
       </div>
 
       <hr class="ui-divider" />
 
       <form @submit.prevent="$emit('submit')" class="add-form">
-        <h3 class="section-subtitle">Osobní údaje a role</h3>
+        <h3 class="section-subtitle">{{ $t('modals.edit_user.personal_info') }}</h3>
         <div class="form-row">
-          <BaseInput v-model="form.first_name" label="Křestní jméno *" required class="half" />
-          <BaseInput v-model="form.last_name" label="Příjmení *" required class="half" />
+          <BaseInput v-model="form.first_name" :label="$t('modals.edit_user.first_name')" required class="half" />
+          <BaseInput v-model="form.last_name" :label="$t('modals.edit_user.last_name')" required class="half" />
         </div>
         
-        <BaseInput v-model="form.username" label="Přezdívka (Username) *" required />
-        <BaseInput v-model="form.email" type="email" label="E-mail *" required />
+        <BaseInput v-model="form.username" :label="$t('modals.edit_user.username')" required />
+        <BaseInput v-model="form.email" type="email" :label="$t('modals.edit_user.email')" required />
         
         <div class="role-section">
-          <BaseSelect v-model="form.role" label="Role uživatele *" :disabled="isCurrentUser" required>
-            <option value="user">Běžný pivař (user)</option>
-            <option value="admin">Administrátor (admin)</option>
+          <BaseSelect v-model="form.role" :label="$t('modals.edit_user.role')" :disabled="isCurrentUser" required>
+            <option value="user">{{ $t('modals.edit_user.role_user') }}</option>
+            <option value="admin">{{ $t('modals.edit_user.role_admin') }}</option>
           </BaseSelect>
           
           <p v-if="isCurrentUser" class="self-edit-warning">
-            Nemůžete změnit roli sami sobě, abyste se neodřízli z administrace.
+            {{ $t('modals.edit_user.self_edit_warning') }}
           </p>
         </div>
 
         <BaseButton type="submit" variant="edit" style="margin-top: 1rem; width: 100%;">
-          Uložit změny
+          {{ $t('modals.edit_user.save') }}
         </BaseButton>
       </form>
     </template>
@@ -59,6 +59,7 @@
 
 <script setup>
 import { UserCogIcon, Trash2Icon, UserIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
@@ -71,6 +72,7 @@ defineProps({
 })
 
 defineEmits(['close', 'submit', 'remove-avatar'])
+const { t } = useI18n()
 </script>
 
 <style scoped>

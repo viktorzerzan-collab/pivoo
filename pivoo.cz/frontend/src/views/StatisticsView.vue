@@ -7,9 +7,9 @@
 
         <div class="filter-wrapper">
           <BaseSelect v-model="period" :searchable="false">
-            <option value="month">Tento měsíc</option>
-            <option value="year">Tento rok</option>
-            <option value="all">Celková historie</option>
+            <option value="month">{{ $t('statistics.period_month') }}</option>
+            <option value="year">{{ $t('statistics.period_year') }}</option>
+            <option value="all">{{ $t('statistics.period_all') }}</option>
           </BaseSelect>
         </div>
       </div>
@@ -23,7 +23,7 @@
           
           <div class="panel-card stats-card">
             <div class="panel-header">
-              <h3><BeerIcon :size="20" class="panel-icon" /> Nejoblíbenější piva</h3>
+              <h3><BeerIcon :size="20" class="panel-icon" /> {{ $t('statistics.fav_beers') }}</h3>
             </div>
             <div class="ranking-list" v-if="statsData.beers.length > 0">
               <div v-for="(item, index) in statsData.beers" :key="index" class="ranking-item">
@@ -35,29 +35,29 @@
                 <div class="item-count">{{ item.count }}x</div>
               </div>
             </div>
-            <div v-else class="empty-stats">Žádná data k zobrazení.</div>
+            <div v-else class="empty-stats">{{ $t('statistics.empty_data') }}</div>
           </div>
 
           <div class="panel-card stats-card">
             <div class="panel-header">
-              <h3><FactoryIcon :size="20" class="panel-icon" /> Nejoblíbenější pivovary</h3>
+              <h3><FactoryIcon :size="20" class="panel-icon" /> {{ $t('statistics.fav_breweries') }}</h3>
             </div>
             <div class="ranking-list" v-if="statsData.breweries.length > 0">
               <div v-for="(item, index) in statsData.breweries" :key="index" class="ranking-item">
                 <div class="rank-number">{{ index + 1 }}</div>
                 <div class="item-info">
                   <div class="item-name"><strong>{{ item.name }}</strong></div>
-                  <div class="item-sub">Ochutnáno {{ item.beer_types }} druhů</div>
+                  <div class="item-sub">{{ $t('statistics.tasted_types', { count: item.beer_types }) }}</div>
                 </div>
                 <div class="item-count">{{ item.count }}x</div>
               </div>
             </div>
-            <div v-else class="empty-stats">Žádná data k zobrazení.</div>
+            <div v-else class="empty-stats">{{ $t('statistics.empty_data') }}</div>
           </div>
 
           <div class="panel-card stats-card">
             <div class="panel-header">
-              <h3><MapPinIcon :size="20" class="panel-icon" /> Nejoblíbenější místa</h3>
+              <h3><MapPinIcon :size="20" class="panel-icon" /> {{ $t('statistics.fav_locations') }}</h3>
             </div>
             <div class="ranking-list" v-if="statsData.locations.length > 0">
               <div v-for="(item, index) in statsData.locations" :key="index" class="ranking-item">
@@ -66,18 +66,18 @@
                   <div class="item-name"><strong>{{ item.name }}</strong></div>
                   <div class="item-sub">
                     <span v-if="item.city">{{ item.city }} • </span>
-                    {{ item.visits }}x návštěva
+                    {{ $t('statistics.visits', { count: item.visits }) }}
                   </div>
                 </div>
                 <div class="item-count">{{ item.count }}x</div>
               </div>
             </div>
-            <div v-else class="empty-stats">Žádná data k zobrazení.</div>
+            <div v-else class="empty-stats">{{ $t('statistics.empty_data') }}</div>
           </div>
 
           <div class="panel-card stats-card styles-card">
             <div class="panel-header">
-              <h3><ShapesIcon :size="20" class="panel-icon" /> Rozložení pivních stylů</h3>
+              <h3><ShapesIcon :size="20" class="panel-icon" /> {{ $t('statistics.style_distribution') }}</h3>
             </div>
             <div class="styles-list" v-if="statsData.styles.length > 0">
               <div v-for="style in statsData.styles" :key="style.name" class="style-row">
@@ -90,42 +90,42 @@
                 </div>
               </div>
             </div>
-            <div v-else class="empty-stats">Žádné styly k zobrazení.</div>
+            <div v-else class="empty-stats">{{ $t('statistics.empty_styles') }}</div>
           </div>
 
           <div class="panel-card stats-card collector-card">
             <div class="panel-header">
-              <h3><TrophyIcon :size="20" class="panel-icon" /> Pivní rozmanitost</h3>
+              <h3><TrophyIcon :size="20" class="panel-icon" /> {{ $t('statistics.diversity') }}</h3>
             </div>
             <div class="collector-stats" v-if="statsData.collector">
               <div class="collector-main">
                 <div class="collector-val">{{ statsData.collector.unique_count }}</div>
-                <div class="collector-label">unikátních piv ze {{ statsData.collector.total_count }} celkem</div>
+                <div class="collector-label">{{ $t('statistics.unique_beers', { total: statsData.collector.total_count }) }}</div>
               </div>
               <div class="collector-progress">
                 <div class="progress-bar">
                   <div class="progress-fill" :style="{ width: collectorPercent + '%' }"></div>
                 </div>
-                <div class="progress-text">Diverzita: {{ collectorPercent }} %</div>
+                <div class="progress-text">{{ $t('statistics.diversity_percent', { percent: collectorPercent }) }}</div>
               </div>
             </div>
           </div>
 
           <div class="panel-card stats-card price-card">
             <div class="panel-header">
-              <h3><CoinsIcon :size="20" class="panel-icon" /> Pivní ekonomika</h3>
+              <h3><CoinsIcon :size="20" class="panel-icon" /> {{ $t('statistics.economy') }}</h3>
             </div>
             <div class="price-stats-grid" v-if="statsData.prices">
               <div class="price-box avg">
-                <span class="p-label">Průměrná cena</span>
+                <span class="p-label">{{ $t('statistics.avg_price') }}</span>
                 <span class="p-val">{{ Math.round(statsData.prices.avg_price) || 0 }} Kč</span>
               </div>
               <div class="price-box min">
-                <span class="p-label">Nejlevnější</span>
+                <span class="p-label">{{ $t('statistics.min_price') }}</span>
                 <span class="p-val">{{ Math.round(statsData.prices.min_price) || 0 }} Kč</span>
               </div>
               <div class="price-box max">
-                <span class="p-label">Nejdražší</span>
+                <span class="p-label">{{ $t('statistics.max_price') }}</span>
                 <span class="p-val">{{ Math.round(statsData.prices.max_price) || 0 }} Kč</span>
               </div>
             </div>
@@ -133,7 +133,7 @@
 
           <div class="panel-card stats-card full-width-card">
             <div class="panel-header">
-              <h3><CalendarDaysIcon :size="20" class="panel-icon" /> Týdenní pivní biorytmus</h3>
+              <h3><CalendarDaysIcon :size="20" class="panel-icon" /> {{ $t('statistics.weekly_rhythm') }}</h3>
             </div>
             <div class="chart-container" v-if="dayActivity.length > 0">
               <div v-for="day in dayActivity" :key="day.label" class="chart-column-wrapper">
@@ -144,7 +144,7 @@
                 <div class="column-label" :class="{ 'weekend': day.isWeekend }">{{ day.label }}</div>
               </div>
             </div>
-            <div v-else class="empty-stats">Nedostatek dat pro analýzu týdne.</div>
+            <div v-else class="empty-stats">{{ $t('statistics.empty_week') }}</div>
           </div>
 
         </div>
@@ -160,6 +160,7 @@ import {
   CalendarDaysIcon, TrophyIcon, 
   CoinsIcon, ShapesIcon
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useToastStore } from '../stores/toast'
 import BaseLoader from '../components/BaseLoader.vue'
@@ -167,14 +168,16 @@ import BaseSelect from '../components/BaseSelect.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
 
 const toastStore = useToastStore()
+const { t, tm } = useI18n()
+
 const isLoading = ref(true)
 const period = ref('month')
 const scope = ref('me')
 
-const scopeOptions = [
-  { value: 'me', label: 'Moje' },
-  { value: 'global', label: 'Globální' }
-]
+const scopeOptions = computed(() => [
+  { value: 'me', label: t('statistics.scope_me') },
+  { value: 'global', label: t('statistics.scope_global') }
+])
 
 const statsData = ref({
   beers: [], breweries: [], locations: [], days: [],
@@ -188,10 +191,12 @@ const collectorPercent = computed(() => {
 })
 
 const dayActivity = computed(() => {
-  const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
+  const dayNames = tm('days')
+  const labels = [dayNames.monday, dayNames.tuesday, dayNames.wednesday, dayNames.thursday, dayNames.friday, dayNames.saturday, dayNames.sunday].map(d => d.substring(0, 2))
+  
   if (!statsData.value.days || statsData.value.days.length === 0) return []
   const maxVal = Math.max(...statsData.value.days.map(d => parseInt(d.count)))
-  return dayNames.map((name, index) => {
+  return labels.map((name, index) => {
     const dbDay = statsData.value.days.find(d => parseInt(d.day_index) === index)
     const count = dbDay ? parseInt(dbDay.count) : 0
     return { label: name, count: count, percent: maxVal > 0 ? (count / maxVal) * 100 : 0, isWeekend: index >= 5 }
@@ -206,7 +211,7 @@ const fetchDetailedStats = async () => {
       statsData.value = res.data
     }
   } catch (error) {
-    toastStore.showToast('Nepodařilo se načíst statistiky.', 'toast-error')
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
   } finally {
     isLoading.value = false
   }

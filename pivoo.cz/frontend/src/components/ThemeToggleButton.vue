@@ -1,5 +1,5 @@
 <template>
-  <BaseTooltip :text="isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'" position="bottom">
+  <BaseTooltip :text="isDark ? $t('tooltips.light_mode') : $t('tooltips.dark_mode')" position="bottom">
     <button 
       class="theme-toggle-btn" 
       @click="$emit('toggle')" 

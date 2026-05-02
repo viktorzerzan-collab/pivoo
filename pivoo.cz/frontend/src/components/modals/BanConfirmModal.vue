@@ -4,19 +4,19 @@
       <h2 class="modal-title" :class="isBanning ? 'danger-text' : 'success-text'">
         <BanIcon v-if="isBanning" :size="26" />
         <UnlockIcon v-else :size="26" />
-        {{ isBanning ? 'Opravdu zablokovat?' : 'Opravdu odblokovat?' }}
+        {{ isBanning ? $t('modals.ban_confirm.title_ban') : $t('modals.ban_confirm.title_unban') }}
       </h2>
     </template>
     <template #body>
       <p class="modal-desc">
-        Chystáte se {{ isBanning ? 'zablokovat' : 'odblokovat' }} uživatele <strong>{{ user?.username }}</strong>.<br><br>
-        <span v-if="isBanning">Uživatel bude okamžitě odhlášen a ztratí přístup do aplikace.</span>
-        <span v-else>Uživatel se bude moci znovu normálně přihlásit.</span>
+        {{ isBanning ? $t('modals.ban_confirm.desc_ban_1') : $t('modals.ban_confirm.desc_unban_1') }} <strong>{{ user?.username }}</strong>.<br><br>
+        <span v-if="isBanning">{{ $t('modals.ban_confirm.desc_ban_2') }}</span>
+        <span v-else>{{ $t('modals.ban_confirm.desc_unban_2') }}</span>
       </p>
       <div class="button-group">
-         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">Zrušit</BaseButton>
+         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
          <BaseButton :variant="isBanning ? 'danger' : 'primary'" style="flex: 1" @click="$emit('confirm', user)">
-            {{ isBanning ? 'Ano, zablokovat' : 'Ano, odblokovat' }}
+            {{ isBanning ? $t('modals.ban_confirm.btn_ban') : $t('modals.ban_confirm.btn_unban') }}
          </BaseButton>
       </div>
     </template>

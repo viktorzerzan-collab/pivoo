@@ -1,7 +1,7 @@
 <template>
   <BaseTooltip 
     v-if="authStore.user" 
-    :text="isFavorite ? 'Odebrat z oblíbených' : 'Přidat do oblíbených'" 
+    :text="isFavorite ? $t('tooltips.remove_favorite') : $t('tooltips.add_favorite')" 
     position="top"
   >
     <button 
@@ -21,7 +21,7 @@
 <script setup>
 import { StarIcon } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
-import BaseTooltip from './BaseTooltip.vue' 
+import BaseTooltip from './BaseTooltip.vue'
 
 defineProps({
   isFavorite: {

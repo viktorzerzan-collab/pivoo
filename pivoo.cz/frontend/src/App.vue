@@ -17,6 +17,7 @@
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
 import AppToast from './components/AppToast.vue'
@@ -27,6 +28,8 @@ import { apiFetch } from './api'
 const route = useRoute()
 const authStore = useAuthStore()
 const { user, theme } = storeToRefs(authStore)
+
+const { t } = useI18n() // Initialize i18n
 
 const isAuthPage = computed(() => route.name === 'login' || route.name === 'register')
 

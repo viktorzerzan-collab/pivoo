@@ -3,7 +3,7 @@
     <div v-if="isActuallyVisible" class="loader-overlay">
       <div class="loader-content">
         <div class="spinner"></div>
-        <p class="loader-text">{{ message }}</p>
+        <p class="loader-text">{{ message || $t('loader.loading') }}</p>
       </div>
     </div>
   </transition>
@@ -14,35 +14,29 @@ import { ref, watch, onUnmounted } from 'vue'
 
 const props = defineProps({
   show: Boolean,
-  // Sjednocený výchozí text pro celou aplikaci
-  message: { type: String, default: 'Probíhá načítání...' }
+  message: { type: String, default: '' }
 })
 
 const isActuallyVisible = ref(false)
 let timeoutId = null
 
-// Sledujeme změny prop 'show'
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    // Pokud se má loader zobrazit, počkáme 200ms (aby u rychlých dotazů neproblikl)
     timeoutId = setTimeout(() => {
       isActuallyVisible.value = true
     }, 200)
   } else {
-    // Pokud se má skrýt, okamžitě ho skryjeme a zrušíme případný časovač
     if (timeoutId) clearTimeout(timeoutId)
     isActuallyVisible.value = false
   }
 }, { immediate: true })
 
-// Úklid při zničení komponenty
 onUnmounted(() => {
   if (timeoutId) clearTimeout(timeoutId)
 })
 </script>
 
 <style scoped>
-/* OPRAVA: Změněno z absolute na fixed, aby překrylo celou obrazovku */
 .loader-overlay {
   position: fixed;
   inset: 0;
@@ -51,7 +45,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999; /* OPRAVA: Zvýšeno na 9999, aby překrylo i horní lištu (ta má z-index 50) */
+  z-index: 9999;
 }
 
 .loader-content {

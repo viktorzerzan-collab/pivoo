@@ -48,7 +48,7 @@
             <StarIcon :size="14" fill="#0ea5e9" color="#0ea5e9" />
             <span class="rating-value">{{ Number(location.avg_rating).toFixed(1) }}</span>
             <span class="count" v-if="location.total_visits">
-              ({{ location.total_visits }}x návštěva)
+              ({{ location.total_visits }}{{ $t('cards.visits_count') }})
             </span>
           </div>
         </div>
@@ -58,7 +58,7 @@
     <div class="card-footer">
       <BaseButton variant="secondary" @click="$emit('showDetail', location)" class="full-width-btn">
         <template #icon><InfoIcon :size="16" /></template>
-        Detail podniku
+        {{ $t('cards.location_detail') }}
       </BaseButton>
     </div>
   </div>
@@ -66,6 +66,7 @@
 
 <script setup>
 import { MapPinIcon, StarIcon, InfoIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseButton from './BaseButton.vue'
 import FavoriteButton from './FavoriteButton.vue'
 import WishlistButton from './WishlistButton.vue'
@@ -79,14 +80,20 @@ const props = defineProps({ location: Object })
 defineEmits(['showDetail'])
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
+const { t, te } = useI18n()
 
 const toggleFav = () => { catalogStore.toggleFavorite(props.location.id, 'location') }
 const toggleWishlist = () => { catalogStore.toggleWishlist(props.location.id, 'location') }
 
 const formatLocation = (location) => {
   let loc = location.city || '';
-  if (location.country && location.country !== 'Česká republika') { loc += loc ? ', ' + location.country : location.country; }
-  return loc || 'Lokalita neznámá';
+  const key = `dynamic.locations.${loc}`;
+  if (te(key)) loc = t(key);
+  
+  if (location.country && location.country !== 'Česká republika') { 
+    loc += loc ? ', ' + location.country : location.country; 
+  }
+  return loc || t('cards.unknown_location');
 }
 </script>
 

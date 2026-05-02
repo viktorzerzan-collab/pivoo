@@ -8,7 +8,7 @@
 
         <div class="mobile-action-bar">
           <button v-if="isAdmin" class="btn-add" @click="openAddModal">
-            <PlusIcon :size="20" /> Přidat podnik
+            <PlusIcon :size="20" /> {{ $t('catalog.add_location') }}
           </button>
         </div>
       </div>
@@ -17,7 +17,7 @@
         <div class="filters-header" @click="filtersOpen = !filtersOpen">
           <div class="filters-title">
             <FilterIcon :size="20" class="panel-icon" /> 
-            <h3>Filtrování a vyhledávání</h3>
+            <h3>{{ $t('catalog.filters_title') }}</h3>
           </div>
           <ChevronDownIcon :class="{ 'rotated': filtersOpen }" :size="20" class="toggle-icon" />
         </div>
@@ -25,21 +25,21 @@
         <transition name="slide-fade">
           <div v-show="filtersOpen" class="filters-body">
             <div class="filters-grid">
-              <FilterInput v-model="filters.search" label="Název podniku" placeholder="Např. U Tygra..." />
-              <FilterInput v-model="filters.city" label="Město" placeholder="Např. Praha, Plzeň..." />
-              <FilterInput v-model="filters.country" label="Země" placeholder="Např. Česko, Německo..." />
+              <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_location')" :placeholder="$t('catalog.placeholder_location')" />
+              <FilterInput v-model="filters.city" :label="$t('catalog.filter_city')" :placeholder="$t('catalog.placeholder_city')" />
+              <FilterInput v-model="filters.country" :label="$t('catalog.filter_country_short')" :placeholder="$t('catalog.placeholder_country')" />
             </div>
             <div class="filters-footer">
-              <button class="btn-secondary" @click="resetFilters">Resetovat filtry</button>
+              <button class="btn-secondary" @click="resetFilters">{{ $t('catalog.reset_filters') }}</button>
             </div>
           </div>
         </transition>
       </div>
 
       <div v-if="activeFilters.length > 0" class="active-filters-chips">
-        <span class="chips-label">Aktivní filtry:</span>
+        <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
         <div class="chips-container">
-          <button v-for="chip in activeFilters" :key="chip.id" class="filter-chip" @click="removeFilter(chip)">
+          <button v-for="chip in activeFilters" :key="chip.id" class="filter-chip" @click="removeFilter(chip)" :title="$t('catalog.cancel_filter')">
             {{ chip.label }} <XIcon :size="14" />
           </button>
         </div>
@@ -47,17 +47,17 @@
 
       <div class="results-bar">
         <div v-if="viewMode === 'list'" class="sort-control-wrapper">
-          <BaseSelect v-model="sortBy" placeholder="Řadit podle..." :searchable="false">
+          <BaseSelect v-model="sortBy" :placeholder="$t('catalog.sort_by')" :searchable="false">
             <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </BaseSelect>
         </div>
         <div v-else class="sort-control-placeholder"></div>
 
-        <span class="results-count">Nalezeno podniků: <strong>{{ totalItems }}</strong></span>
+        <span class="results-count">{{ $t('catalog.found_locations') }} <strong>{{ totalItems }}</strong></span>
         
         <div class="desktop-action-bar">
           <button v-if="isAdmin" class="btn-add" @click="openAddModal">
-            <PlusIcon :size="20" /> Přidat podnik
+            <PlusIcon :size="20" /> {{ $t('catalog.add_location') }}
           </button>
         </div>
       </div>
@@ -73,20 +73,20 @@
             <BasePagination v-if="totalPages > 1" v-model:currentPage="currentPage" :total-pages="totalPages" />
           </div>
           <div ref="loadMoreTrigger" class="load-more-trigger">
-            <div v-if="isAppending" class="mobile-loader">Načítám další...</div>
+            <div v-if="isAppending" class="mobile-loader">{{ $t('catalog.loading_more') }}</div>
           </div>
         </div>
 
         <div v-else class="map-wrapper">
           <MapView :items="locations" type="location" @showDetail="openDetail" />
-          <p class="map-info">Zobrazuji výsledky z aktuálního výběru ({{ locations.length }} špendlíků).</p>
+          <p class="map-info">{{ $t('catalog.map_info', { count: locations.length }) }}</p>
         </div>
       </template>
       
       <div v-else-if="!isLoading" class="empty-state">
         <MapIcon :size="48" color="#cbd5e1" />
-        <p>Žádné podniky neodpovídají zadaným filtrům.</p>
-        <button class="btn-secondary mt-2" @click="resetFilters">Zrušit filtry</button>
+        <p>{{ $t('catalog.empty_locations') }}</p>
+        <button class="btn-secondary mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</button>
       </div>
     </div>
 
@@ -98,6 +98,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
@@ -116,16 +117,18 @@ import BaseSwitch from '../components/BaseSwitch.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
+const { t } = useI18n()
+
 const { user } = storeToRefs(authStore)
 const { locations, locationsPagination, countries, isLoading } = storeToRefs(catalogStore)
 
 const isAdmin = computed(() => user.value?.role === 'admin')
 const viewMode = ref('list')
 
-const viewModeOptions = [
-  { value: 'list', label: 'Karty', icon: LayoutGridIcon },
-  { value: 'map', label: 'Mapa', icon: MapIcon }
-]
+const viewModeOptions = computed(() => [
+  { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
+  { value: 'map', label: t('catalog.view_map'), icon: MapIcon }
+])
 
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
@@ -151,9 +154,9 @@ const activeFilters = computed(() => {
        parts.forEach(part => active.push({ id: `${key}|${part}`, realKey: key, partValue: part, label: `${labelPrefix}: ${part}` }))
     }
   }
-  addMultiChips(filters.value.search, 'search', 'Hledání')
-  addMultiChips(filters.value.city, 'city', 'Město')
-  addMultiChips(filters.value.country, 'country', 'Země')
+  addMultiChips(filters.value.search, 'search', t('catalog.search_prefix'))
+  addMultiChips(filters.value.city, 'city', t('catalog.filter_city'))
+  addMultiChips(filters.value.country, 'country', t('catalog.filter_country_short'))
   return active
 })
 
@@ -207,16 +210,16 @@ const resetFilters = () => {
 watch([filters, sortBy], () => { currentPage.value = 1; loadLocations(false) }, { deep: true })
 watch(currentPage, () => { if (!isAppending.value) loadLocations(false) })
 
-const sortOptions = [
-  { value: 'name_asc', label: 'Název (A-Z)' },
-  { value: 'name_desc', label: 'Název (Z-A)' },
-  { value: 'city_asc', label: 'Město (A-Z)' },
-  { value: 'city_desc', label: 'Město (Z-A)' },
-  { value: 'rating_desc', label: 'Hodnocení (Nejlepší)' },
-  { value: 'rating_asc', label: 'Hodnocení (Nejhorší)' },
-  { value: 'newest', label: 'Datum přidání (Od nejnovějšího)' },
-  { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' }
-]
+const sortOptions = computed(() => [
+  { value: 'name_asc', label: t('catalog.sort.name_asc') },
+  { value: 'name_desc', label: t('catalog.sort.name_desc') },
+  { value: 'city_asc', label: t('catalog.sort.city_asc') },
+  { value: 'city_desc', label: t('catalog.sort.city_desc') },
+  { value: 'rating_desc', label: t('catalog.sort.rating_desc') },
+  { value: 'rating_asc', label: t('catalog.sort.rating_asc') },
+  { value: 'newest', label: t('catalog.sort.newest') },
+  { value: 'oldest', label: t('catalog.sort.oldest') }
+])
 
 const openAddModal = () => {
   form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null }
@@ -255,11 +258,11 @@ const submitLocation = async () => {
       })
 
       currentPage.value = 1
-      toastStore.showToast("Podnik uložen") 
+      toastStore.showToast(t('toast.location_added')) 
     } else {
-      toastStore.showToast(result.message || 'Nepodařilo se uložit podnik.', 'toast-error')
+      toastStore.showToast(result.message || t('toast.location_add_error'), 'toast-error')
     }
-  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
 onMounted(async () => { await catalogStore.fetchAllData(); loadLocations(false) })

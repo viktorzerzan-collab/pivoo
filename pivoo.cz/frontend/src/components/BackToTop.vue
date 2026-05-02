@@ -1,11 +1,11 @@
 <template>
   <transition name="fade-slide">
     <div v-if="isVisible" class="back-to-top-wrapper">
-      <BaseTooltip text="Zpět nahoru" position="top">
+      <BaseTooltip :text="$t('buttons.back_to_top')" position="top">
         <button
           @click="scrollToTop"
           class="back-to-top-btn"
-          aria-label="Zpět nahoru"
+          :aria-label="$t('buttons.back_to_top')"
         >
           <ArrowUpIcon class="arrow-icon" />
         </button>

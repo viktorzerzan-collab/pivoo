@@ -2,7 +2,7 @@
   <div class="dashboard-page">
     <div class="section-actions">
       <button class="btn-add" @click="openCheckInModal">
-        <PlusCircleIcon /> Zaznamenat vypitá piva
+        <PlusCircleIcon /> {{ $t('views.dashboard.record_beers') }}
       </button>
     </div>
 
@@ -12,20 +12,20 @@
       <div class="dashboard-content">
         <div class="panel-card">
           <div class="panel-header">
-            <h3><BeerIcon class="panel-icon" /> Já a pivo v {{ currentMonthName }}</h3>
+            <h3><BeerIcon class="panel-icon" /> {{ $t('views.dashboard.me_and_beer_in') }} {{ currentMonthName }}</h3>
           </div>
           <StatsBoard :stats="stats" />
         </div>
 
         <div class="panel-card">
           <div class="panel-header">
-            <h3><HistoryIcon class="panel-icon" /> Poslední záznamy</h3>
+            <h3><HistoryIcon class="panel-icon" /> {{ $t('views.dashboard.recent_records') }}</h3>
           </div>
           <HistoryList :history="history" @edit="openEditModal" @delete="confirmDelete" />
           
           <div v-if="!isLoading && (!history || history.length === 0)" class="empty-dashboard">
             <BeerIcon :size="48" color="#cbd5e1" stroke-width="1" />
-            <p>Zatím žádné záznamy.</p>
+            <p>{{ $t('views.dashboard.no_records') }}</p>
           </div>
         </div>
       </div>
@@ -86,6 +86,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { PlusCircleIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -103,10 +104,12 @@ import AddBeerModal from '../components/modals/AddBeerModal.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
+const { t, tm } = useI18n()
+
 const { beers, breweries, locations, allBeers, allBreweries, allLocations, stats, history, countries, styles, isLoading } = storeToRefs(catalogStore)
 
 const currentMonthName = computed(() => {
-  const months = ['lednu', 'únoru', 'březnu', 'dubnu', 'květnu', 'červnu', 'červenci', 'srpnu', 'září', 'říjnu', 'listopadu', 'prosinci']
+  const months = tm('views.dashboard.months')
   return months[new Date().getMonth()]
 })
 
@@ -196,14 +199,14 @@ const submitNewBrewery = async () => {
         total_beers_in_catalog: 0
       }
       catalogStore.addBreweryLocally(newBrewery)
-      toastStore.showToast("Pivovar přidán!")
+      toastStore.showToast(t('toast.brewery_added'))
       
       if (pendingAiData.value) {
          pendingAiData.value.brewery_id = res.id
          handleMagicAddBeer(pendingAiData.value)
       }
     }
-  } catch (e) { toastStore.showToast('Chyba při ukládání pivovaru.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.brewery_add_error'), 'toast-error') }
 }
 
 const submitNewBeer = async () => {
@@ -224,7 +227,7 @@ const submitNewBeer = async () => {
         is_favorite: 0
       }
       catalogStore.addBeerLocally(newBeer)
-      toastStore.showToast("Pivo přidáno do katalogu!")
+      toastStore.showToast(t('toast.beer_added'))
       
       form.value.brewery_id = newBeer.brewery_id
       setTimeout(() => { form.value.beer_id = newBeer.id }, 100)
@@ -232,7 +235,7 @@ const submitNewBeer = async () => {
       pendingAiData.value = null
       isModalOpen.value = true
     }
-  } catch (e) { toastStore.showToast('Chyba při ukládání piva.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.beer_add_error'), 'toast-error') }
 }
 
 const openAddLocationFromCheckin = (coords) => {
@@ -258,12 +261,12 @@ const submitNewLocation = async () => {
          total_visits: 0
       }
       catalogStore.addLocationLocally(newLoc)
-      toastStore.showToast("Podnik přidán!")
+      toastStore.showToast(t('toast.location_added'))
       
       form.value.location_id = result.id
       isModalOpen.value = true
     }
-  } catch (e) { toastStore.showToast('Chyba serveru při přidávání podniku.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.location_add_error'), 'toast-error') }
 }
 
 const openEditModal = (record) => {
@@ -303,11 +306,11 @@ const submitCheckIn = async () => {
          note: form.value.note
       }
       catalogStore.addCheckinLocally(newCheckin)
-      toastStore.showToast('Záznam úspěšně zapsán!')
+      toastStore.showToast(t('toast.record_added'))
       
       form.value = { brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' }
-    } else { toastStore.showToast(res.message || 'Nepodařilo se vytvořit záznam.', 'toast-error') }
-  } catch (e) { toastStore.showToast(e.message || 'Chyba serveru.', 'toast-error') }
+    } else { toastStore.showToast(res.message || t('toast.record_add_error'), 'toast-error') }
+  } catch (e) { toastStore.showToast(e.message || t('toast.communication_error'), 'toast-error') }
 }
 
 const submitEdit = async () => {
@@ -330,9 +333,9 @@ const submitEdit = async () => {
            brewery_name: brewery ? brewery.name : 'Neznámý pivovar',
            location_name: loc ? loc.name : 'Neznámý podnik'
        })
-       toastStore.showToast('Záznam upraven!') 
+       toastStore.showToast(t('toast.record_edited')) 
     }
-  } catch (e) { toastStore.showToast(e.message || 'Chyba komunikace.', 'toast-error') }
+  } catch (e) { toastStore.showToast(e.message || t('toast.communication_error'), 'toast-error') }
 }
 
 const confirmDelete = (id) => { recordIdToDelete.value = id; isDeleteConfirmModalOpen.value = true }
@@ -343,9 +346,9 @@ const executeDelete = async () => {
     if (res.status === 'success') { 
       isDeleteConfirmModalOpen.value = false
       catalogStore.removeCheckinLocally(recordIdToDelete.value)
-      toastStore.showToast('Záznam smazán.') 
+      toastStore.showToast(t('toast.record_deleted')) 
     }
-  } catch (e) { toastStore.showToast('Chyba komunikace.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 </script>
 

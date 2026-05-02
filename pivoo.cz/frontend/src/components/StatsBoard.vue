@@ -5,7 +5,7 @@
         <BeerIcon :size="24" class="stat-icon" />
       </div>
       <div class="stat-info">
-        <span class="stat-label">Počet piv</span>
+        <span class="stat-label">{{ $t('stats.total_beers') }}</span>
         <span class="stat-value">{{ stats.total_beers || 0 }}x</span>
       </div>
     </div>
@@ -15,7 +15,7 @@
         <DropletsIcon :size="24" class="stat-icon" />
       </div>
       <div class="stat-info">
-        <span class="stat-label">Vypitý objem</span>
+        <span class="stat-label">{{ $t('stats.total_volume') }}</span>
         <span class="stat-value">{{ stats.total_liters || 0 }} l</span>
       </div>
     </div>
@@ -25,7 +25,7 @@
         <CoinsIcon :size="24" class="stat-icon" />
       </div>
       <div class="stat-info">
-        <span class="stat-label">Útrata</span>
+        <span class="stat-label">{{ $t('stats.total_spent') }}</span>
         <span class="stat-value">{{ totalPrice }} Kč</span>
       </div>
     </div>
@@ -35,14 +35,14 @@
         <HeartIcon :size="24" class="stat-icon" />
       </div>
       <div class="stat-info">
-        <span class="stat-label">Nejoblíbenější</span>
-        <span class="stat-value fav-text">{{ stats.favorite || '—' }}</span>
+        <span class="stat-label">{{ $t('stats.favorite') }}</span>
+        <span class="stat-value fav-text">{{ stats.favorite || $t('stats.none') }}</span>
       </div>
     </div>
   </div>
   
   <div v-else class="empty-stats">
-    <p>Načítám tvé statistiky...</p>
+    <p>{{ $t('stats.loading') }}</p>
   </div>
 </template>
 
@@ -63,7 +63,6 @@ const totalPrice = computed(() => {
 </script>
 
 <style scoped>
-/* OPRAVA: Mřížka nastavená na 4 sloupce pro desktop */
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
 
 .stat-box { 
@@ -75,7 +74,7 @@ const totalPrice = computed(() => {
   align-items: center; 
   gap: 1rem; 
   transition: all 0.3s ease; 
-  min-width: 0; /* Prevence přetečení textu */
+  min-width: 0; 
 }
 
 .stat-box:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
@@ -112,7 +111,6 @@ const totalPrice = computed(() => {
   text-overflow: ellipsis; 
 }
 
-/* Speciální úprava pro dlouhé názvy piva */
 .fav-text { font-size: 0.95rem; }
 
 .empty-stats { 
@@ -125,7 +123,6 @@ const totalPrice = computed(() => {
   border: 1px dashed var(--border); 
 }
 
-/* Responzivita: Na tabletech 2 sloupce, na mobilech 1 */
 @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
 </style>

@@ -55,17 +55,17 @@
           </div>
 
           <div class="tags-row">
-             <span class="tag-badge">{{ beer.style || 'Bez stylu' }}</span>
-             <span v-if="beer.fermentation" class="tag-badge">{{ beer.fermentation }} kvašení</span>
-             <span v-if="beer.is_unfiltered" class="tag-badge">Nefiltrované</span>
-             <span v-if="beer.is_unpasteurized" class="tag-badge">Nepasterizované</span>
+             <span class="tag-badge">{{ translateStyle(beer.style) }}</span>
+             <span v-if="beer.fermentation" class="tag-badge">{{ translateFermentation(beer.fermentation) }}</span>
+             <span v-if="beer.is_unfiltered" class="tag-badge">{{ $t('cards.unfiltered') }}</span>
+             <span v-if="beer.is_unpasteurized" class="tag-badge">{{ $t('cards.unpasteurized') }}</span>
           </div>
 
           <div v-if="beer.avg_rating" class="card-rating">
             <StarIcon :size="14" fill="#f59e0b" color="#f59e0b" />
             <span class="rating-value">{{ Number(beer.avg_rating).toFixed(1) }}</span>
             <span class="count" v-if="beer.total_checkins">
-              ({{ beer.total_checkins }}x v deníčku)
+              ({{ beer.total_checkins }}{{ $t('cards.in_diary') }})
             </span>
           </div>
         </div>
@@ -75,7 +75,7 @@
     <div class="card-footer">
       <BaseButton variant="secondary" @click="$emit('showDetail', beer)" class="full-width-btn">
         <template #icon><InfoIcon :size="16" /></template>
-        Detail piva
+        {{ $t('cards.beer_detail') }}
       </BaseButton>
     </div>
   </div>
@@ -86,21 +86,33 @@ import {
   BeerIcon, StarIcon, InfoIcon, ThermometerIcon, 
   PercentIcon, ActivityIcon, PipetteIcon 
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseButton from './BaseButton.vue'
 import FavoriteButton from './FavoriteButton.vue'
 import WishlistButton from './WishlistButton.vue'
 import CountryFlag from './CountryFlag.vue'
 import BaseTooltip from './BaseTooltip.vue'
 import { useCatalogStore } from '../stores/catalog'
-import { useAuthStore } from '../stores/auth'
 
 const props = defineProps({ beer: Object })
 defineEmits(['showDetail'])
 const catalogStore = useCatalogStore()
-const authStore = useAuthStore()
+const { t, te } = useI18n()
 
 const toggleFav = () => { catalogStore.toggleFavorite(props.beer.id, 'beer') }
 const toggleWishlist = () => { catalogStore.toggleWishlist(props.beer.id, 'beer') }
+
+const translateStyle = (val) => {
+  if (!val) return t('cards.no_style')
+  const key = `dynamic.styles.${val}`
+  return te(key) ? t(key) : val
+}
+
+const translateFermentation = (val) => {
+  if (!val) return ''
+  const key = `dynamic.fermentation.${val}`
+  return te(key) ? t(key) : `${val} ${t('cards.fermentation_suffix')}`
+}
 </script>
 
 <style scoped>

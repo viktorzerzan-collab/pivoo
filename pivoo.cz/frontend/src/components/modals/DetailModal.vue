@@ -13,8 +13,12 @@
             <h2 class="modal-title">{{ item?.name }}</h2>
             
             <div v-if="type === 'beer' && (item?.is_unfiltered || item?.is_unpasteurized)" class="property-badges">
-              <span v-if="item.is_unfiltered" class="prop-badge">Nefiltrované</span>
-              <span v-if="item.is_unpasteurized" class="prop-badge">Nepasterizované</span>
+              <span v-if="item.is_unfiltered" class="prop-badge">{{ $t('cards.unfiltered') }}</span>
+              <span v-if="item.is_unpasteurized" class="prop-badge">{{ $t('cards.unpasteurized') }}</span>
+            </div>
+
+            <div v-if="type === 'location' && item?.type" class="property-badges">
+              <span class="prop-badge loc-type">{{ formatLocationType(item.type) }}</span>
             </div>
           </div>
           
@@ -24,7 +28,7 @@
                 :code="item?.brewery_country_code" 
                 :name="item?.brewery_country" 
               />
-              {{ item?.brewery_name }} • {{ item?.style || 'Bez stylu' }}
+              {{ item?.brewery_name }} • {{ translateStyle(item?.style) }}
             </template>
             
             <template v-else>
@@ -32,7 +36,7 @@
                 :code="item?.country_code" 
                 :name="item?.country" 
               />
-              {{ item?.city || 'Neznámé město' }}{{ item?.country ? ', ' + item?.country : '' }}
+              {{ translateDynamic(item?.city) || $t('modals.detail.unknown_city') }}{{ getCountryName(item?.country_code, item?.country) ? ', ' + getCountryName(item?.country_code, item?.country) : '' }}
             </template>
           </p>
         </div>
@@ -43,7 +47,7 @@
       <div class="detail-content">
         <div class="rating-section">
           <span class="label">
-            {{ type === 'beer' ? 'Celkové hodnocení piva' : type === 'brewery' ? 'Průměrné hodnocení produkce' : 'Hodnocení obsluhy a péče' }}
+            {{ type === 'beer' ? $t('modals.detail.rating_beer') : type === 'brewery' ? $t('modals.detail.rating_brewery') : $t('modals.detail.rating_care') }}
           </span>
           <div class="rating-display">
             <template v-if="item?.avg_rating && item.avg_rating > 0">
@@ -55,7 +59,7 @@
               </div>
               <span class="rating-number">{{ Number(item.avg_rating).toFixed(1) }}</span>
             </template>
-            <span v-else class="no-rating">Zatím nehodnoceno</span>
+            <span v-else class="no-rating">{{ $t('modals.detail.unrated') }}</span>
           </div>
         </div>
 
@@ -67,28 +71,28 @@
             <div class="stat-box">
               <ActivityIcon :size="18" />
               <div class="stat-val">
-                <small>EPM</small>
+                <small>{{ $t('modals.detail.epm') }}</small>
                 <strong>{{ item.epm ? item.epm + '°' : '—' }}</strong>
               </div>
             </div>
             <div class="stat-box">
               <PercentIcon :size="18" />
               <div class="stat-val">
-                <small>Alkohol</small>
+                <small>{{ $t('modals.detail.abv') }}</small>
                 <strong>{{ item.abv ? item.abv + '%' : '—' }}</strong>
               </div>
             </div>
             <div class="stat-box">
               <ThermometerIcon :size="18" />
               <div class="stat-val">
-                <small>Hořkost</small>
+                <small>{{ $t('modals.detail.ibu') }}</small>
                 <strong>{{ item.ibu ? item.ibu + ' IBU' : '—' }}</strong>
               </div>
             </div>
             <div class="stat-box">
               <PipetteIcon :size="18" />
               <div class="stat-val">
-                <small>Barva</small>
+                <small>{{ $t('modals.detail.ebc') }}</small>
                 <strong>{{ item.ebc ? item.ebc + ' EBC' : '—' }}</strong>
               </div>
             </div>
@@ -98,28 +102,28 @@
             <div v-if="item.fermentation" class="info-row">
               <FlaskConicalIcon :size="18" class="row-icon" />
               <div class="row-content">
-                <strong>Kvašení:</strong> <span>{{ item.fermentation }}</span>
+                <strong>{{ $t('modals.detail.fermentation') }}</strong> <span>{{ translateFermentation(item.fermentation) }}</span>
               </div>
             </div>
 
             <div v-if="item.hops" class="info-row">
               <SproutIcon :size="18" class="row-icon" />
               <div class="row-content">
-                <strong>Chmely:</strong> <span class="tags-list">{{ item.hops }}</span>
+                <strong>{{ $t('modals.detail.hops') }}</strong> <span class="tags-list">{{ item.hops }}</span>
               </div>
             </div>
 
             <div v-if="item.malts" class="info-row">
               <WheatIcon :size="18" class="row-icon" />
               <div class="row-content">
-                <strong>Slady:</strong> <span class="tags-list">{{ item.malts }}</span>
+                <strong>{{ $t('modals.detail.malts') }}</strong> <span class="tags-list">{{ item.malts }}</span>
               </div>
             </div>
 
             <div v-if="item.tags" class="info-row flavor-row">
               <TagIcon :size="18" class="row-icon" />
               <div class="row-content">
-                <strong>Chuťový profil:</strong>
+                <strong>{{ $t('modals.detail.profile') }}</strong>
                 <div class="flavor-tags">
                   <span v-for="tag in item.tags.split(',')" :key="tag" class="f-tag">{{ tag.trim() }}</span>
                 </div>
@@ -128,7 +132,7 @@
           </div>
 
           <div class="reviews-section">
-            <h3 class="section-subtitle"><MessageSquareIcon :size="18" /> Poslední ochutnávky</h3>
+            <h3 class="section-subtitle"><MessageSquareIcon :size="18" /> {{ $t('modals.detail.recent_tastings') }}</h3>
             <div v-if="reviews && reviews.length > 0" class="reviews-list">
               <div v-for="rev in reviews" :key="rev.id" class="review-bubble">
                 <div class="rev-head">
@@ -138,10 +142,10 @@
                   </div>
                 </div>
                 <p v-if="rev.note" class="rev-note">"{{ rev.note }}"</p>
-                <small class="rev-date">{{ rev.location_name }} • {{ new Date(rev.consumed_at).toLocaleDateString() }}</small>
+                <small class="rev-date">{{ translateDynamic(rev.location_name) }} • {{ new Date(rev.consumed_at).toLocaleDateString() }}</small>
               </div>
             </div>
-            <div v-else class="empty-reviews">Tohle pivo zatím nikdo nekomentoval.</div>
+            <div v-else class="empty-reviews">{{ $t('modals.detail.no_comments') }}</div>
           </div>
         </div>
 
@@ -150,21 +154,21 @@
           <div class="info-item" v-if="item?.address || item?.city || item?.zip_code">
             <MapPinIcon :size="18" class="icon-muted" />
             <div class="info-text">
-              <strong>Adresa:</strong><br>
+              <strong>{{ $t('modals.detail.address') }}</strong><br>
               <span v-if="item.address">{{ item.address }}<br></span>
-              <span>{{ item.zip_code ? item.zip_code + ' ' : '' }}{{ item.city || 'Neznámé město' }}</span>
-              <span v-if="item.country"><br>{{ item.country }}</span>
+              <span>{{ item.zip_code ? item.zip_code + ' ' : '' }}{{ translateDynamic(item.city) || $t('modals.detail.unknown_city') }}</span>
+              <span v-if="item.country"><br>{{ getCountryName(item.country_code, item.country) }}</span>
             </div>
           </div>
 
           <div v-if="item?.lat && item?.lng" class="info-item" style="margin-top: 0.5rem;">
             <MapIcon :size="18" class="icon-muted" />
             <div class="info-text">
-              <strong>Navigace:</strong><br>
+              <strong>{{ $t('modals.detail.navigation') }}</strong><br>
               <a :href="`https://www.google.com/maps?q=${item.lat},${item.lng}`" 
                  target="_blank" 
                  class="link" style="display: inline-flex; align-items: center; gap: 0.3rem;">
-                 Otevřít v mapě <ExternalLinkIcon :size="14" />
+                 {{ $t('modals.detail.open_map') }} <ExternalLinkIcon :size="14" />
               </a>
             </div>
           </div>
@@ -172,7 +176,7 @@
           <div v-if="item?.opening_hours" class="info-item">
             <ClockIcon :size="18" class="icon-muted" />
             <div class="info-text">
-              <strong>Otevírací doba:</strong><br>
+              <strong>{{ $t('modals.detail.opening_hours') }}</strong><br>
               <OpeningHoursDisplay :openingHours="item.opening_hours" />
             </div>
           </div>
@@ -180,7 +184,7 @@
           <div v-if="item?.phone" class="info-item">
             <PhoneIcon :size="18" class="icon-muted" />
             <div class="info-text">
-              <strong>Telefon:</strong><br>
+              <strong>{{ $t('modals.detail.phone') }}</strong><br>
               <a :href="'tel:' + item.phone" class="link">{{ item.phone }}</a>
             </div>
           </div>
@@ -188,7 +192,7 @@
           <div v-if="item?.email" class="info-item">
             <MailIcon :size="18" class="icon-muted" />
             <div class="info-text">
-              <strong>E-mail:</strong><br>
+              <strong>{{ $t('modals.detail.email') }}</strong><br>
               <a :href="'mailto:' + item.email" class="link">{{ item.email }}</a>
             </div>
           </div>
@@ -196,7 +200,7 @@
           <div v-if="item?.website" class="info-item">
             <GlobeIcon :size="18" class="icon-muted" />
             <div class="info-text">
-              <strong>Web:</strong><br>
+              <strong>{{ $t('modals.detail.website') }}</strong><br>
               <a :href="item.website" target="_blank" class="link" rel="noopener noreferrer">{{ item.website }}</a>
             </div>
           </div>
@@ -214,6 +218,7 @@ import {
   ClockIcon, ThermometerIcon, PipetteIcon, SproutIcon, WheatIcon, 
   FlaskConicalIcon, TagIcon, MapIcon, ExternalLinkIcon 
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import OpeningHoursDisplay from '../OpeningHoursDisplay.vue'
 import CountryFlag from '../CountryFlag.vue'
@@ -227,14 +232,36 @@ defineProps({
 
 defineEmits(['close'])
 
+const { t, te, locale } = useI18n()
+
+const translateDynamic = (val) => {
+  if (!val) return val
+  const key = `dynamic.locations.${val}`
+  return te(key) ? t(key) : val
+}
+
 const formatLocationType = (type) => {
-  const types = {
-    'hospoda': 'Hospoda / Bar',
-    'pivoteka': 'Pivotéka',
-    'obchod': 'Obchod',
-    'jine': 'Jiné'
-  }
-  return types[type] || type;
+  if (!type) return ''
+  const key = `dynamic.location_types.${type}`
+  return te(key) ? t(key) : type
+}
+
+const translateStyle = (val) => {
+  if (!val) return t('cards.no_style')
+  const key = `dynamic.styles.${val}`
+  return te(key) ? t(key) : val
+}
+
+const translateFermentation = (val) => {
+  if (!val) return ''
+  const key = `dynamic.fermentation.${val}`
+  return te(key) ? t(key) : `${val} ${t('cards.fermentation_suffix')}`
+}
+
+const getCountryName = (code, fallback) => {
+  if (!code) return fallback;
+  try { return new Intl.DisplayNames([locale.value], { type: 'region' }).of(code.toUpperCase()); }
+  catch (e) { return fallback; }
 }
 </script>
 

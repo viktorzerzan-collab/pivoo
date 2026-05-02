@@ -7,7 +7,7 @@
         type="text" 
         :value="modelValue" 
         @input="handleInput"
-        :placeholder="placeholder"
+        :placeholder="placeholder || $t('filter.search')"
         class="filter-input"
       />
     </div>
@@ -16,12 +16,15 @@
 
 <script setup>
 import { SearchIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+
 const props = defineProps({
   modelValue: String,
   label: { type: String, default: '' },
-  placeholder: { type: String, default: 'Hledat...' }
+  placeholder: { type: String, default: null }
 })
 const emit = defineEmits(['update:modelValue'])
+const { t } = useI18n()
 
 let timeout = null
 

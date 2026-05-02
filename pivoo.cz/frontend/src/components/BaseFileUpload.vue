@@ -4,17 +4,17 @@
     
     <div class="upload-container" @click="triggerFileInput" :class="{ 'has-preview': previewUrl, 'is-compressing': isCompressing }">
       <div v-if="isCompressing" class="compressing-overlay">
-        <span class="spinner"></span> Komprimuji obrázek...
+        <span class="spinner"></span> {{ $t('fileupload.compressing') }}
       </div>
       
       <div v-else-if="previewUrl" class="image-preview">
         <img :src="previewUrl" alt="Náhled" />
-        <div class="change-overlay">Změnit obrázek</div>
+        <div class="change-overlay">{{ $t('fileupload.change_image') }}</div>
       </div>
       
       <div v-else class="upload-placeholder">
         <UploadIcon :size="24" class="upload-icon" />
-        <span class="file-name">{{ fileName || placeholder }}</span>
+        <span class="file-name">{{ fileName || placeholder || $t('fileupload.placeholder') }}</span>
       </div>
 
       <input 
@@ -34,15 +34,18 @@
 <script setup>
 import { ref, onUnmounted } from 'vue'
 import { UploadIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   label: String,
-  placeholder: { type: String, default: 'Vybrat soubor...' },
+  placeholder: { type: String, default: null },
   accept: { type: String, default: 'image/*' },
   maxSizeMB: { type: Number, default: 5 }
 })
 
 const emit = defineEmits(['update:file'])
+const { t } = useI18n()
+
 const fileInput = ref(null)
 const fileName = ref('')
 const error = ref('')
@@ -87,7 +90,7 @@ const compressImage = (file) => {
 
         canvas.toBlob((blob) => {
           if (!blob) {
-            reject(new Error('Chyba při kompresi.'))
+            reject(new Error(t('fileupload.error_compression')))
             return
           }
           const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".webp"
@@ -110,7 +113,7 @@ const handleFileChange = async (event) => {
   
   if (file) {
     if (!file.type.startsWith('image/')) {
-      error.value = 'Vybraný soubor není obrázek.'
+      error.value = t('fileupload.error_not_image')
       if (fileInput.value) fileInput.value.value = ''
       return
     }
@@ -120,7 +123,7 @@ const handleFileChange = async (event) => {
       const compressedFile = await compressImage(file)
       
       if (compressedFile.size > props.maxSizeMB * 1024 * 1024) {
-        error.value = `I po kompresi je soubor příliš velký. Maximum je ${props.maxSizeMB} MB.`
+        error.value = t('fileupload.error_too_large', { size: props.maxSizeMB })
         fileName.value = ''
         if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
         previewUrl.value = null
@@ -135,7 +138,7 @@ const handleFileChange = async (event) => {
       emit('update:file', compressedFile)
     } catch (e) {
       console.error(e)
-      error.value = 'Nepodařilo se zpracovat a zkomprimovat obrázek.'
+      error.value = t('fileupload.error_compression')
     } finally {
       isCompressing.value = false
       if (fileInput.value) fileInput.value.value = ''

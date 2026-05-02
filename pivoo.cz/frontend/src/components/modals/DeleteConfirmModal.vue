@@ -3,14 +3,14 @@
     <template #header>
       <h2 class="modal-title danger-text">
         <AlertTriangleIcon :size="26" />
-        Opravdu smazat?
+        {{ $t('modals.delete_confirm.title') }}
       </h2>
     </template>
     <template #body>
-      <p class="modal-desc">Tento záznam bude nenávratně odstraněn.</p>
+      <p class="modal-desc">{{ $t('modals.delete_confirm.desc') }}</p>
       <div class="button-group">
-         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">Zrušit</BaseButton>
-         <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm')">Ano, smazat</BaseButton>
+         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('modals.delete_confirm.cancel') }}</BaseButton>
+         <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm')">{{ $t('modals.delete_confirm.confirm') }}</BaseButton>
       </div>
     </template>
   </BaseModal>

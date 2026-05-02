@@ -2,9 +2,9 @@
   <div class="map-container-wrapper">
     <div id="map" ref="mapElement"></div>
     
-    <button class="btn-locate" @click="locateMe" :disabled="isLocating" title="Moje poloha">
+    <button class="btn-locate" @click="locateMe" :disabled="isLocating" :title="$t('map.my_location')">
       <NavigationIcon :size="18" :class="{ 'spinning': isLocating }" />
-      {{ isLocating ? 'Hledám...' : 'Kde jsem?' }}
+      {{ isLocating ? $t('map.searching') : $t('map.where_am_i') }}
     </button>
   </div>
 </template>
@@ -14,6 +14,7 @@ import { onMounted, ref, watch, onUnmounted } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { NavigationIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
@@ -24,6 +25,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['showDetail'])
+const { t } = useI18n()
+
 const mapElement = ref(null)
 let map = null
 let markersGroup = null
@@ -78,7 +81,7 @@ const updateMarkers = () => {
         <div class="map-popup">
           <strong class="popup-title">${escapeHTML(item.name)}</strong><br>
           <span class="popup-city">${escapeHTML(item.city || '')}</span><br>
-          <button class="popup-btn" id="btn-${item.id}">Zobrazit detail</button>
+          <button class="popup-btn" id="btn-${item.id}">${escapeHTML(t('map.show_detail'))}</button>
         </div>
       `
       marker.bindPopup(popupContent)
@@ -103,7 +106,7 @@ const updateMarkers = () => {
 
 const locateMe = () => {
   if (!navigator.geolocation) {
-    alert("Váš prohlížeč nepodporuje geolokaci.")
+    alert(t('map.unsupported'))
     return
   }
 
@@ -124,12 +127,12 @@ const locateMe = () => {
           weight: 3,
           opacity: 1,
           fillOpacity: 1
-        }).addTo(map).bindPopup("<b>Nacházíte se zde</b>").openPopup()
+        }).addTo(map).bindPopup(`<b>${t('map.you_are_here')}</b>`).openPopup()
       }
     },
     (err) => {
       isLocating.value = false
-      alert("Nepodařilo se zjistit vaši polohu.")
+      alert(t('map.failed'))
     }
   )
 }

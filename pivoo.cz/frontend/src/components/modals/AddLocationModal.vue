@@ -3,7 +3,7 @@
     <template #header>
       <h2 class="modal-title">
         <MapPinIcon class="title-icon" :size="26" />
-        {{ isEditing ? 'Upravit podnik' : 'Nový podnik' }}
+        {{ isEditing ? $t('modals.add_location.title_edit') : $t('modals.add_location.title_add') }}
       </h2>
     </template>
     <template #body>
@@ -16,51 +16,51 @@
           </div>
         </div>
 
-        <BaseInput v-model="form.name" label="Název podniku *" required />
+        <BaseInput v-model="form.name" :label="$t('modals.add_location.name')" required />
         
-        <BaseSelect v-model="form.type" label="Typ podniku" required>
-          <option value="hospoda">Hospoda / Bar</option>
-          <option value="pivoteka">Pivotéka</option>
-          <option value="obchod">Obchod</option>
-          <option value="jine">Jiné</option>
+        <BaseSelect v-model="form.type" :label="$t('modals.add_location.type')" required>
+          <option value="hospoda">{{ $t('modals.add_location.type_pub') }}</option>
+          <option value="pivoteka">{{ $t('modals.add_location.type_shop') }}</option>
+          <option value="obchod">{{ $t('modals.add_location.type_store') }}</option>
+          <option value="jine">{{ $t('modals.add_location.type_other') }}</option>
         </BaseSelect>
 
         <template v-if="form.type !== 'jine'">
           
           <div class="map-container-wrapper">
-            <label class="form-label d-block mb-2">Poloha na mapě (přetáhněte špendlík pro automatické načtení adresy)</label>
+            <label class="form-label d-block mb-2">{{ $t('modals.add_location.map_label') }}</label>
             <div ref="mapContainerRef" class="admin-map-element"></div>
             <div class="coords-display">
               GPS: {{ form.lat || '???' }}, {{ form.lng || '???' }}
-              <span v-if="isGeocoding" style="color: var(--blue); margin-left: 10px;">(Načítám adresu z mapy...)</span>
+              <span v-if="isGeocoding" style="color: var(--blue); margin-left: 10px;">{{ $t('modals.add_location.geocoding') }}</span>
             </div>
           </div>
 
-          <BaseInput v-model="form.address" label="Ulice a číslo popisné" />
+          <BaseInput v-model="form.address" :label="$t('modals.add_brewery.address')" />
 
           <div class="form-row">
-            <BaseInput v-model="form.city" label="Město" class="half" />
-            <BaseInput v-model="form.zip_code" label="PSČ" class="half" />
+            <BaseInput v-model="form.city" :label="$t('modals.add_brewery.city')" class="half" />
+            <BaseInput v-model="form.zip_code" :label="$t('modals.add_brewery.zip')" class="half" />
           </div>
 
-          <BaseSelect v-model="form.country_id" label="Země">
+          <BaseSelect v-model="form.country_id" :label="$t('modals.add_brewery.country')">
             <option v-for="c in countries" :key="c.id" :value="c.id">
               {{ c.name_cz }}
             </option>
           </BaseSelect>
 
           <div class="form-row">
-            <BaseInput v-model="form.email" type="email" label="E-mail" class="half" />
-            <BaseInput v-model="form.phone" label="Telefon" class="half" />
+            <BaseInput v-model="form.email" type="email" :label="$t('modals.add_brewery.email')" class="half" />
+            <BaseInput v-model="form.phone" :label="$t('modals.add_brewery.phone')" class="half" />
           </div>
 
-          <BaseInput v-model="form.website" type="url" label="Webové stránky" />
+          <BaseInput v-model="form.website" type="url" :label="$t('modals.add_brewery.website')" />
           
-          <OpeningHoursInput v-model="form.opening_hours" label="Otevírací doba" />
+          <OpeningHoursInput v-model="form.opening_hours" :label="$t('opening_hours.label')" />
         </template>
 
         <BaseButton type="submit" variant="add" style="margin-top: 1rem; width: 100%;">
-          Uložit podnik
+          {{ $t('modals.add_location.save') }}
         </BaseButton>
       </form>
     </template>
@@ -70,6 +70,7 @@
 <script setup>
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { MapPinIcon, AlertTriangleIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
@@ -92,6 +93,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit'])
 
 const catalogStore = useCatalogStore()
+const { t } = useI18n()
 
 const map = ref(null)
 const marker = ref(null)
@@ -123,7 +125,7 @@ const checkDuplicates = (lat, lng) => {
   })
 
   if (duplicates.length > 0) {
-    duplicateWarning.value = `Pozor! V okruhu 50 metrů již existuje: ${duplicates.join(', ')}. Jste si jisti, že vytváříte zcela nový podnik?`
+    duplicateWarning.value = t('modals.add_location.duplicate_warning', { duplicates: duplicates.join(', ') })
   } else {
     duplicateWarning.value = ''
   }

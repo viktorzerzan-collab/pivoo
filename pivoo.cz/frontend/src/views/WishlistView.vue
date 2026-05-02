@@ -17,7 +17,7 @@
           @showDetail="openDetail(beer, 'beer')" 
         />
         <div v-if="wishlistBeers.length === 0" class="empty-state">
-          Zatím zde nemáš žádná piva.
+          {{ $t('views.wishlist.no_beers') }}
         </div>
       </div>
 
@@ -30,7 +30,7 @@
           @showDetail="openDetail(brewery, 'brewery')" 
         />
         <div v-if="wishlistBreweries.length === 0" class="empty-state">
-          Zatím zde nemáš žádné pivovary.
+          {{ $t('views.wishlist.no_breweries') }}
         </div>
       </div>
 
@@ -43,7 +43,7 @@
           @showDetail="openDetail(location, 'location')" 
         />
         <div v-if="wishlistLocations.length === 0" class="empty-state">
-          Zatím zde nemáš žádné podniky.
+          {{ $t('views.wishlist.no_locations') }}
         </div>
       </div>
 
@@ -62,6 +62,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { BeerIcon, FactoryIcon, MapPinIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { useCatalogStore } from '../stores/catalog'
 import { apiFetch } from '../api'
 
@@ -73,13 +74,14 @@ import BaseLoader from '../components/BaseLoader.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
 
 const catalogStore = useCatalogStore()
+const { t } = useI18n()
 const activeTab = ref('beers')
 
-const tabOptions = [
-  { value: 'beers', label: 'Piva', icon: BeerIcon },
-  { value: 'breweries', label: 'Pivovary', icon: FactoryIcon },
-  { value: 'locations', label: 'Podniky', icon: MapPinIcon }
-]
+const tabOptions = computed(() => [
+  { value: 'beers', label: t('nav.beers'), icon: BeerIcon },
+  { value: 'breweries', label: t('nav.breweries'), icon: FactoryIcon },
+  { value: 'locations', label: t('nav.locations'), icon: MapPinIcon }
+])
 
 const wishlistBeers = computed(() => catalogStore.beers.filter(b => Number(b.is_wishlist) === 1))
 const wishlistBreweries = computed(() => catalogStore.breweries.filter(b => Number(b.is_wishlist) === 1))

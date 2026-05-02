@@ -3,7 +3,7 @@
     <template #header>
       <h2 class="modal-title">
         <BeerIcon class="title-icon" :size="26" /> 
-        {{ isEditing ? 'Upravit pivo' : 'Nové pivo' }}
+        {{ isEditing ? $t('modals.add_beer.title_edit') : $t('modals.add_beer.title_add') }}
       </h2>
     </template>
     <template #body>
@@ -11,69 +11,69 @@
         
         <div v-if="form.is_magic" class="magic-banner">
           <SparklesIcon :size="20" class="magic-icon" />
-          <span>Údaje byly předvyplněny umělou inteligencí. Prosím, zkontrolujte je před uložením.</span>
+          <span>{{ $t('modals.add_beer.magic_banner') }}</span>
         </div>
 
         <div class="form-section">
-          <h3 class="section-label">Základní informace</h3>
-          <BaseInput v-model="form.name" label="Název piva *" required />
+          <h3 class="section-label">{{ $t('modals.add_beer.basic_info') }}</h3>
+          <BaseInput v-model="form.name" :label="$t('modals.add_beer.name')" required />
           
           <div class="form-row">
-            <BaseSelect v-model="form.brewery_id" label="Pivovar *" required class="half" searchable>
-              <option disabled value="">-- Vyber pivovar --</option>
+            <BaseSelect v-model="form.brewery_id" :label="$t('modals.add_beer.brewery')" required class="half" searchable>
+              <option disabled value="">{{ $t('modals.add_beer.select_brewery') }}</option>
               <option v-for="brewery in catalogStore.allBreweries" :key="brewery.id" :value="brewery.id">{{ brewery.name }}</option>
             </BaseSelect>
 
-            <BaseSelect v-model="form.style_id" label="Styl *" required class="half" searchable>
-              <option disabled value="">-- Vyber styl --</option>
+            <BaseSelect v-model="form.style_id" :label="$t('modals.add_beer.style')" required class="half" searchable>
+              <option disabled value="">{{ $t('modals.add_beer.select_style') }}</option>
               <option v-for="style in catalogStore.styles" :key="style.id" :value="style.id">{{ style.name }}</option>
             </BaseSelect>
           </div>
         </div>
 
         <div class="form-section">
-          <h3 class="section-label">Technické parametry</h3>
+          <h3 class="section-label">{{ $t('modals.add_beer.tech_params') }}</h3>
           <div class="form-row quad">
-            <BaseInput v-model="form.epm" type="number" step="0.1" label="EPM (°)" placeholder="např. 12" />
-            <BaseInput v-model="form.abv" type="number" step="0.1" label="Alkohol (%)" placeholder="4.5" />
-            <BaseInput v-model="form.ibu" type="number" step="1" label="Hořkost (IBU)" placeholder="35" />
-            <BaseInput v-model="form.ebc" type="number" step="1" label="Barva (EBC)" placeholder="12" />
+            <BaseInput v-model="form.epm" type="number" step="0.1" :label="$t('modals.add_beer.epm')" placeholder="např. 12" />
+            <BaseInput v-model="form.abv" type="number" step="0.1" :label="$t('modals.add_beer.abv')" placeholder="4.5" />
+            <BaseInput v-model="form.ibu" type="number" step="1" :label="$t('modals.add_beer.ibu')" placeholder="35" />
+            <BaseInput v-model="form.ebc" type="number" step="1" :label="$t('modals.add_beer.ebc')" placeholder="12" />
           </div>
           
-          <BaseSelect v-model="form.fermentation" label="Způsob kvašení">
-            <option value="">-- Neuvedeno --</option>
-            <option value="spodní">Spodní (ležáky)</option>
-            <option value="svrchní">Svrchní (ale, stout, pšenice)</option>
-            <option value="spontánní">Spontánní (lambic, wild)</option>
-            <option value="smíšené">Smíšené</option>
+          <BaseSelect v-model="form.fermentation" :label="$t('modals.add_beer.fermentation')">
+            <option value="">{{ $t('modals.add_beer.fermentation_none') }}</option>
+            <option value="spodní">{{ $t('modals.add_beer.fermentation_bottom') }}</option>
+            <option value="svrchní">{{ $t('modals.add_beer.fermentation_top') }}</option>
+            <option value="spontánní">{{ $t('modals.add_beer.fermentation_spontaneous') }}</option>
+            <option value="smíšené">{{ $t('modals.add_beer.fermentation_mixed') }}</option>
           </BaseSelect>
         </div>
 
         <div class="form-section">
-          <h3 class="section-label">Složení a charakteristika</h3>
-          <BaseInput v-model="form.hops" label="Použité chmely" placeholder="např. Citra, Mosaic, ŽPČ" />
-          <BaseInput v-model="form.malts" label="Použité slady" placeholder="např. Plzeňský, Karamelový" />
-          <BaseInput v-model="form.tags" label="Chuťový profil / Tagy" placeholder="např. Citrusy, Borovice, Čokoláda" />
+          <h3 class="section-label">{{ $t('modals.add_beer.composition') }}</h3>
+          <BaseInput v-model="form.hops" :label="$t('modals.add_beer.hops')" :placeholder="$t('modals.add_beer.hops_placeholder')" />
+          <BaseInput v-model="form.malts" :label="$t('modals.add_beer.malts')" :placeholder="$t('modals.add_beer.malts_placeholder')" />
+          <BaseInput v-model="form.tags" :label="$t('modals.add_beer.tags')" :placeholder="$t('modals.add_beer.tags_placeholder')" />
         </div>
 
         <div class="form-section">
-          <h3 class="section-label">Vlastnosti piva</h3>
+          <h3 class="section-label">{{ $t('modals.add_beer.properties') }}</h3>
           <div class="checkbox-row">
             <label class="custom-checkbox">
               <input type="checkbox" v-model="form.is_unfiltered" />
               <span class="checkbox-box"></span>
-              Nefiltrované
+              {{ $t('modals.add_beer.unfiltered') }}
             </label>
             <label class="custom-checkbox">
               <input type="checkbox" v-model="form.is_unpasteurized" />
               <span class="checkbox-box"></span>
-              Nepasterizované
+              {{ $t('modals.add_beer.unpasteurized') }}
             </label>
           </div>
         </div>
 
         <BaseButton type="submit" variant="add" style="margin-top: 1.5rem; width: 100%;">
-          {{ isEditing ? 'Uložit změny' : 'Uložit pivo do katalogu' }}
+          {{ isEditing ? $t('modals.add_beer.save_edit') : $t('modals.add_beer.save_add') }}
         </BaseButton>
       </form>
     </template>

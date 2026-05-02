@@ -3,28 +3,28 @@
     <template #header>
       <h2 class="modal-title">
         <KeyIcon class="title-icon" :size="26" />
-        Změnit heslo uživatele
+        {{ $t('modals.change_password.title') }}
       </h2>
     </template>
     <template #body>
       <form @submit.prevent="handleSubmit" class="add-form">
         <p class="user-info-banner">
-          Měníte heslo pro uživatele: <strong>{{ user?.username }}</strong>
+          {{ $t('modals.change_password.banner') }} <strong>{{ user?.username }}</strong>
         </p>
 
         <BaseInput 
           v-model="form.password" 
           type="password" 
-          label="Nové heslo *" 
-          placeholder="Zadejte nové heslo (min. 8 znaků)" 
+          :label="$t('modals.change_password.new_password')" 
+          :placeholder="$t('modals.change_password.new_password_placeholder')" 
           required 
         />
         
         <BaseInput 
           v-model="form.password_confirm" 
           type="password" 
-          label="Potvrzení nového hesla *" 
-          placeholder="Zadejte heslo znovu pro kontrolu" 
+          :label="$t('modals.change_password.confirm_password')" 
+          :placeholder="$t('modals.change_password.confirm_password_placeholder')" 
           required 
         />
 
@@ -33,7 +33,7 @@
         </div>
 
         <BaseButton type="submit" variant="edit" style="margin-top: 1rem; width: 100%;">
-          Nastavit nové heslo
+          {{ $t('modals.change_password.save') }}
         </BaseButton>
       </form>
     </template>
@@ -43,6 +43,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { KeyIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
@@ -53,6 +54,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'submit'])
+const { t } = useI18n()
 
 const form = ref({
   password: '',
@@ -69,12 +71,12 @@ const handleClose = () => {
 
 const handleSubmit = () => {
   if (form.value.password.length < 8) {
-    error.value = 'Heslo musí mít alespoň 8 znaků.'
+    error.value = t('modals.change_password.error_length')
     return
   }
   
   if (form.value.password !== form.value.password_confirm) {
-    error.value = 'Zadaná hesla se neshodují.'
+    error.value = t('modals.change_password.error_match')
     return
   }
 

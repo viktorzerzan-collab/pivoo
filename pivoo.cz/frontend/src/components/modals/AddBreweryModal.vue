@@ -3,7 +3,7 @@
     <template #header>
       <h2 class="modal-title">
         <FactoryIcon class="title-icon" :size="26" />
-        {{ isEditing ? 'Upravit pivovar' : 'Nový pivovar' }}
+        {{ isEditing ? $t('modals.add_brewery.title_edit') : $t('modals.add_brewery.title_add') }}
       </h2>
     </template>
     <template #body>
@@ -11,30 +11,30 @@
         
         <div v-if="form.is_magic" class="magic-banner">
           <SparklesIcon :size="20" class="magic-icon" />
-          <span>Údaje byly předvyplněny umělou inteligencí. Prosím, zkontrolujte je před uložením.</span>
+          <span>{{ $t('modals.add_beer.magic_banner') }}</span>
         </div>
 
         <div style="margin-bottom: 0.5rem;">
-          <BaseFileUpload v-model:file="form.logoFile" label="Logo pivovaru (volitelné)" placeholder="Nahrát logo" />
+          <BaseFileUpload v-model:file="form.logoFile" :label="$t('modals.add_brewery.logo')" :placeholder="$t('modals.add_brewery.logo_placeholder')" />
         </div>
 
-        <BaseInput v-model="form.name" label="Název pivovaru *" required />
+        <BaseInput v-model="form.name" :label="$t('modals.add_brewery.name')" required />
         
-        <BaseInput v-model="form.address" label="Ulice a číslo popisné" />
+        <BaseInput v-model="form.address" :label="$t('modals.add_brewery.address')" />
         
         <div class="form-row">
-          <BaseInput v-model="form.city" label="Město" style="flex: 2;" />
-          <BaseInput v-model="form.zip_code" label="PSČ" style="flex: 1;" />
+          <BaseInput v-model="form.city" :label="$t('modals.add_brewery.city')" style="flex: 2;" />
+          <BaseInput v-model="form.zip_code" :label="$t('modals.add_brewery.zip')" style="flex: 1;" />
         </div>
         
-        <BaseSelect v-model="form.country_id" label="Země">
+        <BaseSelect v-model="form.country_id" :label="$t('modals.add_brewery.country')">
           <option v-for="c in countries" :key="c.id" :value="c.id">
             {{ c.name_cz }}
           </option>
         </BaseSelect>
 
         <div class="map-container-wrapper">
-          <label class="form-label d-block mb-2">Poloha na mapě (přetáhněte špendlík)</label>
+          <label class="form-label d-block mb-2">{{ $t('modals.add_brewery.map_label') }}</label>
           <div ref="mapContainerRef" class="admin-map-element"></div>
           <div class="coords-display">
             GPS: {{ form.lat || '???' }}, {{ form.lng || '???' }}
@@ -42,16 +42,16 @@
         </div>
 
         <div class="form-row">
-          <BaseInput v-model="form.email" type="email" label="E-mail" style="flex: 1;" />
-          <BaseInput v-model="form.phone" label="Telefon" style="flex: 1;" />
+          <BaseInput v-model="form.email" type="email" :label="$t('modals.add_brewery.email')" style="flex: 1;" />
+          <BaseInput v-model="form.phone" :label="$t('modals.add_brewery.phone')" style="flex: 1;" />
         </div>
 
-        <BaseInput v-model="form.website" type="url" label="Web" />
+        <BaseInput v-model="form.website" type="url" :label="$t('modals.add_brewery.website')" />
 
-        <OpeningHoursInput v-model="form.opening_hours" label="Otevírací doba" />
+        <OpeningHoursInput v-model="form.opening_hours" :label="$t('opening_hours.label')" />
 
         <BaseButton type="submit" variant="add" style="margin-top: 0.5rem; width: 100%;">
-          <template #icon><SaveIcon :size="18" /></template>Uložit pivovar
+          <template #icon><SaveIcon :size="18" /></template>{{ $t('modals.add_brewery.save') }}
         </BaseButton>
       </form>
     </template>

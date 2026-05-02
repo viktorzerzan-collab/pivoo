@@ -11,7 +11,7 @@
         :disabled="disabled"
       >
         <span class="selected-text" :class="{ 'placeholder': !selectedLabel }">
-          {{ selectedLabel || placeholder }}
+          {{ selectedLabel || placeholder || $t('select.placeholder') }}
         </span>
         <ChevronDownIcon :size="18" class="arrow-icon" :class="{ 'rotated': isOpen }" />
       </button>
@@ -26,7 +26,7 @@
               :value="searchQuery"
               @input="searchQuery = $event.target.value"
               class="search-input" 
-              placeholder="Hledat..." 
+              :placeholder="$t('select.search')" 
               ref="searchInputRef"
               @keydown.enter.prevent
             />
@@ -47,7 +47,7 @@
               <CheckIcon v-if="modelValue == option.value" :size="16" class="check-icon" />
             </li>
             <li v-if="filteredOptions.length === 0" class="option-empty">
-              Žádné možnosti nenalezeny
+              {{ $t('select.no_options') }}
             </li>
           </ul>
         </div>
@@ -63,17 +63,19 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, useSlots, nextTick } from 'vue'
 import { ChevronDownIcon, CheckIcon, SearchIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: [String, Number],
   label: String,
-  placeholder: { type: String, default: '-- Vyberte --' },
+  placeholder: { type: String, default: null },
   disabled: Boolean,
   searchable: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue'])
 const slots = useSlots()
+const { t } = useI18n()
 
 const isOpen = ref(false)
 const selectRef = ref(null)

@@ -1,7 +1,7 @@
 <template>
   <BaseTooltip 
     v-if="authStore.user" 
-    :text="isWishlist ? 'Odebrat z wishlistu' : 'Přidat do wishlistu'" 
+    :text="isWishlist ? $t('tooltips.remove_wishlist') : $t('tooltips.add_wishlist')" 
     position="top"
   >
     <button 
@@ -21,7 +21,7 @@
 <script setup>
 import { BookmarkIcon } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
-import BaseTooltip from './BaseTooltip.vue' 
+import BaseTooltip from './BaseTooltip.vue'
 
 defineProps({
   isWishlist: {

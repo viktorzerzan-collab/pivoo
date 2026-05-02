@@ -1,11 +1,11 @@
 <template>
-  <BaseTooltip :text="name" position="top">
+  <BaseTooltip :text="translatedName" position="top">
     <span class="country-flag-wrapper">
       <img 
         v-if="code" 
         :src="`https://flagcdn.com/w20/${code.toLowerCase()}.png`" 
         class="flag-icon" 
-        :alt="name" 
+        :alt="translatedName" 
       />
       <span v-else class="flag-emoji">🌍</span>
     </span>
@@ -13,12 +13,26 @@
 </template>
 
 <script setup>
-// IMPORT TOOLTIPU
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseTooltip from './BaseTooltip.vue'
 
-defineProps({
+const props = defineProps({
   code: String,
   name: String
+})
+
+const { locale } = useI18n()
+
+// Automaticky přeloží název země podle jejího kódu a jazyka prohlížeče
+const translatedName = computed(() => {
+  if (!props.code) return props.name || ''
+  try {
+    const displayNames = new Intl.DisplayNames([locale.value], { type: 'region' })
+    return displayNames.of(props.code.toUpperCase())
+  } catch (e) {
+    return props.name
+  }
 })
 </script>
 

@@ -1,6 +1,6 @@
 <template>
   <div class="pagination-wrapper" v-if="totalPages > 1">
-    <BaseTooltip text="První strana" position="top">
+    <BaseTooltip :text="$t('pagination.first')" position="top">
       <button
         class="page-btn"
         :disabled="currentPage === 1"
@@ -10,7 +10,7 @@
       </button>
     </BaseTooltip>
 
-    <BaseTooltip text="Předchozí strana" position="top">
+    <BaseTooltip :text="$t('pagination.prev')" position="top">
       <button
         class="page-btn"
         :disabled="currentPage === 1"
@@ -21,10 +21,12 @@
     </BaseTooltip>
 
     <div class="page-numbers">
-      <span class="page-info">Strana <strong>{{ currentPage }}</strong> z <strong>{{ totalPages }}</strong></span>
+      <span class="page-info">
+        {{ $t('pagination.page') }} <strong>{{ currentPage }}</strong> {{ $t('pagination.of') }} <strong>{{ totalPages }}</strong>
+      </span>
     </div>
 
-    <BaseTooltip text="Další strana" position="top">
+    <BaseTooltip :text="$t('pagination.next')" position="top">
       <button
         class="page-btn"
         :disabled="currentPage === totalPages"
@@ -34,7 +36,7 @@
       </button>
     </BaseTooltip>
 
-    <BaseTooltip text="Poslední strana" position="top">
+    <BaseTooltip :text="$t('pagination.last')" position="top">
       <button
         class="page-btn"
         :disabled="currentPage === totalPages"

@@ -9,15 +9,18 @@
         </router-link>
 
         <nav class="main-nav desktop-only">
-          <router-link to="/dashboard" class="nav-link"><LayoutDashboardIcon :size="18" /> Nástěnka</router-link>
-          <router-link to="/statistics" class="nav-link"><BarChart3Icon :size="18" /> Statistiky</router-link>
-          <router-link to="/beers" class="nav-link"><BeerIcon :size="18" /> Piva</router-link>
-          <router-link to="/breweries" class="nav-link"><FactoryIcon :size="18" /> Pivovary</router-link>
-          <router-link to="/locations" class="nav-link"><MapPinIcon :size="18" /> Podniky</router-link>
+          <router-link to="/dashboard" class="nav-link"><LayoutDashboardIcon :size="18" /> {{ $t('nav.dashboard') }}</router-link>
+          <router-link to="/statistics" class="nav-link"><BarChart3Icon :size="18" /> {{ $t('nav.statistics') }}</router-link>
+          <router-link to="/beers" class="nav-link"><BeerIcon :size="18" /> {{ $t('nav.beers') }}</router-link>
+          <router-link to="/breweries" class="nav-link"><FactoryIcon :size="18" /> {{ $t('nav.breweries') }}</router-link>
+          <router-link to="/locations" class="nav-link"><MapPinIcon :size="18" /> {{ $t('nav.locations') }}</router-link>
         </nav>
       </div>
 
       <div class="header-right">
+        
+        <LangToggleButton />
+
         <ThemeToggleButton 
           :is-dark="isDark" 
           @toggle="$emit('toggle-theme')" 
@@ -35,17 +38,17 @@
           <transition name="dropdown-fade">
             <div v-if="isDropdownOpen" class="dropdown-menu">
               <router-link to="/profile" class="dropdown-item">
-                <UserIcon :size="16" /> Můj profil
+                <UserIcon :size="16" /> {{ $t('nav.profile') }}
               </router-link>
               <router-link to="/wishlist" class="dropdown-item">
-                <BookmarkIcon :size="16" /> Můj wishlist
+                <BookmarkIcon :size="16" /> {{ $t('nav.wishlist') }}
               </router-link>
               <router-link v-if="isAdmin" to="/admin" class="dropdown-item">
-                <ShieldAlertIcon :size="16" /> Administrace
+                <ShieldAlertIcon :size="16" /> {{ $t('nav.admin') }}
               </router-link>
               <div class="dropdown-divider"></div>
               <button @click="handleLogout" class="dropdown-item logout-item">
-                <LogOutIcon :size="16" /> Odhlásit
+                <LogOutIcon :size="16" /> {{ $t('nav.logout') }}
               </button>
             </div>
           </transition>
@@ -59,23 +62,23 @@
     <div class="bottom-nav-inner">
       <router-link to="/dashboard" class="bottom-link">
         <LayoutDashboardIcon :size="24" />
-        <span>Nástěnka</span>
+        <span>{{ $t('nav.dashboard') }}</span>
       </router-link>
       <router-link to="/statistics" class="bottom-link">
         <BarChart3Icon :size="24" />
-        <span>Statistiky</span>
+        <span>{{ $t('nav.statistics') }}</span>
       </router-link>
       <router-link to="/beers" class="bottom-link">
         <BeerIcon :size="24" />
-        <span>Piva</span>
+        <span>{{ $t('nav.beers') }}</span>
       </router-link>
       <router-link to="/breweries" class="bottom-link">
         <FactoryIcon :size="24" />
-        <span>Pivovary</span>
+        <span>{{ $t('nav.breweries') }}</span>
       </router-link>
       <router-link to="/locations" class="bottom-link">
         <MapPinIcon :size="24" />
-        <span>Podniky</span>
+        <span>{{ $t('nav.locations') }}</span>
       </router-link>
     </div>
   </nav>
@@ -93,6 +96,7 @@ import {
 
 import { useAuthStore } from '../stores/auth'
 import ThemeToggleButton from './ThemeToggleButton.vue'
+import LangToggleButton from './LangToggleButton.vue'
 
 defineProps({
   isDark: Boolean

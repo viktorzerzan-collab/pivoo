@@ -1,9 +1,9 @@
 <template>
   <div class="opening-hours-input">
-    <label v-if="label" class="input-label">{{ label }}</label>
+    <label v-if="label || t('opening_hours.label')" class="input-label">{{ label || t('opening_hours.label') }}</label>
     
     <div class="days-container">
-      <div v-for="day in days" :key="day.id" class="day-row">
+      <div v-for="day in localizedDays" :key="day.id" class="day-row">
         <div class="day-info-row">
           <div class="day-name">
             <span class="day-label">{{ day.name }}</span>
@@ -16,16 +16,16 @@
                 v-model="localValue[day.id].closed"
                 @change="handleClosedChange(day.id)"
               >
-              <span class="checkbox-text">Zavřeno</span>
+              <span class="checkbox-text">{{ t('opening_hours.closed_checkbox') }}</span>
             </label>
             
-            <BaseTooltip v-if="!localValue[day.id].closed" text="Přidat pauzu/interval" position="top">
+            <BaseTooltip v-if="!localValue[day.id].closed" :text="t('opening_hours.add_interval_tooltip')" position="top">
               <button 
                 type="button" 
                 class="btn-add-interval" 
                 @click="addInterval(day.id)"
               >
-                + Přidat čas
+                {{ t('opening_hours.add_time') }}
               </button>
             </BaseTooltip>
           </div>
@@ -49,7 +49,7 @@
               >
             </div>
             
-            <BaseTooltip v-if="localValue[day.id].intervals.length > 1" text="Odebrat interval" position="top">
+            <BaseTooltip v-if="localValue[day.id].intervals.length > 1" :text="t('opening_hours.remove_interval_tooltip')" position="top">
               <button 
                 type="button" 
                 class="btn-remove-interval" 
@@ -61,7 +61,7 @@
           </div>
         </div>
         <div v-else class="closed-placeholder">
-          <span>--- Celý den zavřeno ---</span>
+          <span>{{ t('opening_hours.closed_all_day') }}</span>
         </div>
       </div>
     </div>
@@ -69,9 +69,10 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { XIcon } from 'lucide-vue-next'
 import BaseTooltip from './BaseTooltip.vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: {
@@ -80,25 +81,26 @@ const props = defineProps({
   },
   label: {
     type: String,
-    default: 'Otevírací doba'
+    default: null
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
+const { t } = useI18n()
 
-const days = [
-  { id: 1, name: 'Pondělí' },
-  { id: 2, name: 'Úterý' },
-  { id: 3, name: 'Středa' },
-  { id: 4, name: 'Čtvrtek' },
-  { id: 5, name: 'Pátek' },
-  { id: 6, name: 'Sobota' },
-  { id: 7, name: 'Neděle' }
-]
+const localizedDays = computed(() => [
+  { id: 1, name: t('days.monday') },
+  { id: 2, name: t('days.tuesday') },
+  { id: 3, name: t('days.wednesday') },
+  { id: 4, name: t('days.thursday') },
+  { id: 5, name: t('days.friday') },
+  { id: 6, name: t('days.saturday') },
+  { id: 7, name: t('days.sunday') }
+])
 
 const getEmptySchedule = () => {
   const schedule = {}
-  days.forEach(day => {
+  localizedDays.value.forEach(day => {
     schedule[day.id] = { closed: false, intervals: [{ from: '', to: '' }] }
   })
   return schedule

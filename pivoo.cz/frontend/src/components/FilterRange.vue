@@ -8,7 +8,7 @@
           :min="min" 
           :max="max" 
           :step="step"
-          placeholder="Od"
+          :placeholder="t('filter.from')"
           :value="modelValue.min"
           @input="updateMin($event.target.value)"
           class="range-input"
@@ -22,7 +22,7 @@
           :min="min" 
           :max="max" 
           :step="step"
-          placeholder="Do"
+          :placeholder="t('filter.to')"
           :value="modelValue.max"
           @input="updateMax($event.target.value)"
           class="range-input"
@@ -34,6 +34,8 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
 const props = defineProps({
   modelValue: { type: Object, required: true, default: () => ({ min: '', max: '' }) },
   label: { type: String, default: '' },
@@ -44,6 +46,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
+const { t } = useI18n()
 
 const updateMin = (val) => emit('update:modelValue', { ...props.modelValue, min: val })
 const updateMax = (val) => emit('update:modelValue', { ...props.modelValue, max: val })

@@ -3,20 +3,20 @@
     <template #header>
       <h2 class="modal-title danger-text">
         <UserMinusIcon :size="26" />
-        {{ isCurrentUser ? 'Smazat vlastní fotku?' : 'Smazat profilovou fotku?' }}
+        {{ isCurrentUser ? $t('modals.remove_avatar.title_self') : $t('modals.remove_avatar.title_other') }}
       </h2>
     </template>
     <template #body>
       <p class="modal-desc" v-if="isCurrentUser">
-        Opravdu si chcete smazat svou profilovou fotku? Tuto akci nelze vrátit zpět.
+        {{ $t('modals.remove_avatar.desc_self') }}
       </p>
       <p class="modal-desc" v-else>
-        Opravdu chcete uživateli <strong>{{ user?.username }}</strong> smazat jeho profilovou fotku? Tato akce je nevratná.
+        {{ $t('modals.remove_avatar.desc_other', { user: user?.username }) }}
       </p>
       <div class="button-group">
-         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">Zrušit</BaseButton>
+         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
          <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm', user?.id)">
-            Ano, smazat fotku
+            {{ $t('modals.remove_avatar.confirm') }}
          </BaseButton>
       </div>
     </template>
@@ -25,6 +25,7 @@
 
 <script setup>
 import { UserMinusIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseButton from '../BaseButton.vue'
 
@@ -35,6 +36,7 @@ defineProps({
 })
 
 defineEmits(['close', 'confirm'])
+const { t } = useI18n()
 </script>
 
 <style scoped>

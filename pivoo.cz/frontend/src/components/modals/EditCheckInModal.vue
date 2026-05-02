@@ -1,51 +1,51 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')">
     <template #header>
-      <h2 class="modal-title"><PencilIcon class="title-icon" :size="24" /> Upravit záznam</h2>
+      <h2 class="modal-title"><PencilIcon class="title-icon" :size="24" /> {{ $t('modals.checkin.title_edit') }}</h2>
     </template>
     <template #body>
       <form @submit.prevent="$emit('submit')" class="checkin-form">
         
-        <BaseDatePicker v-model="form.consumed_at" label="Kdy to bylo?" />
+        <BaseDatePicker v-model="form.consumed_at" :label="$t('modals.checkin.date_label')" />
 
-        <BaseSelect v-model="form.location_id" label="Kde to bylo?" searchable required>
-          <option disabled value="">-- Vyber lokaci --</option>
+        <BaseSelect v-model="form.location_id" :label="$t('modals.checkin.location_label')" searchable required>
+          <option disabled value="">{{ $t('modals.checkin.select_location') }}</option>
           <option v-for="loc in catalogStore.allLocations" :key="loc.id" :value="loc.id">
             {{ loc.name }}
           </option>
         </BaseSelect>
 
-        <BaseSelect v-model="form.brewery_id" label="Pivovar" searchable required>
-          <option disabled value="">-- Vyber pivovar --</option>
+        <BaseSelect v-model="form.brewery_id" :label="$t('modals.checkin.brewery_label')" searchable required>
+          <option disabled value="">{{ $t('modals.checkin.select_brewery') }}</option>
           <option v-for="brewery in catalogStore.allBreweries" :key="brewery.id" :value="brewery.id">
             {{ brewery.name }}
           </option>
         </BaseSelect>
 
-        <BaseSelect v-model="form.beer_id" label="Které pivo jsi pil?" :disabled="!form.brewery_id" searchable required>
-          <option disabled value="">-- Vyber pivo --</option>
+        <BaseSelect v-model="form.beer_id" :label="$t('modals.checkin.beer_label')" :disabled="!form.brewery_id" searchable required>
+          <option disabled value="">{{ $t('modals.checkin.select_beer') }}</option>
           <option v-for="beer in filteredBeers" :key="beer.id" :value="beer.id">
             {{ beer.name }}
           </option>
         </BaseSelect>
 
         <div class="form-row">
-          <BaseSelect class="half" v-model="form.packaging" label="Forma balení" required>
-            <option value="točené">Točené</option>
-            <option value="lahev">Lahev</option>
-            <option value="plechovka">Plechovka</option>
-            <option value="pet">PET lahev</option>
-            <option value="sud">Soukromý sud</option>
+          <BaseSelect class="half" v-model="form.packaging" :label="$t('modals.checkin.packaging_label')" required>
+            <option value="točené">{{ $t('modals.checkin.packaging.draft') }}</option>
+            <option value="lahev">{{ $t('modals.checkin.packaging.bottle') }}</option>
+            <option value="plechovka">{{ $t('modals.checkin.packaging.can') }}</option>
+            <option value="pet">{{ $t('modals.checkin.packaging.pet') }}</option>
+            <option value="sud">{{ $t('modals.checkin.packaging.keg') }}</option>
           </BaseSelect>
 
           <div class="half">
-            <BaseSelect v-model="volumeMode" label="Objem">
-              <option value="0.20">Sklenička (0.2l)</option>
-              <option value="0.30">Malé (0.3l)</option>
-              <option value="0.40">Šnyt (0.4l)</option>
-              <option value="0.50">Velké (0.5l)</option>
-              <option value="1.00">Tuplák (1.0l)</option>
-              <option value="custom">Vlastní...</option>
+            <BaseSelect v-model="volumeMode" :label="$t('modals.checkin.volume_label')">
+              <option value="0.20">{{ $t('modals.checkin.volume.glass') }}</option>
+              <option value="0.30">{{ $t('modals.checkin.volume.small') }}</option>
+              <option value="0.40">{{ $t('modals.checkin.volume.snyt') }}</option>
+              <option value="0.50">{{ $t('modals.checkin.volume.large') }}</option>
+              <option value="1.00">{{ $t('modals.checkin.volume.tuplak') }}</option>
+              <option value="custom">{{ $t('modals.checkin.volume.custom') }}</option>
             </BaseSelect>
           </div>
         </div>
@@ -58,14 +58,14 @@
             type="number" 
             step="0.01" 
             min="0.01" 
-            label="Zadej objem (litry)" 
-            placeholder="např. 0.25"
+            :label="$t('modals.checkin.custom_volume_label')" 
+            :placeholder="$t('modals.checkin.custom_volume_placeholder')"
             required
           />
         </div>
 
         <div class="form-row">
-          <BaseInput class="half" v-model="form.quantity" type="number" min="1" label="Počet kusů" required />
+          <BaseInput class="half" v-model="form.quantity" type="number" min="1" :label="$t('modals.checkin.quantity_edit_label')" required />
           <div class="half"></div>
         </div>
 
@@ -76,13 +76,13 @@
               v-model="form.original_price" 
               type="number" 
               step="0.01" 
-              label="Cena za kus" 
+              :label="$t('modals.checkin.price_label')" 
               :disabled="form.is_free" 
             />
             <BaseSelect 
               style="flex: 1;"
               v-model="form.currency" 
-              label="Měna" 
+              :label="$t('modals.checkin.currency_label')" 
               :disabled="form.is_free"
               :searchable="false"
             >
@@ -98,28 +98,28 @@
           <div class="half">
             <BaseCheckbox 
               v-model="form.is_free" 
-              label="Neplatil jsem" 
+              :label="$t('modals.checkin.is_free_label')" 
             />
           </div>
         </div>
 
         <div class="form-row">
           <div class="rating-box half">
-            <label class="input-label">Hodnocení piva</label>
+            <label class="input-label">{{ $t('modals.checkin.rating_beer_label') }}</label>
             <StarRating v-model="form.rating_beer" />
           </div>
 
           <div v-if="showCareRating" class="rating-box half">
-            <label class="input-label">Obsluha a péče</label>
+            <label class="input-label">{{ $t('modals.checkin.rating_care_label') }}</label>
             <StarRating v-model="form.rating_care" />
           </div>
           <div v-else class="half"></div>
         </div>
 
-        <BaseInput v-model="form.note" label="Poznámka" placeholder="Jaké bylo?" />
+        <BaseInput v-model="form.note" :label="$t('modals.checkin.note_label')" :placeholder="$t('modals.checkin.note_placeholder')" />
 
         <BaseButton type="submit" variant="edit" style="margin-top: 1rem; width: 100%;">
-          Uložit změny
+          {{ $t('modals.checkin.save_edit') }}
         </BaseButton>
 
       </form>
@@ -130,6 +130,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { PencilIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
@@ -140,6 +141,7 @@ import BaseCheckbox from '../BaseCheckbox.vue'
 
 import { useCatalogStore } from '../../stores/catalog'
 const catalogStore = useCatalogStore()
+const { t } = useI18n()
 
 const props = defineProps({ 
   show: Boolean, 

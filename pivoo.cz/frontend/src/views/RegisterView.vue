@@ -3,38 +3,38 @@
     <div class="auth-card">
       <div class="logo-container">
         <UserPlusIcon :size="56" color="var(--primary)" stroke-width="1.5" />
-        <h1 class="logo-text">Nová registrace</h1>
+        <h1 class="logo-text">{{ $t('views.register.title') }}</h1>
       </div>
-      <p class="auth-subtitle">Přidej se k pivní komunitě Pivoo.cz</p>
+      <p class="auth-subtitle">{{ $t('views.register.subtitle') }}</p>
 
       <form @submit.prevent="handleRegister" class="auth-form">
         
         <div class="avatar-upload-row">
-          <BaseFileUpload v-model:file="avatarFile" label="Profilová fotka (Volitelné)" />
+          <BaseFileUpload v-model:file="avatarFile" :label="$t('views.register.avatar')" />
         </div>
 
         <div class="form-row">
-          <BaseInput v-model="form.first_name" label="Křestní jméno" placeholder="Jan" required />
-          <BaseInput v-model="form.last_name" label="Příjmení" placeholder="Novák" required />
+          <BaseInput v-model="form.first_name" :label="$t('views.register.first_name')" :placeholder="$t('views.register.first_name_placeholder')" required />
+          <BaseInput v-model="form.last_name" :label="$t('views.register.last_name')" :placeholder="$t('views.register.last_name_placeholder')" required />
         </div>
 
-        <BaseInput v-model="form.username" label="Přezdívka (Username)" placeholder="Např. Honza88" required />
-        <BaseInput v-model="form.email" type="email" label="E-mail" placeholder="jan@novak.cz" required />
+        <BaseInput v-model="form.username" :label="$t('views.register.username')" :placeholder="$t('views.register.username_placeholder')" required />
+        <BaseInput v-model="form.email" type="email" :label="$t('views.register.email')" :placeholder="$t('views.register.email_placeholder')" required />
         
-        <BaseDatePicker v-model="form.birthdate" label="Datum narození" required />
+        <BaseDatePicker v-model="form.birthdate" :label="$t('views.register.birthdate')" required />
 
         <div class="form-row">
-          <BaseInput v-model="form.password" type="password" label="Heslo" placeholder="••••••••" required />
-          <BaseInput v-model="form.password_confirm" type="password" label="Potvrzení hesla" placeholder="••••••••" required />
+          <BaseInput v-model="form.password" type="password" :label="$t('views.register.password')" :placeholder="$t('views.register.password_placeholder')" required />
+          <BaseInput v-model="form.password_confirm" type="password" :label="$t('views.register.password_confirm')" :placeholder="$t('views.register.password_placeholder')" required />
         </div>
 
         <BaseButton type="submit" variant="primary" style="margin-top: 1rem; width: 100%;" :disabled="isLoading">
           <template #icon><UserPlusIcon :size="18" /></template>
-          {{ isLoading ? 'Zpracovávám...' : 'Vytvořit účet' }}
+          {{ isLoading ? $t('views.register.processing') : $t('views.register.submit') }}
         </BaseButton>
 
         <div class="auth-footer-link">
-          Už máš účet? <router-link to="/">Přihlas se zde</router-link>
+          {{ $t('views.register.has_account') }} <router-link to="/">{{ $t('views.register.login_here') }}</router-link>
         </div>
       </form>
     </div>
@@ -45,6 +45,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserPlusIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useToastStore } from '../stores/toast' 
 
@@ -55,8 +56,9 @@ import BaseDatePicker from '../components/BaseDatePicker.vue'
 
 const router = useRouter()
 const toastStore = useToastStore() 
-const isLoading = ref(false)
+const { t } = useI18n()
 
+const isLoading = ref(false)
 const avatarFile = ref(null)
 const form = ref({
   first_name: '', last_name: '', username: '', 
@@ -65,7 +67,7 @@ const form = ref({
 
 const handleRegister = async () => {
   if (form.value.password !== form.value.password_confirm) {
-    toastStore.showToast('Zadaná hesla se neshodují.', 'toast-error')
+    toastStore.showToast(t('toast.passwords_mismatch'), 'toast-error')
     return
   }
   
@@ -84,13 +86,13 @@ const handleRegister = async () => {
     })
     
     if (result.status === 'success') {
-      toastStore.showToast('Registrace proběhla úspěšně! Nyní se můžeš přihlásit.')
+      toastStore.showToast(t('toast.register_success'))
       router.push('/')
     } else {
-      toastStore.showToast(result.message || 'Registrace se nezdařila.', 'toast-error')
+      toastStore.showToast(result.message || t('toast.register_error'), 'toast-error')
     }
   } catch (error) {
-    toastStore.showToast('Chyba při komunikaci se serverem.', 'toast-error')
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
   } finally {
     isLoading.value = false
   }

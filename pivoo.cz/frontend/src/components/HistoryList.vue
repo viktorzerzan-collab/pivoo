@@ -10,35 +10,35 @@
               <span class="text-truncate">{{ record.brewery_name }}</span>
             </span>
           </div>
-          <div class="packaging-tag">{{ record.packaging }}</div>
+          <div class="packaging-tag">{{ translatePackaging(record.packaging) }}</div>
         </div>
         
         <div class="consumption-meta">
           <div class="meta-item">
-            <span class="label">Objem:</span>
+            <span class="label">{{ $t('history.volume') }}</span>
             <strong class="text-truncate">{{ record.volume }} l</strong>
           </div>
 
           <div class="meta-item quantity-item">
-            <span class="label">Počet:</span>
+            <span class="label">{{ $t('history.quantity') }}</span>
             <strong>{{ record.quantity }}x</strong>
           </div>
           
           <div class="meta-item price-item" v-if="Number(record.is_free) === 1 || record.price">
-            <span class="label">Cena:</span>
+            <span class="label">{{ $t('history.price') }}</span>
             <div class="price-val">
               <template v-if="Number(record.is_free) === 1">
-                <span class="free-text">Zdarma</span>
-                <small class="unit">Neplatil jsem</small>
+                <span class="free-text">{{ $t('history.free') }}</span>
+                <small class="unit">{{ $t('history.did_not_pay') }}</small>
               </template>
               <template v-else>
                 <template v-if="record.currency && record.currency !== 'CZK'">
                   <span class="price-total">{{ record.original_price * record.quantity }} {{ record.currency }}</span>
-                  <small class="unit">({{ Math.round(record.price * record.quantity) }} Kč celkem)</small>
+                  <small class="unit">({{ Math.round(record.price * record.quantity) }} Kč {{ $t('history.total') }})</small>
                 </template>
                 <template v-else>
                   <span class="price-total">{{ record.price * record.quantity }} Kč</span>
-                  <small class="unit">({{ record.price }} Kč/ks)</small>
+                  <small class="unit">({{ record.price }} Kč/{{ $t('history.per_piece') }})</small>
                 </template>
               </template>
             </div>
@@ -52,7 +52,7 @@
           <div class="card-footer-info">
             <div class="info-row">
               <MapPinIcon :size="12" class="icon-shrink" /> 
-              <span class="text-truncate">{{ record.location_name }}</span>
+              <span class="text-truncate">{{ translateLocation(record.location_name) }}</span>
             </div>
             <div class="info-row date">
               <CircleHelpIcon :size="12" class="icon-shrink" /> 
@@ -61,12 +61,12 @@
           </div>
 
           <div class="inline-actions">
-            <BaseTooltip text="Upravit" position="top">
+            <BaseTooltip :text="$t('buttons.edit')" position="top">
               <button class="btn-edit is-icon-only sm" @click="$emit('edit', record)">
                 <PencilIcon :size="14" />
               </button>
             </BaseTooltip>
-            <BaseTooltip text="Smazat" position="top">
+            <BaseTooltip :text="$t('buttons.delete')" position="top">
               <button class="btn-danger is-icon-only sm" @click="$emit('delete', record.id)">
                 <Trash2Icon :size="14" />
               </button>
@@ -81,9 +81,29 @@
 <script setup>
 import { PencilIcon, Trash2Icon, MapPinIcon, CircleHelpIcon, FactoryIcon } from 'lucide-vue-next'
 import BaseTooltip from './BaseTooltip.vue'
+import { useI18n } from 'vue-i18n'
 
 defineProps({ history: { type: Array, required: true } })
 defineEmits(['edit', 'delete'])
+
+const { t, te } = useI18n()
+
+// Mapa pro překlad typů balení
+const packagingMap = {
+  'točené': 'modals.checkin.packaging.draft',
+  'lahev': 'modals.checkin.packaging.bottle',
+  'plechovka': 'modals.checkin.packaging.can',
+  'pet': 'modals.checkin.packaging.pet',
+  'sud': 'modals.checkin.packaging.keg'
+}
+
+const translatePackaging = (val) => packagingMap[val] ? t(packagingMap[val]) : val
+
+const translateLocation = (val) => {
+  // Pokud máme přesnou shodu v našem dynamickém slovníku, přeložíme
+  const key = `dynamic.locations.${val}`
+  return te(key) ? t(key) : val
+}
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''

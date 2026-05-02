@@ -2,9 +2,9 @@
   <div class="opening-hours-display" v-if="parsedHours">
     <div class="status-badge" :class="isOpenNow ? 'open' : 'closed'" @click="toggleDetails">
       <span class="status-dot"></span>
-      <span class="status-text">{{ isOpenNow ? 'Otevřeno' : 'Zavřeno' }}</span>
+      <span class="status-text">{{ isOpenNow ? t('opening_hours.open') : t('opening_hours.closed') }}</span>
       <span class="today-hours" v-if="todaySchedule && !todaySchedule.closed && isOpenNow">
-        (dnes {{ formatIntervals(todaySchedule.intervals) }})
+        ({{ t('opening_hours.today') }} {{ formatIntervals(todaySchedule.intervals) }})
       </span>
       <ChevronDownIcon :class="['toggle-icon', { 'rotated': showDetails }]" :size="16" />
     </div>
@@ -12,7 +12,7 @@
     <transition name="slide-fade">
       <div v-show="showDetails" class="hours-list">
         <div 
-          v-for="day in days" 
+          v-for="day in localizedDays" 
           :key="day.id" 
           class="hour-row"
           :class="{ 'is-today': day.id === currentDayId }"
@@ -24,20 +24,21 @@
                 {{ interval.from }} - {{ interval.to }}
               </div>
             </template>
-            <span v-else class="day-time closed">Zavřeno</span>
+            <span v-else class="day-time closed">{{ t('opening_hours.closed') }}</span>
           </div>
         </div>
       </div>
     </transition>
   </div>
   <div v-else class="no-hours">
-    <span class="text-muted">Otevírací doba není uvedena</span>
+    <span class="text-muted">{{ t('opening_hours.not_provided') }}</span>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ChevronDownIcon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   openingHours: {
@@ -46,15 +47,17 @@ const props = defineProps({
   }
 })
 
-const days = [
-  { id: 1, name: 'Pondělí' },
-  { id: 2, name: 'Úterý' },
-  { id: 3, name: 'Středa' },
-  { id: 4, name: 'Čtvrtek' },
-  { id: 5, name: 'Pátek' },
-  { id: 6, name: 'Sobota' },
-  { id: 7, name: 'Neděle' }
-]
+const { t } = useI18n()
+
+const localizedDays = computed(() => [
+  { id: 1, name: t('days.monday') },
+  { id: 2, name: t('days.tuesday') },
+  { id: 3, name: t('days.wednesday') },
+  { id: 4, name: t('days.thursday') },
+  { id: 5, name: t('days.friday') },
+  { id: 6, name: t('days.saturday') },
+  { id: 7, name: t('days.sunday') }
+])
 
 const showDetails = ref(false)
 const currentTime = ref(new Date())

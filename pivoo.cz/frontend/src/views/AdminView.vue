@@ -12,12 +12,12 @@
           <div class="header-info">
             <FilterInput 
               v-model="searchQuery" 
-              :placeholder="'Hledat v sekci ' + tabs.find(t => t.value === activeTab).label.toLowerCase() + '...'" 
+              :placeholder="$t('admin.search_placeholder', { section: getTabLabel(activeTab).toLowerCase() })" 
               class="admin-search"
             />
           </div>
           <button v-if="activeTab !== 'users'" class="btn-add" @click="openAddModal(activeTab)">
-            <PlusIcon :size="20" /> Přidat {{ currentLabelSingle }}
+            <PlusIcon :size="20" /> {{ $t('admin.add_item', { item: currentLabelSingle }) }}
           </button>
         </div>
 
@@ -25,28 +25,28 @@
           <table class="admin-table">
             <thead>
               <tr v-if="activeTab === 'users'">
-                <th>Uživatel</th>
-                <th>E-mail</th>
-                <th>Role</th>
-                <th class="w-100 text-right">Akce</th>
+                <th>{{ $t('admin.table.user') }}</th>
+                <th>{{ $t('admin.table.email') }}</th>
+                <th>{{ $t('admin.table.role') }}</th>
+                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
               </tr>
               <tr v-else>
-                <th>Název</th>
-                <th v-if="activeTab === 'breweries'">Piva</th>
+                <th>{{ $t('admin.table.name') }}</th>
+                <th v-if="activeTab === 'breweries'">{{ $t('admin.table.beers_count') }}</th>
                 
-                <th v-if="activeTab === 'beers'">Pivovar</th>
-                <th v-if="activeTab === 'beers'">Styl</th>
+                <th v-if="activeTab === 'beers'">{{ $t('admin.table.brewery') }}</th>
+                <th v-if="activeTab === 'beers'">{{ $t('admin.table.style') }}</th>
                 
-                <th v-if="activeTab === 'locations'">Typ podniku</th>
-                <th v-if="['breweries', 'locations'].includes(activeTab)">Město</th>
-                <th v-if="['breweries', 'locations'].includes(activeTab)">Země</th>
-                <th class="w-100 text-right">Akce</th>
+                <th v-if="activeTab === 'locations'">{{ $t('admin.table.location_type') }}</th>
+                <th v-if="['breweries', 'locations'].includes(activeTab)">{{ $t('admin.table.city') }}</th>
+                <th v-if="['breweries', 'locations'].includes(activeTab)">{{ $t('admin.table.country') }}</th>
+                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <template v-if="activeTab === 'users'">
                 <tr v-for="u in paginatedUsers" :key="u?.id" :class="{ 'banned-row': u.is_banned }">
-                  <td data-label="Uživatel">
+                  <td :data-label="$t('admin.table.user')">
                     <div class="td-content user-cell">
                       <div class="section-icon users-bg" :class="{ 'has-image': u.avatar }">
                         <img v-if="u.avatar" :src="'https://www.pivoo.cz/backend/uploads/avatars/' + u.avatar" alt="Avatar" />
@@ -60,7 +60,7 @@
                           <span class="badge mobile-only" :class="u.role" style="font-size: 0.6rem; padding: 2px 6px;">
                             {{ u.role }}
                           </span>
-                          <span v-if="u.is_banned" class="badge banned-badge">BANNED</span>
+                          <span v-if="u.is_banned" class="badge banned-badge">{{ $t('admin.banned') }}</span>
                         </div>
                         <small class="user-meta-row">
                           {{ u.first_name }} {{ u.last_name }}
@@ -69,36 +69,36 @@
                       </div>
                     </div>
                   </td>
-                  <td data-label="E-mail" class="desktop-only">
+                  <td :data-label="$t('admin.table.email')" class="desktop-only">
                     <div class="td-content email-text">{{ u.email }}</div>
                   </td>
-                  <td data-label="Role" class="desktop-only">
+                  <td :data-label="$t('admin.table.role')" class="desktop-only">
                     <div class="td-content">
                       <span class="badge" :class="u.role">{{ u.role }}</span>
                     </div>
                   </td>
-                  <td data-label="Akce">
+                  <td :data-label="$t('admin.table.actions')">
                     <div class="td-content action-buttons">
-                      <BaseTooltip text="Upravit údaje" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.edit_user')" position="top">
                         <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')">
                           <PencilIcon :size="16" />
                         </button>
                       </BaseTooltip>
                       
-                      <BaseTooltip text="Změnit heslo" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.change_pwd')" position="top">
                         <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: #3b82f6;" @click="openPasswordModal(u)">
                           <KeyIcon :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip :text="u.is_banned ? 'Odblokovat' : 'Zablokovat'" position="top">
+                      <BaseTooltip :text="u.is_banned ? $t('admin.tooltips.unblock') : $t('admin.tooltips.block')" position="top">
                         <button v-if="u?.id !== user?.id" class="is-icon-only admin-action-btn" :style="u.is_banned ? 'background-color: #10b981;' : 'background-color: #64748b;'" @click="openBanModal(u)">
                           <UnlockIcon v-if="u.is_banned" :size="16" />
                           <BanIcon v-else :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip text="Smazat uživatele" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.delete_user')" position="top">
                         <button v-if="u?.id !== user?.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)">
                           <Trash2Icon :size="16" />
                         </button>
@@ -110,7 +110,7 @@
 
               <template v-else>
                 <tr v-for="item in paginatedCurrentItems" :key="item?.id">
-                  <td data-label="Název">
+                  <td :data-label="$t('admin.table.name')">
                     <div class="td-content main-item-cell">
                       <div class="section-icon" :class="[activeTab + '-bg', { 'has-image': activeTab === 'breweries' && item.logo }]">
                         <img v-if="activeTab === 'breweries' && item.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" alt="Logo" />
@@ -128,70 +128,70 @@
                         
                         <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only combined-meta">
                           <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" class="mobile-flag" />
-                          {{ item.city || 'Lokalita neuvedena' }}{{ item.city && item.country ? ', ' : '' }}{{ item.country }}
+                          {{ item.city || $t('admin.unknown_location') }}{{ item.city && item.country ? ', ' : '' }}{{ item.country }}
                         </small>
 
-                        <small v-if="activeTab === 'breweries'" class="mobile-only">Piv v katalogu: {{ item.total_beers_in_catalog || 0 }}</small>
+                        <small v-if="activeTab === 'breweries'" class="mobile-only">{{ $t('admin.beers_in_catalog', { count: item.total_beers_in_catalog || 0 }) }}</small>
                         
                         <small v-if="activeTab === 'locations'" class="mobile-only">
-                          Typ: {{ item.type === 'hospoda' ? 'Hospoda / Bar' : (item.type === 'jine' ? 'Jiné' : item.type) }}
+                          {{ $t('admin.type', { type: item.type === 'hospoda' ? $t('admin.type_pub') : (item.type === 'jine' ? $t('admin.type_other') : item.type) }) }}
                         </small>
                       </div>
                     </div>
                   </td>
 
-                  <td v-if="activeTab === 'breweries'" data-label="Piva" class="desktop-only">
+                  <td v-if="activeTab === 'breweries'" :data-label="$t('admin.table.beers_count')" class="desktop-only">
                     <div class="td-content">
                       <strong>{{ item.total_beers_in_catalog || 0 }}</strong>
                     </div>
                   </td>
 
-                  <td v-if="activeTab === 'beers'" data-label="Pivovar" class="desktop-only">
+                  <td v-if="activeTab === 'beers'" :data-label="$t('admin.table.brewery')" class="desktop-only">
                     <div class="td-content">
                       {{ item.brewery_name }}
                     </div>
                   </td>
-                  <td v-if="activeTab === 'beers'" data-label="Styl" class="desktop-only">
+                  <td v-if="activeTab === 'beers'" :data-label="$t('admin.table.style')" class="desktop-only">
                     <div class="td-content">
                       {{ item.style }}
                     </div>
                   </td>
 
-                  <td v-if="activeTab === 'locations'" data-label="Typ podniku" class="desktop-only">
+                  <td v-if="activeTab === 'locations'" :data-label="$t('admin.table.location_type')" class="desktop-only">
                     <div class="td-content">
-                      {{ item.type === 'hospoda' ? 'Hospoda / Bar' : (item.type === 'jine' ? 'Jiné' : item.type) }}
+                      {{ item.type === 'hospoda' ? $t('admin.type_pub') : (item.type === 'jine' ? $t('admin.type_other') : item.type) }}
                     </div>
                   </td>
 
-                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Město" class="desktop-only">
+                  <td v-if="['breweries', 'locations'].includes(activeTab)" :data-label="$t('admin.table.city')" class="desktop-only">
                     <div class="td-content">
                       {{ item.city || '-' }}
                     </div>
                   </td>
 
-                  <td v-if="['breweries', 'locations'].includes(activeTab)" data-label="Země" class="desktop-only">
+                  <td v-if="['breweries', 'locations'].includes(activeTab)" :data-label="$t('admin.table.country')" class="desktop-only">
                     <div class="td-content country-cell">
                       <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" class="admin-flag-icon" :alt="item.country" />
                       <span>{{ item.country || '-' }}</span>
                     </div>
                   </td>
 
-                  <td data-label="Akce">
+                  <td :data-label="$t('admin.table.actions')">
                     <div class="td-content action-buttons">
                       
-                      <BaseTooltip v-if="activeTab === 'locations'" text="Sloučit duplicitu" position="top">
+                      <BaseTooltip v-if="activeTab === 'locations'" :text="$t('admin.tooltips.merge')" position="top">
                         <button class="btn-primary is-icon-only" style="background-color: #8b5cf6; color: white; border: none;" @click="openMergeModal(item)">
                           <GitMergeIcon :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip text="Upravit" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.edit')" position="top">
                         <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
                           <PencilIcon :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip text="Smazat" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.delete')" position="top">
                         <button class="btn-danger is-icon-only" @click="confirmDelete(item.id, activeTab)">
                           <Trash2Icon :size="16" />
                         </button>
@@ -205,7 +205,7 @@
           
           <div v-if="(activeTab === 'users' && filteredUsers.length === 0) || (activeTab !== 'users' && filteredCurrentItems.length === 0)" class="admin-empty-search">
             <SearchXIcon :size="40" color="var(--text-muted)" />
-            <p>Žádné záznamy neodpovídají hledání.</p>
+            <p>{{ $t('admin.empty_search') }}</p>
           </div>
 
           <div ref="loadMoreTrigger" class="load-more-trigger"></div>
@@ -213,7 +213,7 @@
         
         <div class="admin-section-footer">
           <div class="footer-info desktop-only">
-            Zobrazeno <strong>{{ activeTab === 'users' ? paginatedUsers.length : paginatedCurrentItems.length }}</strong> z <strong>{{ activeTab === 'users' ? filteredUsers.length : filteredCurrentItems.length }}</strong> záznamů
+            {{ $t('admin.showing') }} <strong>{{ activeTab === 'users' ? paginatedUsers.length : paginatedCurrentItems.length }}</strong> {{ $t('admin.of') }} <strong>{{ activeTab === 'users' ? filteredUsers.length : filteredCurrentItems.length }}</strong> {{ $t('admin.records') }}
           </div>
           
           <div class="desktop-only">
@@ -266,11 +266,11 @@
     />
     
     <BaseModal :show="modals.style" @close="modals.style = false">
-      <template #header><h2>{{ isEditing ? 'Upravit' : 'Přidat' }} styl</h2></template>
+      <template #header><h2>{{ isEditing ? $t('admin.edit_style') : $t('admin.add_style') }}</h2></template>
       <template #body>
         <form @submit.prevent="submitForm('style')" style="display: flex; flex-direction: column; gap: 1.5rem;">
-          <BaseInput v-model="formData.style.name" label="Název stylu *" required />
-          <button type="submit" class="btn-add" style="padding: 1rem;"><SaveIcon :size="18" /> Uložit styl</button>
+          <BaseInput v-model="formData.style.name" :label="$t('admin.style_name')" required />
+          <button type="submit" class="btn-add" style="padding: 1rem;"><SaveIcon :size="18" /> {{ $t('admin.save_style') }}</button>
         </form>
       </template>
     </BaseModal>
@@ -278,30 +278,30 @@
     <BaseModal :show="modals.merge" @close="modals.merge = false">
       <template #header>
         <h2 style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-          <GitMergeIcon color="#8b5cf6" /> Sloučit podniky
+          <GitMergeIcon color="#8b5cf6" /> {{ $t('admin.merge_title') }}
         </h2>
       </template>
       <template #body>
         <form @submit.prevent="submitMerge" style="display: flex; flex-direction: column; gap: 1.5rem;">
           <p style="margin: 0; color: var(--text-muted); line-height: 1.4;">
-            Chystáte se smazat duplicitu <strong>{{ mergeForm.source?.name }}</strong>. 
-            Vyberte níže podnik, který v databázi zůstane a na který se převedou všechny stávající záznamy o vypitých pivech.
+            {{ $t('admin.merge_desc', { source: mergeForm.source?.name }) }}
           </p>
           
           <BaseSelect 
             v-model="mergeForm.target_id" 
-            label="Cílový podnik (ten, který zůstane) *" 
+            :label="$t('admin.merge_target')" 
+            :placeholder="$t('admin.merge_target_placeholder')"
             searchable 
             required
           >
-            <option disabled value="">-- Vyhledejte cílový podnik --</option>
+            <option disabled value="">{{ $t('admin.merge_target_placeholder') }}</option>
             <option v-for="loc in mergeTargetOptions" :key="loc.id" :value="loc.id">
-              {{ loc.name }} ({{ loc.city || 'Bez města' }})
+              {{ loc.name }} ({{ loc.city || $t('admin.merge_no_city') }})
             </option>
           </BaseSelect>
           
           <button type="submit" class="btn-primary" style="background-color: #8b5cf6; color: white; padding: 1rem; font-weight: 700; width: 100%;">
-            Provést sloučení
+            {{ $t('admin.merge_submit') }}
           </button>
         </form>
       </template>
@@ -317,6 +317,7 @@ import {
   UnlockIcon, UserIcon, UsersIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
   GitMergeIcon 
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -341,6 +342,8 @@ import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmMo
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
+const { t } = useI18n()
+
 const { user } = storeToRefs(authStore)
 const { beers, breweries, locations, styles, countries, isLoading } = storeToRefs(catalogStore)
 
@@ -377,15 +380,19 @@ const handleResize = () => {
 watch(activeTab, () => { searchQuery.value = ''; currentPage.value = 1 })
 watch(searchQuery, () => { currentPage.value = 1 })
 
-const tabs = [
-  { value: 'users', label: 'Uživatelé', icon: UsersIcon },
-  { value: 'beers', label: 'Piva', icon: BeerIcon },
-  { value: 'breweries', label: 'Pivovary', icon: FactoryIcon },
-  { value: 'locations', label: 'Podniky', icon: MapPinIcon },
-  { value: 'styles', label: 'Styly', icon: HopIcon }
-]
+const tabs = computed(() => [
+  { value: 'users', label: t('admin.tabs.users'), icon: UsersIcon },
+  { value: 'beers', label: t('admin.tabs.beers'), icon: BeerIcon },
+  { value: 'breweries', label: t('admin.tabs.breweries'), icon: FactoryIcon },
+  { value: 'locations', label: t('admin.tabs.locations'), icon: MapPinIcon },
+  { value: 'styles', label: t('admin.tabs.styles'), icon: HopIcon }
+])
 
-const currentLabelSingle = computed(() => ({ beers: 'pivo', breweries: 'pivovar', locations: 'podnik', styles: 'styl', users: 'uživatele' }[activeTab.value]))
+const getTabLabel = (val) => tabs.value.find(t => t.value === val)?.label || ''
+
+const currentLabelSingle = computed(() => {
+  return t(`admin.items.${activeTab.value === 'users' ? 'user' : (activeTab.value === 'beers' ? 'beer' : (activeTab.value === 'breweries' ? 'brewery' : (activeTab.value === 'locations' ? 'location' : 'style')))}`)
+})
 
 const filteredUsers = computed(() => {
   let items = [...allUsers.value]
@@ -495,9 +502,9 @@ const openAddModal = (t) => {
   modals.value[keyMap] = true 
 }
 
-const openEditModal = (item, t) => { 
+const openEditModal = (item, typeParam) => { 
   isEditing.value = true
-  const key = t === 'styles' ? 'style' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'breweries' ? 'brewery' : 'user')))
+  const key = typeParam === 'styles' ? 'style' : (typeParam === 'beers' ? 'beer' : (typeParam === 'locations' ? 'location' : (typeParam === 'breweries' ? 'brewery' : 'user')))
   if (key === 'beer') {
     formData.value.beer = { ...item, is_unfiltered: !!item.is_unfiltered, is_unpasteurized: !!item.is_unpasteurized }
   } else {
@@ -531,7 +538,7 @@ const submitMerge = async () => {
       toastStore.showToast(res.message || 'Nepodařilo se podniky sloučit.', 'toast-error')
     }
   } catch (error) {
-    toastStore.showToast('Chyba komunikace se serverem.', 'toast-error')
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
   }
 }
 
@@ -545,7 +552,7 @@ const handlePasswordChange = async (payload) => {
       modals.value.password = false 
     } 
     else { toastStore.showToast(res.message || 'Nepodařilo se změnit heslo.', 'toast-error') }
-  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
 const handleRemoveAvatar = (userId) => {
@@ -562,7 +569,7 @@ const executeRemoveAvatar = async (userId) => {
       modals.value.user = false
       fetchUsers() 
     } else { toastStore.showToast(res.message || 'Nepodařilo se smazat fotku.', 'toast-error') }
-  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
 const openBanModal = (u) => { selectedUserForBan.value = u; modals.value.ban = true }
@@ -577,52 +584,52 @@ const handleBanConfirm = async (u) => {
       fetchUsers() 
     } 
     else { toastStore.showToast(res.message || 'Chyba při změně blokace.', 'toast-error') }
-  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-const submitForm = async (t) => {
+const submitForm = async (t_form) => {
   try {
-    const endpoint = isEditing.value ? `update_${t}.php` : `add_${t}.php`
+    const endpoint = isEditing.value ? `update_${t_form}.php` : `add_${t_form}.php`
     let bodyData;
-    if (t === 'brewery') {
+    if (t_form === 'brewery') {
       bodyData = new FormData();
-      Object.keys(formData.value[t]).forEach(key => {
-         if (formData.value[t][key] !== null && formData.value[t][key] !== undefined && formData.value[t][key] !== '') {
-           bodyData.append(key, formData.value[t][key])
+      Object.keys(formData.value[t_form]).forEach(key => {
+         if (formData.value[t_form][key] !== null && formData.value[t_form][key] !== undefined && formData.value[t_form][key] !== '') {
+           bodyData.append(key, formData.value[t_form][key])
          }
       });
     } else {
-      bodyData = JSON.stringify(formData.value[t])
+      bodyData = JSON.stringify(formData.value[t_form])
     }
     const res = await apiFetch(`/${endpoint}`, { method: 'POST', body: bodyData })
     if (res.status === 'success') { 
       toastStore.showToast(res.message)
-      modals.value[t] = false
+      modals.value[t_form] = false
 
-      if (t === 'user') {
+      if (t_form === 'user') {
         fetchUsers()
       } else {
         if (isEditing.value) {
-          const arrName = t === 'style' ? 'styles' : (t === 'brewery' ? 'breweries' : t + 's')
-          const index = catalogStore[arrName].findIndex(x => x.id === formData.value[t].id)
+          const arrName = t_form === 'style' ? 'styles' : (t_form === 'brewery' ? 'breweries' : t_form + 's')
+          const index = catalogStore[arrName].findIndex(x => x.id === formData.value[t_form].id)
           if (index !== -1) {
-             catalogStore[arrName][index] = { ...catalogStore[arrName][index], ...formData.value[t] }
+             catalogStore[arrName][index] = { ...catalogStore[arrName][index], ...formData.value[t_form] }
           }
         } else {
-          const newItem = { ...formData.value[t], id: res.id }
-          if (t === 'beer') catalogStore.addBeerLocally({ ...newItem, avg_rating: null, total_checkins: 0, is_favorite: 0 })
-          else if (t === 'brewery') catalogStore.addBreweryLocally({ ...newItem, avg_rating: null, total_beers_in_catalog: 0, is_favorite: 0 })
-          else if (t === 'location') catalogStore.addLocationLocally({ ...newItem, avg_rating: null, total_visits: 0, is_favorite: 0 })
+          const newItem = { ...formData.value[t_form], id: res.id }
+          if (t_form === 'beer') catalogStore.addBeerLocally({ ...newItem, avg_rating: null, total_checkins: 0, is_favorite: 0 })
+          else if (t_form === 'brewery') catalogStore.addBreweryLocally({ ...newItem, avg_rating: null, total_beers_in_catalog: 0, is_favorite: 0 })
+          else if (t_form === 'location') catalogStore.addLocationLocally({ ...newItem, avg_rating: null, total_visits: 0, is_favorite: 0 })
           else catalogStore.fetchAllData()
         }
       }
     } else { toastStore.showToast(res.message || 'Chyba při ukládání.', 'toast-error') }
-  } catch (e) { toastStore.showToast('Chyba serveru.', 'toast-error') }
+  } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-const confirmDelete = (id, t) => {
+const confirmDelete = (id, typeParam) => {
   const typeMap = { users: 'user', beers: 'beer', breweries: 'brewery', locations: 'location', styles: 'style' }
-  deleteModal.value = { show: true, id, type: typeMap[t] } 
+  deleteModal.value = { show: true, id, type: typeMap[typeParam] } 
 }
 
 const handleDelete = async () => {
@@ -637,7 +644,7 @@ const handleDelete = async () => {
         catalogStore[arrName] = catalogStore[arrName].filter(x => x.id !== deleteModal.value.id)
       }
     } else { toastStore.showToast(res.message || 'Nepodařilo se smazat.', 'toast-error') }
-  } catch(e) { toastStore.showToast('Chyba při mazání.', 'toast-error') } 
+  } catch(e) { toastStore.showToast(t('toast.delete_error'), 'toast-error') } 
   finally { deleteModal.value.show = false }
 }
 </script>

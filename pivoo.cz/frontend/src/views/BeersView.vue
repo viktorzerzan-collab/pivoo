@@ -5,7 +5,7 @@
     <div class="catalog-header-layout">
       <div class="mobile-action-bar">
         <button v-if="authStore.user" class="btn-add" @click="openAddModal">
-          <PlusCircleIcon :size="20" /> Přidat pivo
+          <PlusCircleIcon :size="20" /> {{ $t('catalog.add_beer') }}
         </button>
       </div>
 
@@ -13,7 +13,7 @@
         <div class="filters-header" @click="filtersOpen = !filtersOpen">
           <div class="filters-title">
             <FilterIcon :size="20" class="panel-icon" /> 
-            <h3>Filtrování a vyhledávání</h3>
+            <h3>{{ $t('catalog.filters_title') }}</h3>
           </div>
           <ChevronDownIcon :class="{ 'rotated': filtersOpen }" :size="20" class="toggle-icon" />
         </div>
@@ -21,38 +21,38 @@
         <transition name="slide-fade">
           <div v-show="filtersOpen" class="filters-body">
             <div class="filters-grid">
-              <FilterInput v-model="filters.search" label="Název piva" placeholder="Např. Pilsner..." />
+              <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_beer')" :placeholder="$t('catalog.placeholder_beer')" />
               
-              <FilterInput v-model="filters.brewery" label="Pivovar" placeholder="Např. Prazdroj, Bernard..." />
+              <FilterInput v-model="filters.brewery" :label="$t('catalog.filter_brewery')" :placeholder="$t('catalog.placeholder_brewery')" />
 
-              <FilterInput v-model="filters.country" label="Země původu" placeholder="Např. Česko, Německo..." />
+              <FilterInput v-model="filters.country" :label="$t('catalog.filter_country')" :placeholder="$t('catalog.placeholder_country')" />
 
-              <BaseSelect v-model="filters.style" label="Pivní styl" placeholder="Všechny styly" searchable>
-                <option value="">Všechny styly</option>
+              <BaseSelect v-model="filters.style" :label="$t('catalog.filter_style')" :placeholder="$t('catalog.all_styles')" searchable>
+                <option value="">{{ $t('catalog.all_styles') }}</option>
                 <option v-for="s in styles" :key="s.id" :value="s.id">{{ s.name }}</option>
               </BaseSelect>
 
-              <FilterRange v-model="filters.epm" label="Stupňovitost (EPM)" :step="0.1" unit="°" />
-              <FilterRange v-model="filters.abv" label="Obsah alkoholu (ABV)" :step="0.1" unit="%" />
-              <FilterRange v-model="filters.ibu" label="Hořkost (IBU)" :step="1" unit="IBU" />
+              <FilterRange v-model="filters.epm" :label="$t('modals.add_beer.epm')" :step="0.1" unit="°" />
+              <FilterRange v-model="filters.abv" :label="$t('modals.add_beer.abv')" :step="0.1" unit="%" />
+              <FilterRange v-model="filters.ibu" :label="$t('modals.add_beer.ibu')" :step="1" unit="IBU" />
             </div>
             
             <div class="filters-footer">
-              <button class="btn-secondary" @click="resetFilters">Resetovat filtry</button>
+              <button class="btn-secondary" @click="resetFilters">{{ $t('catalog.reset_filters') }}</button>
             </div>
           </div>
         </transition>
       </div>
 
       <div v-if="activeFilters.length > 0" class="active-filters-chips">
-        <span class="chips-label">Aktivní filtry:</span>
+        <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
         <div class="chips-container">
           <button 
             v-for="chip in activeFilters" 
             :key="chip.id" 
             class="filter-chip"
             @click="removeFilter(chip)"
-            title="Zrušit filtr"
+            :title="$t('catalog.cancel_filter')"
           >
             {{ chip.label }}
             <XIcon :size="14" />
@@ -62,16 +62,16 @@
 
       <div class="results-bar">
         <div class="sort-control-wrapper">
-          <BaseSelect v-model="sortBy" placeholder="Řadit podle..." :searchable="false">
+          <BaseSelect v-model="sortBy" :placeholder="$t('catalog.sort_by')" :searchable="false">
             <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </BaseSelect>
         </div>
 
-        <span class="results-count">Nalezeno piv: <strong>{{ totalItems }}</strong></span>
+        <span class="results-count">{{ $t('catalog.found_beers') }} <strong>{{ totalItems }}</strong></span>
         
         <div class="desktop-action-bar">
           <button v-if="authStore.user" class="btn-add" @click="openAddModal">
-            <PlusCircleIcon :size="20" /> Přidat pivo
+            <PlusCircleIcon :size="20" /> {{ $t('catalog.add_beer') }}
           </button>
         </div>
       </div>
@@ -98,15 +98,15 @@
 
         <div ref="loadMoreTrigger" class="load-more-trigger">
           <div v-if="isAppending" class="mobile-loader">
-            Načítám další piva...
+            {{ $t('catalog.loading_more_beers') }}
           </div>
         </div>
       </template>
       
       <div v-else-if="!isLoading" class="empty-state">
         <BeerIcon :size="48" color="#cbd5e1" :stroke-width="1" />
-        <p>Žádná piva neodpovídají zadaným filtrům.</p>
-        <button class="btn-secondary mt-2" @click="resetFilters">Zrušit filtry</button>
+        <p>{{ $t('catalog.empty_beers') }}</p>
+        <button class="btn-secondary mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</button>
       </div>
     </div>
 
@@ -131,6 +131,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
@@ -149,6 +150,7 @@ import DetailModal from '../components/modals/DetailModal.vue'
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const { t } = useI18n()
 
 const { beers, beersPagination, breweries, styles, countries, isLoading } = storeToRefs(catalogStore)
 
@@ -177,9 +179,9 @@ const activeFilters = computed(() => {
     }
   }
 
-  addMultiChips(filters.value.search, 'search', 'Hledání')
-  addMultiChips(filters.value.brewery, 'brewery', 'Pivovar')
-  addMultiChips(filters.value.country, 'country', 'Země')
+  addMultiChips(filters.value.search, 'search', t('catalog.search_prefix'))
+  addMultiChips(filters.value.brewery, 'brewery', t('catalog.filter_brewery'))
+  addMultiChips(filters.value.country, 'country', t('catalog.filter_country_short'))
   
   if (filters.value.style) {
     const s = styles.value.find(x => x.id == filters.value.style)
@@ -296,24 +298,24 @@ const resetFilters = () => {
   }
 }
 
-const sortOptions = [
-  { value: 'name_asc', label: 'Název (A-Z)' },
-  { value: 'name_desc', label: 'Název (Z-A)' },
-  { value: 'brewery_asc', label: 'Pivovar (A-Z)' },
-  { value: 'brewery_desc', label: 'Pivovar (Z-A)' },
-  { value: 'style_asc', label: 'Styl (A-Z)' },
-  { value: 'style_desc', label: 'Styl (Z-A)' },
-  { value: 'rating_desc', label: 'Hodnocení (Nejlepší)' },
-  { value: 'rating_asc', label: 'Hodnocení (Nejhorší)' },
-  { value: 'abv_desc', label: 'Alkohol (Nejsilnější)' },
-  { value: 'abv_asc', label: 'Alkohol (Nejslabší)' },
-  { value: 'epm_desc', label: 'Stupňovitost (Nejvyšší)' },
-  { value: 'epm_asc', label: 'Stupňovitost (Nejnižší)' },
-  { value: 'ibu_desc', label: 'Hořkost (Nejvyšší)' },
-  { value: 'ibu_asc', label: 'Hořkost (Nejnižší)' },
-  { value: 'newest', label: 'Datum přidání (Od nejnovějšího)' },
-  { value: 'oldest', label: 'Datum přidání (Od nejstaršího)' }
-]
+const sortOptions = computed(() => [
+  { value: 'name_asc', label: t('catalog.sort.name_asc') },
+  { value: 'name_desc', label: t('catalog.sort.name_desc') },
+  { value: 'brewery_asc', label: t('catalog.sort.brewery_asc') },
+  { value: 'brewery_desc', label: t('catalog.sort.brewery_desc') },
+  { value: 'style_asc', label: t('catalog.sort.style_asc') },
+  { value: 'style_desc', label: t('catalog.sort.style_desc') },
+  { value: 'rating_desc', label: t('catalog.sort.rating_desc') },
+  { value: 'rating_asc', label: t('catalog.sort.rating_asc') },
+  { value: 'abv_desc', label: t('catalog.sort.abv_desc') },
+  { value: 'abv_asc', label: t('catalog.sort.abv_asc') },
+  { value: 'epm_desc', label: t('catalog.sort.epm_desc') },
+  { value: 'epm_asc', label: t('catalog.sort.epm_asc') },
+  { value: 'ibu_desc', label: t('catalog.sort.ibu_desc') },
+  { value: 'ibu_asc', label: t('catalog.sort.ibu_asc') },
+  { value: 'newest', label: t('catalog.sort.newest') },
+  { value: 'oldest', label: t('catalog.sort.oldest') }
+])
 
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
@@ -361,12 +363,12 @@ const submitBeer = async () => {
         is_favorite: 0
       })
       
-      toastStore.showToast("Pivo bylo úspěšně přidáno")
+      toastStore.showToast(t('toast.beer_added'))
     } else {
-      toastStore.showToast(res.message || "Chyba při ukládání", "toast-error")
+      toastStore.showToast(res.message || t('toast.beer_add_error'), "toast-error")
     }
   } catch (e) { 
-    toastStore.showToast('Chyba serveru.', 'toast-error') 
+    toastStore.showToast(t('toast.communication_error'), 'toast-error') 
   }
 }
 

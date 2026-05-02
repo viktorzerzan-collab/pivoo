@@ -1,11 +1,11 @@
 <template>
-  <BaseTooltip text="Najít můj podnik podle GPS" position="top-end">
+  <BaseTooltip :text="t('geolocate.tooltip')" position="top-end">
     <button 
       type="button" 
       class="btn-locate is-icon-only" 
       @click="$emit('locate')" 
       :disabled="isLocating"
-      aria-label="Lokalizovat"
+      :aria-label="t('geolocate.aria_label')"
     >
       <MapPinIcon :class="{ 'spinning': isLocating }" />
     </button>
@@ -15,6 +15,7 @@
 <script setup>
 import { MapPinIcon } from 'lucide-vue-next'
 import BaseTooltip from './BaseTooltip.vue'
+import { useI18n } from 'vue-i18n'
 
 defineProps({
   isLocating: {
@@ -24,6 +25,7 @@ defineProps({
 })
 
 defineEmits(['locate'])
+const { t } = useI18n()
 </script>
 
 <style scoped>
