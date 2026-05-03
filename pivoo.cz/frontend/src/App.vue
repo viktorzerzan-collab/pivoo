@@ -1,6 +1,13 @@
 <template>
   <div class="layout-wrapper" :class="{ 'has-bottom-nav': !isAuthPage }">
     <AppNavigation v-if="!isAuthPage" @toggle-theme="toggleTheme" :is-dark="isDark" />
+    
+    <!-- Plovoucí panel pro přepínače na přihlašovacích stránkách -->
+    <div v-if="isAuthPage" class="auth-top-bar">
+      <LangToggleButton />
+      <ThemeToggleButton :is-dark="isDark" @toggle="toggleTheme" />
+    </div>
+
     <main class="main-content" :class="{ 'auth-layout': isAuthPage }">
       <div :class="isAuthPage ? 'full-width' : 'container'">
         <router-view />
@@ -22,6 +29,8 @@ import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
 import AppToast from './components/AppToast.vue'
 import BackToTop from './components/BackToTop.vue'
+import LangToggleButton from './components/LangToggleButton.vue'
+import ThemeToggleButton from './components/ThemeToggleButton.vue'
 import { useAuthStore } from './stores/auth'
 import { apiFetch } from './api' 
 
@@ -29,7 +38,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const { user, theme } = storeToRefs(authStore)
 
-const { t } = useI18n() // Initialize i18n
+const { t } = useI18n()
 
 const isAuthPage = computed(() => route.name === 'login' || route.name === 'register')
 
@@ -118,7 +127,6 @@ onUnmounted(() => {
   --text-muted: #64748b;
   --border: #e2e8f0;
   
-  /* Plochý design - zrušení stínů u standardních prvků */
   --shadow: none;
   --shadow-floating: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   
@@ -127,7 +135,6 @@ onUnmounted(() => {
   --scrollbar-thumb: #cbd5e1;
   --scrollbar-thumb-hover: #94a3b8;
 
-  /* Sjednocené zaoblení */
   --radius-sm: 8px;
   --radius-md: 12px;
 }
@@ -149,7 +156,7 @@ html.dark-mode {
   --scrollbar-thumb-hover: #64748b;
 }
 
-/* --- GRAFICKÉ VYHLAZENÍ: OZNAČENÍ TEXTU --- */
+/* --- GRAFICKÉ VYHLAZENÍ --- */
 ::selection {
   background-color: var(--primary);
   color: #1e293b;
@@ -159,7 +166,6 @@ html.dark-mode {
   color: #1e293b;
 }
 
-/* --- GRAFICKÉ VYHLAZENÍ: ODSTRANĚNÍ ŠIPEK U ČÍSELNÝCH VSTUPŮ --- */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -169,22 +175,14 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* --- USKAKOVÁNÍ STRÁNKY A POSUVNÍKY --- */
 html {
   overflow-y: scroll;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-::-webkit-scrollbar {
-  width: 14px;  
-  height: 14px; 
-}
-
-::-webkit-scrollbar-track {
-  background: transparent; 
-}
-
+::-webkit-scrollbar { width: 14px; height: 14px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
   border-radius: var(--radius-sm);
@@ -192,16 +190,10 @@ html {
   background-clip: content-box;
   transition: background-color 0.2s ease;
 }
+::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--scrollbar-thumb-hover);
-}
+body.modal-open { overflow: hidden; }
 
-body.modal-open {
-  overflow: hidden;
-}
-
-/* --- ZÁKLAD DOKUMENTU --- */
 html, body, #app {
   height: 100%;
   width: 100%;
@@ -222,9 +214,20 @@ html, body, #app {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* PLOVOUCÍ LIŠTA NA AUTH STRÁNKÁCH */
+.auth-top-bar {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 100;
+}
+
 .main-content { flex: 1 0 auto; display: flex; flex-direction: column; }
 .container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
-.auth-layout { justify-content: center; align-items: center; flex: 1; }
+.auth-layout { justify-content: center; align-items: center; flex: 1; position: relative; }
 
 .full-width { width: 100%; }
 
@@ -275,7 +278,7 @@ button.btn-close:hover {
   background: rgba(128,128,128,0.1) !important;
 }
 
-/* --- 5. OSTATNÍ KOMPONENTY A ODZNAČKY --- */
+/* --- 5. ODZNAČKY --- */
 .badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
 .badge.admin { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; }
 .badge.user { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: #3b82f6; }
@@ -296,13 +299,8 @@ button.btn-close:hover {
 .toast-success { background-color: #10b981; }
 .toast-error { background-color: #ef4444; }
 
-.toast-fade-enter-active, .toast-fade-leave-active { 
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-}
-.toast-fade-enter-from, .toast-fade-leave-to { 
-  opacity: 0; 
-  transform: translate(-50%, -20px);
-}
+.toast-fade-enter-active, .toast-fade-leave-active { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.toast-fade-enter-from, .toast-fade-leave-to { opacity: 0; transform: translate(-50%, -20px); }
 
 /* --- 7. RESPONSIVNÍ ÚPRAVY --- */
 @media (max-width: 900px) {
@@ -313,5 +311,6 @@ button.btn-close:hover {
 
 @media (max-width: 600px) {
   .container { padding: 1rem; }
+  .auth-top-bar { top: 1rem; right: 1rem; }
 }
 </style>

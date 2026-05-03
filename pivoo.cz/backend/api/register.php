@@ -40,10 +40,10 @@ try {
         exit();
     }
 
-    // Validace délky hesla
-    if (strlen($password) < 8) {
+    // Validace síly hesla (min 8 znaků, číslo, speciální znak)
+    if (strlen($password) < 8 || !preg_match('/[0-9]/', $password) || !preg_match('/[^a-zA-Z0-9]/', $password)) {
         http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Heslo musí mít alespoň 8 znaků."]);
+        echo json_encode(["status" => "error", "message" => "Heslo musí mít alespoň 8 znaků, obsahovat číslo a speciální znak."]);
         exit();
     }
 

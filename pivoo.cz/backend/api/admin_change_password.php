@@ -24,10 +24,10 @@ $data = json_decode(file_get_contents("php://input"));
 // Kontrola, zda máme všechna potřebná data
 if (!empty($data->user_id) && !empty($data->new_password)) {
     
-    // Dodatečná kontrola délky hesla i na straně serveru
-    if (strlen($data->new_password) < 8) {
+    // Dodatečná kontrola síly hesla i na straně serveru
+    if (strlen($data->new_password) < 8 || !preg_match('/[0-9]/', $data->new_password) || !preg_match('/[^a-zA-Z0-9]/', $data->new_password)) {
         http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Nové heslo musí mít alespoň 8 znaků."]);
+        echo json_encode(["status" => "error", "message" => "Nové heslo musí mít alespoň 8 znaků, obsahovat číslo a speciální znak."]);
         exit();
     }
 

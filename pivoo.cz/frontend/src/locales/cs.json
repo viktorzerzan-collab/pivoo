@@ -28,6 +28,12 @@
     "enter": "Vstoupit",
     "logging_in": "Přihlašuji..."
   },
+  "password": {
+    "req_length": "Minimálně 8 znaků",
+    "req_number": "Alespoň jedno číslo",
+    "req_special": "Alespoň jeden speciální znak",
+    "req_match": "Hesla se musí shodovat"
+  },
   "footer": {
     "rights_reserved": "Všechna práva rezervována.",
     "version": "Verze",
@@ -361,7 +367,7 @@
       "username": "Přezdívka (Username)",
       "username_placeholder": "Např. Honza88",
       "email": "E-mail",
-      "email_placeholder": "jan@novak.cz",
+      "email_placeholder": "jan{'@'}novak.cz",
       "currency": "Výchozí měna",
       "birthdate": "Datum narození",
       "password": "Heslo",
@@ -582,7 +588,22 @@
       "V práci": "V práci",
       "Ve vlaku": "Ve vlaku",
       "Venku": "Venku",
-      "Na služební cestě": "Na služební cestě"
+      "Na služební cestě": "Na služební cestě",
+      "Praha": "Praha",
+      "Brno": "Brno",
+      "Ostrava": "Ostrava",
+      "Plzeň": "Plzeň",
+      "Bratislava": "Bratislava",
+      "Wien": "Vídeň",
+      "Vídeň": "Vídeň",
+      "München": "Mnichov",
+      "Mnichov": "Mnichov",
+      "Berlin": "Berlín",
+      "Berlín": "Berlín",
+      "London": "Londýn",
+      "Londýn": "Londýn",
+      "Warszawa": "Varšava",
+      "Varšava": "Varšava"
     },
     "location_types": {
       "hospoda": "Hospoda / Bar",

@@ -37,7 +37,14 @@
           <BaseInput v-model="form.password_confirm" type="password" :label="$t('views.register.password_confirm')" :placeholder="$t('views.register.password_placeholder')" required />
         </div>
 
-        <BaseButton type="submit" variant="primary" style="margin-top: 1rem; width: 100%;" :disabled="isLoading">
+        <!-- Opravené volání s přesměrováním stavu přes událost -->
+        <PasswordStrength 
+          :password="form.password" 
+          :confirm="form.password_confirm" 
+          @validityChange="isPasswordValid = $event"
+        />
+
+        <BaseButton type="submit" variant="primary" style="margin-top: 1rem; width: 100%;" :disabled="isLoading || !isPasswordValid">
           <template #icon><UserPlusIcon :size="18" /></template>
           {{ isLoading ? $t('views.register.processing') : $t('views.register.submit') }}
         </BaseButton>
@@ -63,6 +70,7 @@ import BaseButton from '../components/BaseButton.vue'
 import BaseFileUpload from '../components/BaseFileUpload.vue'
 import BaseDatePicker from '../components/BaseDatePicker.vue' 
 import BaseSelect from '../components/BaseSelect.vue' 
+import PasswordStrength from '../components/PasswordStrength.vue'
 
 const router = useRouter()
 const toastStore = useToastStore() 
@@ -76,9 +84,11 @@ const form = ref({
   default_currency: 'CZK'
 })
 
+// Místo reaktivního odkazování na DOM element držíme jednoduchý boolean
+const isPasswordValid = ref(false)
+
 const handleRegister = async () => {
-  if (form.value.password !== form.value.password_confirm) {
-    toastStore.showToast(t('toast.passwords_mismatch'), 'toast-error')
+  if (!isPasswordValid.value) {
     return
   }
   
@@ -115,16 +125,16 @@ const handleRegister = async () => {
   width: 100%;
   min-height: 100vh; 
   display: flex; 
-  align-items: center; 
+  align-items: flex-start;
   justify-content: center; 
   background-color: var(--bg-app); 
-  padding: 1rem; 
+  padding: 4rem 1rem; 
   transition: background-color 0.3s ease;
 }
 
 .auth-card { 
   background: var(--bg-panel); 
-  padding: 3rem 2.5rem; 
+  padding: 3.5rem 2.5rem; 
   border-radius: var(--radius-md); 
   box-shadow: var(--shadow-floating); 
   width: 100%; 
@@ -132,34 +142,35 @@ const handleRegister = async () => {
   text-align: center; 
   border: 1px solid var(--border); 
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  margin: auto;
 }
 
 .logo-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 
 .logo-text { 
-  font-size: 2.25rem; 
+  font-size: 2.5rem; 
   font-weight: 800; 
   color: var(--text-main); 
-  letter-spacing: -0.025em; 
+  letter-spacing: -0.05em; 
   margin: 0; 
   transition: color 0.3s ease;
 }
 
 .auth-subtitle { 
   color: var(--text-muted); 
-  font-size: 1rem; 
-  margin-bottom: 2rem; 
+  font-size: 1.1rem; 
+  margin-bottom: 2.5rem; 
   margin-top: 0.25rem; 
   transition: color 0.3s ease;
 }
 
-.auth-form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
+.auth-form { display: flex; flex-direction: column; gap: 1.5rem; text-align: left; }
 .form-row { display: flex; gap: 1rem; }
 .form-row > * { flex: 1; }
 .avatar-upload-row { margin-bottom: 0.5rem; }
 
 .auth-footer-link { 
-  margin-top: 1.5rem; 
+  margin-top: 2rem; 
   text-align: center; 
   color: var(--text-muted); 
   font-size: 0.95rem; 
@@ -176,7 +187,8 @@ const handleRegister = async () => {
 .auth-footer-link a:hover { color: var(--primary); text-decoration: underline; }
 
 @media (max-width: 600px) {
-  .form-row { flex-direction: column; gap: 1.25rem; }
+  .auth-wrapper { padding: 2rem 1rem; }
+  .form-row { flex-direction: column; gap: 1.5rem; }
   .auth-card { padding: 2rem 1.5rem; }
 }
 </style>

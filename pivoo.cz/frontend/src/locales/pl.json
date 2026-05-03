@@ -28,6 +28,12 @@
     "enter": "Wejdź",
     "logging_in": "Logowanie..."
   },
+  "password": {
+    "req_length": "Co najmniej 8 znaków",
+    "req_number": "Co najmniej jedna cyfra",
+    "req_special": "Co najmniej jeden znak specjalny",
+    "req_match": "Hasła muszą się zgadzać"
+  },
   "footer": {
     "rights_reserved": "Wszelkie prawa zastrzeżone.",
     "version": "Wersja",
@@ -361,7 +367,7 @@
       "username": "Nazwa użytkownika",
       "username_placeholder": "Np. Jan88",
       "email": "E-mail",
-      "email_placeholder": "jan@kowalski.pl",
+      "email_placeholder": "jan{'@'}kowalski.pl",
       "currency": "Domyślna waluta",
       "birthdate": "Data urodzenia",
       "password": "Hasło",
@@ -582,7 +588,22 @@
       "V práci": "W pracy",
       "Ve vlaku": "W pociągu",
       "Venku": "Na zewnątrz",
-      "Na služební cestě": "W podróży służbowej"
+      "Na služební cestě": "W podróży służbowej",
+      "Praha": "Praga",
+      "Brno": "Brno",
+      "Ostrava": "Ostrawa",
+      "Plzeň": "Pilzno",
+      "Bratislava": "Bratysława",
+      "Wien": "Wiedeń",
+      "Vídeň": "Wiedeń",
+      "München": "Monachium",
+      "Mnichov": "Monachium",
+      "Berlin": "Berlin",
+      "Berlín": "Berlin",
+      "London": "Londyn",
+      "Londýn": "Londyn",
+      "Warszawa": "Warszawa",
+      "Varšava": "Warszawa"
     },
     "location_types": {
       "hospoda": "Pub / Bar",

@@ -28,11 +28,17 @@
           required 
         />
 
+        <PasswordStrength 
+          ref="pwdStrengthRef" 
+          :password="form.password" 
+          :confirm="form.password_confirm" 
+        />
+
         <div v-if="error" class="modal-error-text">
           {{ error }}
         </div>
 
-        <BaseButton type="submit" variant="edit" style="margin-top: 1rem; width: 100%;">
+        <BaseButton type="submit" variant="edit" style="margin-top: 0.5rem; width: 100%;" :disabled="!isPasswordValid">
           {{ $t('modals.change_password.save') }}
         </BaseButton>
       </form>
@@ -41,12 +47,13 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { KeyIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
+import PasswordStrength from '../PasswordStrength.vue'
 
 const props = defineProps({
   show: Boolean,
@@ -62,6 +69,8 @@ const form = ref({
 })
 
 const error = ref('')
+const pwdStrengthRef = ref(null)
+const isPasswordValid = computed(() => pwdStrengthRef.value?.isValid)
 
 const handleClose = () => {
   form.value = { password: '', password_confirm: '' }
@@ -70,13 +79,7 @@ const handleClose = () => {
 }
 
 const handleSubmit = () => {
-  if (form.value.password.length < 8) {
-    error.value = t('modals.change_password.error_length')
-    return
-  }
-  
-  if (form.value.password !== form.value.password_confirm) {
-    error.value = t('modals.change_password.error_match')
+  if (!isPasswordValid.value) {
     return
   }
 

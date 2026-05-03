@@ -28,6 +28,12 @@
     "enter": "Eintreten",
     "logging_in": "Wird angemeldet..."
   },
+  "password": {
+    "req_length": "Mindestens 8 Zeichen",
+    "req_number": "Mindestens eine Zahl",
+    "req_special": "Mindestens ein Sonderzeichen",
+    "req_match": "Passwörter müssen übereinstimmen"
+  },
   "footer": {
     "rights_reserved": "Alle Rechte vorbehalten.",
     "version": "Version",
@@ -361,7 +367,7 @@
       "username": "Benutzername",
       "username_placeholder": "Z. B. Max88",
       "email": "E-Mail",
-      "email_placeholder": "max@mustermann.de",
+      "email_placeholder": "max{'@'}mustermann.de",
       "currency": "Standardwährung",
       "birthdate": "Geburtsdatum",
       "password": "Passwort",
@@ -582,7 +588,22 @@
       "V práci": "Auf der Arbeit",
       "Ve vlaku": "Im Zug",
       "Venku": "Draußen",
-      "Na služební cestě": "Auf Geschäftsreise"
+      "Na služební cestě": "Auf Geschäftsreise",
+      "Praha": "Prag",
+      "Brno": "Brünn",
+      "Ostrava": "Ostrava",
+      "Plzeň": "Pilsen",
+      "Bratislava": "Bratislava",
+      "Wien": "Wien",
+      "Vídeň": "Wien",
+      "München": "München",
+      "Mnichov": "München",
+      "Berlin": "Berlin",
+      "Berlín": "Berlin",
+      "London": "London",
+      "Londýn": "London",
+      "Warszawa": "Warschau",
+      "Varšava": "Warschau"
     },
     "location_types": {
       "hospoda": "Kneipe / Bar",

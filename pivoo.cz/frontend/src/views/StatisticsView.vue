@@ -63,9 +63,9 @@
               <div v-for="(item, index) in statsData.locations" :key="index" class="ranking-item">
                 <div class="rank-number">{{ index + 1 }}</div>
                 <div class="item-info">
-                  <div class="item-name"><strong>{{ item.name }}</strong></div>
+                  <div class="item-name"><strong>{{ translateDynamic(item.name) }}</strong></div>
                   <div class="item-sub">
-                    <span v-if="item.city">{{ item.city }} • </span>
+                    <span v-if="item.city">{{ translateDynamic(item.city) }} • </span>
                     {{ $t('statistics.visits', { count: item.visits }) }}
                   </div>
                 </div>
@@ -82,7 +82,7 @@
             <div class="styles-list" v-if="statsData.styles.length > 0">
               <div v-for="style in statsData.styles" :key="style.name" class="style-row">
                 <div class="style-info">
-                  <span class="style-name">{{ style.name }}</span>
+                  <span class="style-name">{{ translateStyle(style.name) }}</span>
                   <span class="style-count">{{ style.count }}x</span>
                 </div>
                 <div class="style-bar-bg">
@@ -118,15 +118,18 @@
             <div class="price-stats-grid" v-if="statsData.prices">
               <div class="price-box avg">
                 <span class="p-label">{{ $t('statistics.avg_price') }}</span>
-                <span class="p-val">{{ Math.round(statsData.prices.avg_price) || 0 }} Kč</span>
+                <span class="p-val" v-if="isLoadingRate">...</span>
+                <span class="p-val" v-else>{{ avgPrice }} {{ userCurrency }}</span>
               </div>
               <div class="price-box min">
                 <span class="p-label">{{ $t('statistics.min_price') }}</span>
-                <span class="p-val">{{ Math.round(statsData.prices.min_price) || 0 }} Kč</span>
+                <span class="p-val" v-if="isLoadingRate">...</span>
+                <span class="p-val" v-else>{{ minPrice }} {{ userCurrency }}</span>
               </div>
               <div class="price-box max">
                 <span class="p-label">{{ $t('statistics.max_price') }}</span>
-                <span class="p-val">{{ Math.round(statsData.prices.max_price) || 0 }} Kč</span>
+                <span class="p-val" v-if="isLoadingRate">...</span>
+                <span class="p-val" v-else>{{ maxPrice }} {{ userCurrency }}</span>
               </div>
             </div>
           </div>
@@ -163,12 +166,14 @@ import {
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useToastStore } from '../stores/toast'
+import { useAuthStore } from '../stores/auth'
 import BaseLoader from '../components/BaseLoader.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
 
 const toastStore = useToastStore()
-const { t, tm } = useI18n()
+const authStore = useAuthStore()
+const { t, tm, te } = useI18n()
 
 const isLoading = ref(true)
 const period = ref('month')
@@ -184,6 +189,46 @@ const statsData = ref({
   collector: { unique_count: 0, total_count: 0 },
   styles: [], prices: { avg_price: 0, min_price: 0, max_price: 0 }
 })
+
+const userCurrency = computed(() => authStore.defaultCurrency || 'CZK')
+const exchangeRate = ref(1.0)
+const isLoadingRate = ref(false)
+
+const fetchRate = async () => {
+  if (userCurrency.value === 'CZK') {
+    exchangeRate.value = 1.0;
+    return;
+  }
+  isLoadingRate.value = true;
+  try {
+    const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/czk.json`);
+    const data = await res.json();
+    const rate = data.czk[userCurrency.value.toLowerCase()];
+    if (rate) {
+      exchangeRate.value = rate;
+    }
+  } catch (e) {
+    console.error("Nepodařilo se načíst kurz pro statistiky:", e);
+  } finally {
+    isLoadingRate.value = false;
+  }
+}
+
+const avgPrice = computed(() => Math.round((statsData.value.prices?.avg_price || 0) * exchangeRate.value))
+const minPrice = computed(() => Math.round((statsData.value.prices?.min_price || 0) * exchangeRate.value))
+const maxPrice = computed(() => Math.round((statsData.value.prices?.max_price || 0) * exchangeRate.value))
+
+const translateDynamic = (val) => {
+  if (!val) return val
+  const key = `dynamic.locations.${val}`
+  return te(key) ? t(key) : val
+}
+
+const translateStyle = (val) => {
+  if (!val) return t('cards.no_style')
+  const key = `dynamic.styles.${val}`
+  return te(key) ? t(key) : val
+}
 
 const collectorPercent = computed(() => {
   if (!statsData.value.collector || statsData.value.collector.total_count == 0) return 0
@@ -218,7 +263,12 @@ const fetchDetailedStats = async () => {
 }
 
 watch([period, scope], () => fetchDetailedStats())
-onMounted(() => fetchDetailedStats())
+watch(userCurrency, () => fetchRate())
+
+onMounted(() => {
+  fetchDetailedStats()
+  fetchRate()
+})
 </script>
 
 <style scoped>

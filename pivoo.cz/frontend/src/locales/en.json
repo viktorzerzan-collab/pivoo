@@ -28,6 +28,12 @@
     "enter": "Enter",
     "logging_in": "Logging in..."
   },
+  "password": {
+    "req_length": "At least 8 characters",
+    "req_number": "At least one number",
+    "req_special": "At least one special character",
+    "req_match": "Passwords must match"
+  },
   "footer": {
     "rights_reserved": "All rights reserved.",
     "version": "Version",
@@ -361,7 +367,7 @@
       "username": "Username",
       "username_placeholder": "E.g., John88",
       "email": "E-mail",
-      "email_placeholder": "john@doe.com",
+      "email_placeholder": "john{'@'}doe.com",
       "currency": "Default currency",
       "birthdate": "Date of birth",
       "password": "Password",
@@ -582,7 +588,22 @@
       "V práci": "At work",
       "Ve vlaku": "On the train",
       "Venku": "Outside",
-      "Na služební cestě": "On a business trip"
+      "Na služební cestě": "On a business trip",
+      "Praha": "Prague",
+      "Brno": "Brno",
+      "Ostrava": "Ostrava",
+      "Plzeň": "Pilsen",
+      "Bratislava": "Bratislava",
+      "Wien": "Vienna",
+      "Vídeň": "Vienna",
+      "München": "Munich",
+      "Mnichov": "Munich",
+      "Berlin": "Berlin",
+      "Berlín": "Berlin",
+      "London": "London",
+      "Londýn": "London",
+      "Warszawa": "Warsaw",
+      "Varšava": "Warsaw"
     },
     "location_types": {
       "hospoda": "Pub / Bar",
