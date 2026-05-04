@@ -34,13 +34,12 @@ $db = $database->getConnection();
 
 try {
     // 1. Získání databáze pivovarů a stylů pro přesnější párování
-    $breweries_stmt = $db->query("SELECT id, name FROM breweries WHERE is_approved = 1");
+    $breweries_stmt = $db->query("SELECT id, name FROM breweries");
     $breweries_list = $breweries_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $styles_stmt = $db->query("SELECT id, name FROM beer_styles");
     $styles_list = $styles_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Přidáno načítání zemí, aby AI mohla přiřadit správné country_id
     $countries_stmt = $db->query("SELECT id, name_cz FROM countries");
     $countries_list = $countries_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -58,21 +57,21 @@ try {
     $imageData = base64_encode(file_get_contents($imagePath));
 
     // 3. Prompt pro Gemini
-    $promptText = "Jsi pivní expert. Zanalyzuj tuto fotografii piva (etiketa, plechovka, láhev).
+    $promptText = "Jsi pivní expert. Zanalyzuj tuto fotografii piva (etiketa, plechovka, láhev) nebo nápojového lístku.
 Tvé úkoly:
 1. Identifikuj přesný název piva a jméno pivovaru.
 2. Identifikuj pivní styl.
 3. Najdi technické parametry: EPM (Stupňovitost v °), ABV (Alkohol v %), IBU (Hořkost), EBC (Barva).
 4. Zjisti, zda je pivo nefiltrované nebo nepasterizované.
-5. Porovnej nalezený pivovar a styl se seznamy, které ti dodám. Pokud najdeš shodu (i částečnou, např. 'Pilsner Urquell' = 'Plzeňský Prazdroj'), vrať jeho ID.
+5. Porovnej nalezený pivovar a styl se seznamy, které ti dodám. Pokud najdeš shodu, vrať jeho ID.
 
 Zde je seznam existujících pivovarů: " . json_encode($breweries_list) . "
 Zde je seznam existujících pivních stylů: " . json_encode($styles_list) . "
 Zde je seznam zemí a jejich ID: " . json_encode($countries_list) . "
 
-DŮLEŽITÉ: Pokud pivovar v seznamu pivovarů NENÍ, nastav 'brewery_id' na null, 'is_new_brewery' na true a do 'brewery_metadata' doplň maximum informací o pivovaru z tvých znalostí, abys mi ušetřil práci. Vyhledej přesné město, PSČ, ulici a číslo popisné, kontakt (web, email, telefon), přibližné GPS souřadnice (lat, lng) a přiřaď správné 'country_id' podle poskytnutého seznamu zemí.
+DŮLEŽITÉ: Pokud pivovar v seznamu pivovarů NENÍ, nastav 'brewery_id' na null, 'is_new_brewery' na true a do 'brewery_metadata' doplň maximum informací o pivovaru z tvých znalostí. Vyhledej přesné město, PSČ, ulici, a přiřaď správné 'country_id'.
 
-Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, markdownu nebo formátování. Struktura musí být:
+Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo markdownu. Struktura musí být:
 {
     \"beer_name\": \"...\",
     \"brewery_name\": \"...\",
@@ -100,7 +99,6 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, mark
 
     // 4. Volání Google Gemini API
     $clean_api_key = trim(GEMINI_API_KEY);
-    // PŘECHOD NA AKTUÁLNÍ MODEL: gemini-3-flash-preview
     $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" . $clean_api_key;
 
     $postData = [
@@ -123,11 +121,8 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, mark
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    
-    // SERVEROVÁ KOMPATIBILITA
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    // Vynucení IPv4 pro přeskočení chyby "Bad IPv6 address" na hostingu
     curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
     
     $response = curl_exec($ch);
@@ -152,14 +147,75 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu, mark
         $ai_json = json_decode($ai_response_text, true);
         
         if (json_last_error() === JSON_ERROR_NONE) {
-            echo json_encode(["status" => "success", "data" => $ai_json]);
+            
+            // --- AUTOMATICKÉ ZALOŽENÍ CHYBĚJÍCÍCH DAT (SHADOW PROFILES) ---
+            $db->beginTransaction();
+            try {
+                $brewery_id = $ai_json['brewery_id'] ?? null;
+                $beer_id = null;
+
+                // A) Pokud pivovar neexistuje, založíme ho jako neschválený
+                if (!$brewery_id || !empty($ai_json['is_new_brewery'])) {
+                    $meta = $ai_json['brewery_metadata'] ?? [];
+                    $b_name = $ai_json['brewery_name'] ?: 'Neznámý pivovar';
+                    $b_city = $meta['city'] ?? null;
+                    $b_country = $meta['country_id'] ?? 1;
+                    $b_lat = $meta['lat'] ?? null;
+                    $b_lng = $meta['lng'] ?? null;
+
+                    $stmt = $db->prepare("INSERT INTO breweries (name, city, country_id, lat, lng, is_approved) VALUES (?, ?, ?, ?, ?, 0)");
+                    $stmt->execute([$b_name, $b_city, $b_country, $b_lat, $b_lng]);
+                    
+                    $brewery_id = $db->lastInsertId();
+                    $ai_json['brewery_id'] = $brewery_id;
+                    $ai_json['brewery_name'] = $b_name;
+                }
+
+                // B) Zkontrolujeme, zda existuje pivo
+                if ($brewery_id && !empty($ai_json['beer_name'])) {
+                    $find_beer = $db->prepare("SELECT id FROM beers WHERE brewery_id = ? AND name LIKE ? LIMIT 1");
+                    // Rychlý fuzzy match na název piva
+                    $find_beer->execute([$brewery_id, '%' . trim($ai_json['beer_name']) . '%']);
+                    $existing_beer = $find_beer->fetch();
+
+                    if ($existing_beer) {
+                        $beer_id = $existing_beer['id'];
+                    } else {
+                        // Pivo neexistuje, založíme ho jako neschválené
+                        $style_id = $ai_json['style_id'] ?? null;
+                        $epm = $ai_json['epm'] ?? null;
+                        $abv = $ai_json['abv'] ?? null;
+                        $ibu = $ai_json['ibu'] ?? null;
+                        $ebc = $ai_json['ebc'] ?? null;
+                        $unfiltered = !empty($ai_json['is_unfiltered']) ? 1 : 0;
+                        $unpasteurized = !empty($ai_json['is_unpasteurized']) ? 1 : 0;
+
+                        $stmt_beer = $db->prepare("INSERT INTO beers (name, brewery_id, style_id, epm, abv, ibu, ebc, is_unfiltered, is_unpasteurized, is_approved) 
+                                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
+                        $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $style_id, $epm, $abv, $ibu, $ebc, $unfiltered, $unpasteurized]);
+                        $beer_id = $db->lastInsertId();
+                    }
+                    $ai_json['beer_id'] = $beer_id;
+                }
+
+                $db->commit();
+                
+                echo json_encode(["status" => "success", "data" => $ai_json]);
+
+            } catch (Exception $e) {
+                $db->rollBack();
+                error_log("Shadow Profile Creation Error: " . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(["status" => "error", "message" => "Záznam byl rozpoznán, ale interní chyba brání jeho uložení."]);
+            }
+
         } else {
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "AI vrátila neplatná data: " . $ai_response_text]);
         }
     } else {
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "AI nedokázala obrázek analyzovat. Odpověď: " . $response]);
+        echo json_encode(["status" => "error", "message" => "AI nedokázala obrázek analyzovat."]);
     }
 
 } catch (Exception $e) {
