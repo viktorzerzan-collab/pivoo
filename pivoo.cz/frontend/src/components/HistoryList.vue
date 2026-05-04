@@ -32,13 +32,14 @@
                 <small class="unit">{{ $t('history.did_not_pay') }}</small>
               </template>
               <template v-else>
-                <template v-if="record.currency && record.currency !== 'CZK'">
-                  <span class="price-total">{{ record.original_price * record.quantity }} {{ record.currency }}</span>
-                  <small class="unit">({{ Math.round(record.price * record.quantity) }} CZK {{ $t('history.total') }})</small>
+                <template v-if="(record.currency || 'CZK') !== userCurrency">
+                  <span class="price-total">{{ (record.original_price || record.price) * record.quantity }} {{ record.currency || 'CZK' }}</span>
+                  <small class="unit" v-if="isLoadingRate">(...)</small>
+                  <small class="unit" v-else>({{ Math.round(record.price * record.quantity * exchangeRate) }} {{ userCurrency }} {{ $t('history.total') }})</small>
                 </template>
                 <template v-else>
-                  <span class="price-total">{{ record.price * record.quantity }} CZK</span>
-                  <small class="unit">({{ record.price }} CZK/{{ $t('history.per_piece') }})</small>
+                  <span class="price-total">{{ (record.original_price || record.price) * record.quantity }} {{ userCurrency }}</span>
+                  <small class="unit">({{ record.original_price || record.price }} {{ userCurrency }}/{{ $t('history.per_piece') }})</small>
                 </template>
               </template>
             </div>
@@ -79,14 +80,49 @@
 </template>
 
 <script setup>
+import { ref, onMounted, watch, computed } from 'vue'
 import { PencilIcon, Trash2Icon, MapPinIcon, CircleHelpIcon, FactoryIcon } from 'lucide-vue-next'
 import BaseTooltip from './BaseTooltip.vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '../stores/auth'
 
 defineProps({ history: { type: Array, required: true } })
 defineEmits(['edit', 'delete'])
 
 const { t, te } = useI18n()
+const authStore = useAuthStore()
+
+const userCurrency = computed(() => authStore.defaultCurrency || 'CZK')
+const exchangeRate = ref(1.0)
+const isLoadingRate = ref(false)
+
+const fetchRate = async () => {
+  if (userCurrency.value === 'CZK') {
+    exchangeRate.value = 1.0;
+    return;
+  }
+  isLoadingRate.value = true;
+  try {
+    const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/czk.json`);
+    const data = await res.json();
+    const rate = data.czk[userCurrency.value.toLowerCase()];
+    if (rate) {
+      exchangeRate.value = rate;
+    }
+  } catch (e) {
+    console.error("Nepodařilo se načíst kurz pro historii:", e);
+  } finally {
+    isLoadingRate.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchRate()
+})
+
+watch(userCurrency, () => {
+  fetchRate()
+})
 
 // Mapa pro překlad typů balení
 const packagingMap = {
