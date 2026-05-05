@@ -506,6 +506,7 @@
   "admin": {
     "tabs": {
       "users": "Users",
+      "pending": "Pending Approval",
       "beers": "Beers",
       "breweries": "Breweries",
       "locations": "Locations",
@@ -524,8 +525,14 @@
       "style": "Style",
       "location_type": "Location type",
       "city": "City",
-      "country": "Country"
+      "country": "Country",
+      "type": "Type",
+      "author": "Author"
     },
+    "entity_beer": "Beer",
+    "entity_brewery": "Brewery",
+    "entity_location": "Location",
+    "unknown_author": "Unknown author",
     "banned": "BANNED",
     "beers_in_catalog": "Beers in catalog: {count}",
     "type": "Type: {type}",
@@ -540,7 +547,9 @@
       "delete_user": "Delete user",
       "merge": "Merge duplicate",
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "approve": "Approve record",
+      "reject": "Reject and delete"
     },
     "empty_search": "No records match your search.",
     "showing": "Showing",

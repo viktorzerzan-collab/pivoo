@@ -5,19 +5,20 @@ import { apiFetch } from '../api'
 export const useCatalogStore = defineStore('catalog', {
   state: () => ({
     beers: [],
-    allBeers: [], // PŘIDÁNO: Kompaktní seznam pro selecty
+    allBeers: [], 
     beersPagination: null,
     breweries: [],
-    allBreweries: [], // PŘIDÁNO: Kompaktní seznam pro selecty
+    allBreweries: [], 
     breweriesPagination: null,
     locations: [],
-    allLocations: [], // PŘIDÁNO: Kompaktní seznam pro selecty
+    allLocations: [], 
     locationsPagination: null,
     styles: [],      
     countries: [],   
     stats: null,
     detailedStats: null,
     history: [],
+    pendingApprovals: [], // PŘIDÁNO: Fronta ke schválení
     isLoading: false,
     error: null,
   }),
@@ -37,7 +38,6 @@ export const useCatalogStore = defineStore('catalog', {
           apiFetch('/countries.php'),   
           apiFetch('/stats.php?period=month'),
           apiFetch('/history.php'),
-          // PŘIDÁNO: Paralelní stažení odlehčených (compact) dat pro formuláře
           apiFetch('/beers.php?compact=1'),
           apiFetch('/breweries.php?compact=1'),
           apiFetch('/locations.php?compact=1&include_all=1')
@@ -57,7 +57,6 @@ export const useCatalogStore = defineStore('catalog', {
         if (statsRes.status === 'fulfilled' && statsRes.value.status === 'success') this.stats = statsRes.value.data
         if (historyRes.status === 'fulfilled' && historyRes.value.status === 'success') this.history = historyRes.value.data
 
-        // PŘIDÁNO: Uložení kompaktních dat do storu
         if (allBeersRes.status === 'fulfilled' && allBeersRes.value.status === 'success') this.allBeers = allBeersRes.value.data
         if (allBreweriesRes.status === 'fulfilled' && allBreweriesRes.value.status === 'success') this.allBreweries = allBreweriesRes.value.data
         if (allLocationsRes.status === 'fulfilled' && allLocationsRes.value.status === 'success') this.allLocations = allLocationsRes.value.data
@@ -70,7 +69,35 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // PŘIDÁNO: Uložení i do all* polí pro okamžitou viditelnost nově přidaných položek v menu
+    // PŘIDÁNO: Načtení fronty schvalování pro administrátory
+    async fetchPendingApprovals() {
+      this.isLoading = true
+      try {
+        const [beersRes, breweriesRes, locsRes] = await Promise.all([
+          apiFetch('/beers.php?status=pending&limit=100'),
+          apiFetch('/breweries.php?status=pending&limit=100'),
+          apiFetch('/locations.php?status=pending&limit=100&include_all=1')
+        ])
+
+        const pending = []
+        if (beersRes.status === 'success') {
+          pending.push(...beersRes.data.map(b => ({ ...b, entity_type: 'beer' })))
+        }
+        if (breweriesRes.status === 'success') {
+          pending.push(...breweriesRes.data.map(b => ({ ...b, entity_type: 'brewery' })))
+        }
+        if (locsRes.status === 'success') {
+          pending.push(...locsRes.data.map(l => ({ ...l, entity_type: 'location' })))
+        }
+
+        this.pendingApprovals = pending.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
+      } catch (err) {
+        console.error('Chyba při načítání fronty schvalování:', err)
+      } finally {
+        this.isLoading = false
+      }
+    },
+
     addBeerLocally(beer) {
       this.beers.unshift(beer)
       this.allBeers.unshift({ id: beer.id, name: beer.name, brewery_id: beer.brewery_id, is_favorite: beer.is_favorite || 0, is_wishlist: beer.is_wishlist || 0 })

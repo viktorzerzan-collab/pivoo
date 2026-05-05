@@ -8,12 +8,13 @@ require_once '../JwtHandler.php';
 $token = JwtHandler::getBearerToken();
 $decoded = $token ? JwtHandler::decode($token) : null;
 $userId = $decoded ? (int)$decoded['user_id'] : 0;
+// PŘIDÁNO: Zjištění role pro administrátorské zobrazení
+$userRole = $decoded ? $decoded['role'] : 'user';
 
 $db = (new Database())->getConnection();
 
 if ($db) {
     try {
-        // Kompaktní režim pro plnění selectů ve formulářích
         if (isset($_GET['compact']) && $_GET['compact'] == 1) {
             $query = "SELECT b.id, b.name, b.brewery_id, 
                              IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
@@ -46,8 +47,15 @@ if ($db) {
         $ibu_max = isset($_GET['ibu_max']) && $_GET['ibu_max'] !== '' ? (int)$_GET['ibu_max'] : null;
 
         $sort = $_GET['sort'] ?? 'name_asc';
+        
+        // PŘIDÁNO: Filtrování podle stavu schválení (pouze admin může vidět pending)
+        $status = $_GET['status'] ?? 'approved';
+        if ($status === 'pending' && $userRole === 'admin') {
+            $whereParts = ["b.is_approved = 0"];
+        } else {
+            $whereParts = ["b.is_approved = 1"];
+        }
 
-        $whereParts = ["b.is_approved = 1"];
         $params = [':uid' => $userId];
 
         function applyMultiSearch(&$whereParts, &$params, $inputValue, $dbColumn, $paramPrefix) {
@@ -83,7 +91,8 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(DISTINCT b.id) as total FROM beers b LEFT JOIN breweries br ON b.brewery_id = br.id LEFT JOIN countries c ON br.country_id = c.id $whereSql";
+        // ZMĚNA: Přidán JOIN i do COUNT dotazu kvůli konzistenci a hledání (pokud by se hledalo dle autora)
+        $countQuery = "SELECT COUNT(DISTINCT b.id) as total FROM beers b LEFT JOIN breweries br ON b.brewery_id = br.id LEFT JOIN countries c ON br.country_id = c.id LEFT JOIN users u ON b.created_by = u.id $whereSql";
         $countParams = $params;
         unset($countParams[':uid']); 
         $countStmt = $db->prepare($countQuery);
@@ -112,13 +121,15 @@ if ($db) {
             default: $orderBy .= ", b.name ASC"; break;
         }
 
-        $query = "SELECT b.*, br.name as brewery_name, br.lat as brewery_lat, br.lng as brewery_lng, c.name_cz as brewery_country, c.code as brewery_country_code, bs.name as style,
+        // PŘIDÁNO: Připojení jména autora (created_by_user)
+        $query = "SELECT b.*, br.name as brewery_name, br.lat as brewery_lat, br.lng as brewery_lng, c.name_cz as brewery_country, c.code as brewery_country_code, bs.name as style, u.username as created_by_user,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                          IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                   FROM beers b
                   LEFT JOIN breweries br ON b.brewery_id = br.id
                   LEFT JOIN countries c ON br.country_id = c.id
                   LEFT JOIN beer_styles bs ON b.style_id = bs.id
+                  LEFT JOIN users u ON b.created_by = u.id
                   LEFT JOIN user_favorites fav ON b.id = fav.entity_id 
                        AND fav.entity_type = 'beer' 
                        AND fav.user_id = :uid

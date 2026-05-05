@@ -13,8 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// UZAMČENÍ ENDPOINTU!
-JwtHandler::checkAdmin();
+// UZAMČENÍ ENDPOINTU a získání informací o adminovi
+$user = JwtHandler::checkAdmin();
 
 $database = new Database();
 $db = $database->getConnection();
@@ -22,11 +22,12 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style_id)) {
     try {
+        // PŘIDÁNO: Uložení autora
         $query = "INSERT INTO beers (
                     name, brewery_id, style_id, epm, abv, 
                     ibu, ebc, hops, malts, fermentation, tags, is_unfiltered, is_unpasteurized,
-                    is_approved
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+                    is_approved, created_by
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
         
         $stmt = $db->prepare($query);
         
@@ -43,7 +44,7 @@ if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style_id))
 
         if ($stmt->execute([
             $data->name, $data->brewery_id, $data->style_id, $epm, $abv,
-            $ibu, $ebc, $hops, $malts, $fermentation, $tags, $is_unfiltered, $is_unpasteurized
+            $ibu, $ebc, $hops, $malts, $fermentation, $tags, $is_unfiltered, $is_unpasteurized, $user['user_id']
         ])) {
             $new_id = $db->lastInsertId();
             echo json_encode(["status" => "success", "message" => "Pivo bylo úspěšně přidáno do katalogu.", "id" => $new_id]);
@@ -52,7 +53,6 @@ if (!empty($data->name) && !empty($data->brewery_id) && !empty($data->style_id))
             echo json_encode(["status" => "error", "message" => "Pivo se nepodařilo uložit."]);
         }
     } catch (PDOException $e) {
-        // ZMĚNA: Chybu zalogujeme pro správce serveru, ale útočníkovi vrátíme jen obecný text!
         error_log("DB Error (add_beer): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při komunikaci s databází."]);

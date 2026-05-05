@@ -506,6 +506,7 @@
   "admin": {
     "tabs": {
       "users": "Benutzer",
+      "pending": "Ausstehend",
       "beers": "Biere",
       "breweries": "Brauereien",
       "locations": "Lokale",
@@ -524,8 +525,14 @@
       "style": "Stil",
       "location_type": "Art des Lokals",
       "city": "Stadt",
-      "country": "Land"
+      "country": "Land",
+      "type": "Typ",
+      "author": "Autor"
     },
+    "entity_beer": "Bier",
+    "entity_brewery": "Brauerei",
+    "entity_location": "Lokal",
+    "unknown_author": "Unbekannter Autor",
     "banned": "BANNED",
     "beers_in_catalog": "Biere im Katalog: {count}",
     "type": "Art: {type}",
@@ -540,7 +547,9 @@
       "delete_user": "Benutzer löschen",
       "merge": "Duplikat zusammenführen",
       "edit": "Bearbeiten",
-      "delete": "Löschen"
+      "delete": "Löschen",
+      "approve": "Datensatz genehmigen",
+      "reject": "Ablehnen und löschen"
     },
     "empty_search": "Keine Datensätze entsprechen der Suche.",
     "showing": "Angezeigt",

@@ -8,12 +8,13 @@ require_once '../JwtHandler.php';
 $token = JwtHandler::getBearerToken();
 $decoded = $token ? JwtHandler::decode($token) : null;
 $userId = $decoded ? (int)$decoded['user_id'] : 0;
+// PŘIDÁNO: Zjištění role
+$userRole = $decoded ? $decoded['role'] : 'user';
 
 $db = (new Database())->getConnection();
 
 if ($db) {
     try {
-        // Kompaktní režim pro plnění selectů ve formulářích
         if (isset($_GET['compact']) && $_GET['compact'] == 1) {
             $query = "SELECT br.id, br.name, 
                              IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
@@ -38,10 +39,16 @@ if ($db) {
         $country = $_GET['country'] ?? '';
         $sort = $_GET['sort'] ?? 'name_asc';
 
-        $whereParts = ["br.is_approved = 1"];
+        // PŘIDÁNO: Filtrování podle stavu
+        $status = $_GET['status'] ?? 'approved';
+        if ($status === 'pending' && $userRole === 'admin') {
+            $whereParts = ["br.is_approved = 0"];
+        } else {
+            $whereParts = ["br.is_approved = 1"];
+        }
+
         $params = [':uid' => $userId];
 
-        // Pomocná funkce pro vícenásobné hledání (oddělené čárkou)
         function applyMultiSearch(&$whereParts, &$params, $inputValue, $dbColumn, $paramPrefix) {
             if (trim($inputValue) !== '') {
                 $values = array_filter(array_map('trim', explode(',', $inputValue)));
@@ -63,7 +70,7 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(br.id) as total FROM breweries br LEFT JOIN countries c ON br.country_id = c.id $whereSql";
+        $countQuery = "SELECT COUNT(br.id) as total FROM breweries br LEFT JOIN countries c ON br.country_id = c.id LEFT JOIN users u ON br.created_by = u.id $whereSql";
         $countParams = $params;
         unset($countParams[':uid']);
         $countStmt = $db->prepare($countQuery);
@@ -84,11 +91,13 @@ if ($db) {
             default: $orderBy .= ", br.name ASC"; break;
         }
 
-        $query = "SELECT br.*, c.name_cz as country, c.code as country_code,
+        // PŘIDÁNO: Připojení jména autora
+        $query = "SELECT br.*, c.name_cz as country, c.code as country_code, u.username as created_by_user,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                          IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                   FROM breweries br
                   LEFT JOIN countries c ON br.country_id = c.id
+                  LEFT JOIN users u ON br.created_by = u.id
                   LEFT JOIN user_favorites fav ON br.id = fav.entity_id 
                        AND fav.entity_type = 'brewery' 
                        AND fav.user_id = :uid

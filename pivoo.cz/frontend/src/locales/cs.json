@@ -506,6 +506,7 @@
   "admin": {
     "tabs": {
       "users": "Uživatelé",
+      "pending": "Ke schválení",
       "beers": "Piva",
       "breweries": "Pivovary",
       "locations": "Podniky",
@@ -524,8 +525,14 @@
       "style": "Styl",
       "location_type": "Typ podniku",
       "city": "Město",
-      "country": "Země"
+      "country": "Země",
+      "type": "Typ",
+      "author": "Autor"
     },
+    "entity_beer": "Pivo",
+    "entity_brewery": "Pivovar",
+    "entity_location": "Podnik",
+    "unknown_author": "Neznámý autor",
     "banned": "BANNED",
     "beers_in_catalog": "Piv v katalogu: {count}",
     "type": "Typ: {type}",
@@ -540,7 +547,9 @@
       "delete_user": "Smazat uživatele",
       "merge": "Sloučit duplicitu",
       "edit": "Upravit",
-      "delete": "Smazat"
+      "delete": "Smazat",
+      "approve": "Schválit záznam",
+      "reject": "Zamítnout a smazat"
     },
     "empty_search": "Žádné záznamy neodpovídají hledání.",
     "showing": "Zobrazeno",

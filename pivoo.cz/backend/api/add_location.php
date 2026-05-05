@@ -13,7 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-JwtHandler::checkAdmin();
+// ZABEZPEČENÍ a získání informací o adminovi
+$user = JwtHandler::checkAdmin();
 
 $database = new Database();
 $db = $database->getConnection();
@@ -21,8 +22,9 @@ $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name) && !empty($data->type)) {
     try {
-        $query = "INSERT INTO locations (name, type, city, country_id, address, zip_code, email, phone, website, lat, lng, opening_hours, is_approved) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        // PŘIDÁNO: Uložení autora
+        $query = "INSERT INTO locations (name, type, city, country_id, address, zip_code, email, phone, website, lat, lng, opening_hours, is_approved, created_by) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
         
         $stmt = $db->prepare($query);
         
@@ -49,7 +51,8 @@ if (!empty($data->name) && !empty($data->type)) {
             $website, 
             $lat,
             $lng,
-            $opening_hours
+            $opening_hours,
+            $user['user_id']
         ])) {
             $new_id = $db->lastInsertId();
             echo json_encode(["status" => "success", "message" => "Nové místo bylo úspěšně přidáno.", "id" => $new_id]);

@@ -16,7 +16,7 @@
               class="admin-search"
             />
           </div>
-          <button v-if="activeTab !== 'users'" class="btn-add" @click="openAddModal(activeTab)">
+          <button v-if="activeTab !== 'users' && activeTab !== 'pending'" class="btn-add" @click="openAddModal(activeTab)">
             <PlusIcon :size="20" /> {{ $t('admin.add_item', { item: currentLabelSingle }) }}
           </button>
         </div>
@@ -28,6 +28,12 @@
                 <th>{{ $t('admin.table.user') }}</th>
                 <th>{{ $t('admin.table.email') }}</th>
                 <th>{{ $t('admin.table.role') }}</th>
+                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
+              </tr>
+              <tr v-else-if="activeTab === 'pending'">
+                <th>{{ $t('admin.table.name') }}</th>
+                <th>{{ $t('admin.table.type') }}</th>
+                <th>{{ $t('admin.table.author') }}</th>
                 <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
               </tr>
               <tr v-else>
@@ -79,27 +85,72 @@
                   </td>
                   <td :data-label="$t('admin.table.actions')">
                     <div class="td-content action-buttons">
-                      <BaseTooltip :text="$t('admin.tooltips.edit_user')" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.edit_user')" position="top-end">
                         <button class="btn-edit is-icon-only" @click="openEditModal(u, 'users')">
                           <PencilIcon :size="16" />
                         </button>
                       </BaseTooltip>
                       
-                      <BaseTooltip :text="$t('admin.tooltips.change_pwd')" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.change_pwd')" position="top-end">
                         <button v-if="u?.id !== user?.id" class="btn-primary is-icon-only" style="background-color: #3b82f6;" @click="openPasswordModal(u)">
                           <KeyIcon :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip :text="u.is_banned ? $t('admin.tooltips.unblock') : $t('admin.tooltips.block')" position="top">
+                      <BaseTooltip :text="u.is_banned ? $t('admin.tooltips.unblock') : $t('admin.tooltips.block')" position="top-end">
                         <button v-if="u?.id !== user?.id" class="is-icon-only admin-action-btn" :style="u.is_banned ? 'background-color: #10b981;' : 'background-color: #64748b;'" @click="openBanModal(u)">
                           <UnlockIcon v-if="u.is_banned" :size="16" />
                           <BanIcon v-else :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip :text="$t('admin.tooltips.delete_user')" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.delete_user')" position="top-end">
                         <button v-if="u?.id !== user?.id" class="btn-danger is-icon-only" @click="confirmDelete(u.id, activeTab)">
+                          <Trash2Icon :size="16" />
+                        </button>
+                      </BaseTooltip>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+
+              <template v-else-if="activeTab === 'pending'">
+                <tr v-for="item in paginatedCurrentItems" :key="item?.entity_type + item?.id">
+                  <td :data-label="$t('admin.table.name')">
+                    <div class="td-content main-item-cell">
+                      <div class="section-icon" :class="item.entity_type + 's-bg'">
+                        <BeerIcon v-if="item.entity_type === 'beer'" :size="20" color="var(--primary)" />
+                        <FactoryIcon v-else-if="item.entity_type === 'brewery'" :size="20" color="var(--primary)" />
+                        <MapPinIcon v-else-if="item.entity_type === 'location'" :size="20" color="var(--primary)" />
+                      </div>
+                      <div class="item-text">
+                        <div class="info-top-row">
+                          <strong>{{ item.name }}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td :data-label="$t('admin.table.type')" class="desktop-only">
+                    <div class="td-content">
+                      <span class="badge" style="background: var(--bg-app); border: 1px solid var(--border); color: var(--text-muted);">
+                         {{ $t('admin.entity_' + item.entity_type) }}
+                      </span>
+                    </div>
+                  </td>
+                  <td :data-label="$t('admin.table.author')" class="desktop-only">
+                    <div class="td-content">
+                      {{ item.created_by_user || $t('admin.unknown_author') }}
+                    </div>
+                  </td>
+                  <td :data-label="$t('admin.table.actions')">
+                    <div class="td-content action-buttons">
+                      <BaseTooltip :text="$t('admin.tooltips.approve')" position="top-end">
+                        <button class="btn-primary is-icon-only" style="background-color: #10b981; color: white;" @click="handleApprove(item, 'approve')">
+                          <CheckIcon :size="16" />
+                        </button>
+                      </BaseTooltip>
+                      <BaseTooltip :text="$t('admin.tooltips.reject')" position="top-end">
+                        <button class="btn-danger is-icon-only" @click="handleApprove(item, 'reject')">
                           <Trash2Icon :size="16" />
                         </button>
                       </BaseTooltip>
@@ -179,19 +230,19 @@
                   <td :data-label="$t('admin.table.actions')">
                     <div class="td-content action-buttons">
                       
-                      <BaseTooltip v-if="activeTab === 'locations'" :text="$t('admin.tooltips.merge')" position="top">
+                      <BaseTooltip v-if="activeTab === 'locations'" :text="$t('admin.tooltips.merge')" position="top-end">
                         <button class="btn-primary is-icon-only" style="background-color: #8b5cf6; color: white; border: none;" @click="openMergeModal(item)">
                           <GitMergeIcon :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip :text="$t('admin.tooltips.edit')" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.edit')" position="top-end">
                         <button class="btn-edit is-icon-only" @click="openEditModal(item, activeTab)">
                           <PencilIcon :size="16" />
                         </button>
                       </BaseTooltip>
 
-                      <BaseTooltip :text="$t('admin.tooltips.delete')" position="top">
+                      <BaseTooltip :text="$t('admin.tooltips.delete')" position="top-end">
                         <button class="btn-danger is-icon-only" @click="confirmDelete(item.id, activeTab)">
                           <Trash2Icon :size="16" />
                         </button>
@@ -315,7 +366,7 @@ import { storeToRefs } from 'pinia'
 import { 
   PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
   UnlockIcon, UserIcon, UsersIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
-  GitMergeIcon 
+  GitMergeIcon, ListChecksIcon, CheckIcon
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
@@ -377,11 +428,19 @@ const handleResize = () => {
   isMobileMode.value = window.innerWidth <= 768
 }
 
-watch(activeTab, () => { searchQuery.value = ''; currentPage.value = 1 })
+watch(activeTab, (newTab) => { 
+  searchQuery.value = ''; 
+  currentPage.value = 1;
+  if (newTab === 'pending') {
+    catalogStore.fetchPendingApprovals()
+  }
+})
+
 watch(searchQuery, () => { currentPage.value = 1 })
 
 const tabs = computed(() => [
   { value: 'users', label: t('admin.tabs.users'), icon: UsersIcon },
+  { value: 'pending', label: t('admin.tabs.pending'), icon: ListChecksIcon },
   { value: 'beers', label: t('admin.tabs.beers'), icon: BeerIcon },
   { value: 'breweries', label: t('admin.tabs.breweries'), icon: FactoryIcon },
   { value: 'locations', label: t('admin.tabs.locations'), icon: MapPinIcon },
@@ -391,6 +450,7 @@ const tabs = computed(() => [
 const getTabLabel = (val) => tabs.value.find(t => t.value === val)?.label || ''
 
 const currentLabelSingle = computed(() => {
+  if (activeTab.value === 'pending') return '';
   return t(`admin.items.${activeTab.value === 'users' ? 'user' : (activeTab.value === 'beers' ? 'beer' : (activeTab.value === 'breweries' ? 'brewery' : (activeTab.value === 'locations' ? 'location' : 'style')))}`)
 })
 
@@ -407,7 +467,13 @@ const filteredUsers = computed(() => {
   return items.sort((a, b) => (a.username || '').localeCompare(b.username || '', 'cs'))
 })
 
-const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value }[activeTab.value] || []))
+const currentItems = computed(() => ({ 
+  beers: beers.value, 
+  breweries: breweries.value, 
+  locations: locations.value, 
+  styles: styles.value,
+  pending: catalogStore.pendingApprovals || []
+}[activeTab.value] || []))
 
 const filteredCurrentItems = computed(() => {
   let items = [...currentItems.value]
@@ -647,6 +713,28 @@ const handleDelete = async () => {
   } catch(e) { toastStore.showToast(t('toast.delete_error'), 'toast-error') } 
   finally { deleteModal.value.show = false }
 }
+
+const handleApprove = async (item, action) => {
+  try {
+    const res = await apiFetch('/approve_entity.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        entity_type: item.entity_type,
+        entity_id: item.id,
+        action: action
+      })
+    })
+    if (res.status === 'success') {
+      toastStore.showToast(res.message)
+      catalogStore.fetchPendingApprovals()
+      catalogStore.fetchAllData()
+    } else {
+      toastStore.showToast(res.message || 'Chyba při zpracování požadavku.', 'toast-error')
+    }
+  } catch (e) {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+  }
+}
 </script>
 
 <style scoped>
@@ -682,7 +770,7 @@ const handleDelete = async () => {
 .section-icon img { width: 100%; height: 100%; object-fit: cover; }
 .section-icon.has-image { padding: 0; background: transparent; border: 1px solid var(--border); }
 
-.beers-bg, .breweries-bg, .locations-bg, .users-bg, .styles-bg { background: #1e293b; }
+.beers-bg, .breweries-bg, .locations-bg, .users-bg, .styles-bg, .beer-bg, .brewery-bg, .location-bg { background: #1e293b; }
 
 .user-cell, .main-item-cell { display: flex; align-items: center; gap: 1rem; }
 

@@ -506,6 +506,7 @@
   "admin": {
     "tabs": {
       "users": "Użytkownicy",
+      "pending": "Oczekujące",
       "beers": "Piwa",
       "breweries": "Browary",
       "locations": "Lokale",
@@ -524,8 +525,14 @@
       "style": "Styl",
       "location_type": "Typ lokalu",
       "city": "Miasto",
-      "country": "Kraj"
+      "country": "Kraj",
+      "type": "Typ",
+      "author": "Autor"
     },
+    "entity_beer": "Piwo",
+    "entity_brewery": "Browar",
+    "entity_location": "Lokal",
+    "unknown_author": "Nieznany autor",
     "banned": "BANNED",
     "beers_in_catalog": "Piw w katalogu: {count}",
     "type": "Typ: {type}",
@@ -540,7 +547,9 @@
       "delete_user": "Usuń użytkownika",
       "merge": "Połącz duplikat",
       "edit": "Edytuj",
-      "delete": "Usuń"
+      "delete": "Usuń",
+      "approve": "Zatwierdź rekord",
+      "reject": "Odrzuć i usuń"
     },
     "empty_search": "Żadne rekordy nie pasują do wyszukiwania.",
     "showing": "Wyświetlono",

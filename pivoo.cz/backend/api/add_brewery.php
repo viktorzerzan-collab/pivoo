@@ -10,12 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit();
 require_once '../Database.php';
 require_once '../JwtHandler.php';
 
-// ZABEZPEČENÍ: Pouze pro administrátory
-JwtHandler::checkAdmin();
+// ZABEZPEČENÍ a získání informací o adminovi
+$user = JwtHandler::checkAdmin();
 
 $db = (new Database())->getConnection();
 
-// Podpora pro FormData (kvůli souborům) i JSON
 $data = !empty($_POST) ? (object) $_POST : json_decode(file_get_contents("php://input"));
 
 if (!empty($data->name)) {
@@ -23,7 +22,6 @@ if (!empty($data->name)) {
         $logo_filename = null;
 
         if (isset($_FILES['logoFile']) && $_FILES['logoFile']['error'] === UPLOAD_ERR_OK) {
-            // Validace velikosti (max 5 MB)
             if ($_FILES['logoFile']['size'] > 5 * 1024 * 1024) {
                 http_response_code(400);
                 echo json_encode(["status" => "error", "message" => "Soubor loga je příliš velký. Maximum je 5 MB."]);
@@ -33,7 +31,6 @@ if (!empty($data->name)) {
             $file_tmp = $_FILES['logoFile']['tmp_name'];
             $image_info = getimagesize($file_tmp);
             
-            // Whitelist povolených typů obrázků
             $allowed_types = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP];
             
             if ($image_info && in_array($image_info[2], $allowed_types)) {
@@ -59,7 +56,6 @@ if (!empty($data->name)) {
 
                     imagecopyresampled($dst, $src, 0, 0, ($w-$min_side)/2, ($h-$min_side)/2, $target_size, $target_size, $min_side, $min_side);
                     
-                    // Vynucení bezpečné přípony .webp
                     $logo_filename = uniqid('logo_') . '.webp';
                     $upload_dir = '../uploads/logos/';
                     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
@@ -76,8 +72,9 @@ if (!empty($data->name)) {
             }
         }
 
-        $query = "INSERT INTO breweries (name, city, country_id, address, zip_code, email, phone, website, lat, lng, opening_hours, is_approved, logo) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+        // PŘIDÁNO: Uložení autora
+        $query = "INSERT INTO breweries (name, city, country_id, address, zip_code, email, phone, website, lat, lng, opening_hours, is_approved, logo, created_by) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)";
         $stmt = $db->prepare($query);
         
         $city = !empty($data->city) ? $data->city : null;
@@ -91,7 +88,7 @@ if (!empty($data->name)) {
         $lng = !empty($data->lng) ? (float)$data->lng : null;
         $opening_hours = !empty($data->opening_hours) ? $data->opening_hours : null;
 
-        if ($stmt->execute([$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $opening_hours, $logo_filename])) {
+        if ($stmt->execute([$data->name, $city, $country_id, $address, $zip_code, $email, $phone, $website, $lat, $lng, $opening_hours, $logo_filename, $user['user_id']])) {
             $new_id = $db->lastInsertId();
             echo json_encode(["status" => "success", "message" => "Pivovar byl úspěšně přidán do katalogu.", "id" => $new_id]);
         } else {

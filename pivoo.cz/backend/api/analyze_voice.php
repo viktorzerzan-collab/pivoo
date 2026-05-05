@@ -120,8 +120,9 @@ try {
 
                 if (!$brewery_id || !empty($ai_json['is_new_brewery'])) {
                     $b_name = $ai_json['brewery_name'] ?: 'Neznámý pivovar';
-                    $stmt = $db->prepare("INSERT INTO breweries (name, country_id, is_approved) VALUES (?, 1, 0)");
-                    $stmt->execute([$b_name]);
+                    // PŘIDÁNO: Uložení autora
+                    $stmt = $db->prepare("INSERT INTO breweries (name, country_id, is_approved, created_by) VALUES (?, 1, 0, ?)");
+                    $stmt->execute([$b_name, $user['user_id']]);
                     
                     $brewery_id = $db->lastInsertId();
                     $ai_json['brewery_id'] = $brewery_id;
@@ -136,8 +137,9 @@ try {
                     if ($existing_beer) {
                         $beer_id = $existing_beer['id'];
                     } else {
-                        $stmt_beer = $db->prepare("INSERT INTO beers (name, brewery_id, is_approved) VALUES (?, ?, 0)");
-                        $stmt_beer->execute([$ai_json['beer_name'], $brewery_id]);
+                        // PŘIDÁNO: Uložení autora
+                        $stmt_beer = $db->prepare("INSERT INTO beers (name, brewery_id, is_approved, created_by) VALUES (?, ?, 0, ?)");
+                        $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $user['user_id']]);
                         $beer_id = $db->lastInsertId();
                     }
                     $ai_json['beer_id'] = $beer_id;

@@ -142,7 +142,8 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     
     if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
         $ai_response_text = trim($result['candidates'][0]['content']['parts'][0]['text']);
-        $ai_response_text = str_replace(['```json', '```'], '', $ai_response_text);
+        $ai_response_text = str_replace(['```json', '
+```'], '', $ai_response_text);
         
         $ai_json = json_decode($ai_response_text, true);
         
@@ -154,7 +155,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                 $brewery_id = $ai_json['brewery_id'] ?? null;
                 $beer_id = null;
 
-                // A) Pokud pivovar neexistuje, založíme ho jako neschválený
+                // A) Pokud pivovar neexistuje, založíme ho jako neschválený a přidáme ID autora
                 if (!$brewery_id || !empty($ai_json['is_new_brewery'])) {
                     $meta = $ai_json['brewery_metadata'] ?? [];
                     $b_name = $ai_json['brewery_name'] ?: 'Neznámý pivovar';
@@ -163,8 +164,8 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                     $b_lat = $meta['lat'] ?? null;
                     $b_lng = $meta['lng'] ?? null;
 
-                    $stmt = $db->prepare("INSERT INTO breweries (name, city, country_id, lat, lng, is_approved) VALUES (?, ?, ?, ?, ?, 0)");
-                    $stmt->execute([$b_name, $b_city, $b_country, $b_lat, $b_lng]);
+                    $stmt = $db->prepare("INSERT INTO breweries (name, city, country_id, lat, lng, is_approved, created_by) VALUES (?, ?, ?, ?, ?, 0, ?)");
+                    $stmt->execute([$b_name, $b_city, $b_country, $b_lat, $b_lng, $user['user_id']]);
                     
                     $brewery_id = $db->lastInsertId();
                     $ai_json['brewery_id'] = $brewery_id;
@@ -181,7 +182,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                     if ($existing_beer) {
                         $beer_id = $existing_beer['id'];
                     } else {
-                        // Pivo neexistuje, založíme ho jako neschválené
+                        // Pivo neexistuje, založíme ho jako neschválené a přidáme ID autora
                         $style_id = $ai_json['style_id'] ?? null;
                         $epm = $ai_json['epm'] ?? null;
                         $abv = $ai_json['abv'] ?? null;
@@ -190,9 +191,9 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                         $unfiltered = !empty($ai_json['is_unfiltered']) ? 1 : 0;
                         $unpasteurized = !empty($ai_json['is_unpasteurized']) ? 1 : 0;
 
-                        $stmt_beer = $db->prepare("INSERT INTO beers (name, brewery_id, style_id, epm, abv, ibu, ebc, is_unfiltered, is_unpasteurized, is_approved) 
-                                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
-                        $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $style_id, $epm, $abv, $ibu, $ebc, $unfiltered, $unpasteurized]);
+                        $stmt_beer = $db->prepare("INSERT INTO beers (name, brewery_id, style_id, epm, abv, ibu, ebc, is_unfiltered, is_unpasteurized, is_approved, created_by) 
+                                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)");
+                        $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $style_id, $epm, $abv, $ibu, $ebc, $unfiltered, $unpasteurized, $user['user_id']]);
                         $beer_id = $db->lastInsertId();
                     }
                     $ai_json['beer_id'] = $beer_id;
