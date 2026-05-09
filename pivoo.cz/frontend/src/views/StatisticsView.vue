@@ -398,7 +398,7 @@ onMounted(() => {
   margin-bottom: 1.5rem; 
   transition: background-color 0.3s ease;
   position: relative;
-  z-index: 10; /* Zajištění zobrazení kalendáře nad panely */
+  z-index: 10; 
 }
 
 .header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;}
@@ -458,7 +458,6 @@ onMounted(() => {
 .progress-fill { height: 100%; background: var(--primary); border-radius: 5px; transition: width 1s ease; }
 .progress-text { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; transition: color 0.3s ease; }
 
-/* Desktop Grafy - sloupce */
 .chart-container { 
   display: flex; 
   justify-content: space-between; 
@@ -500,7 +499,6 @@ onMounted(() => {
 
 .empty-stats { padding: 3rem 1rem; text-align: center; color: var(--text-muted); font-style: italic; transition: color 0.3s ease; }
 
-/* MOBILNÍ ZOBRAZENÍ - PRUHY POD SEBOU */
 @media (max-width: 800px) {
   .header-actions { flex-direction: column; align-items: stretch; }
   
@@ -508,7 +506,6 @@ onMounted(() => {
   .panel-card { padding: 1rem; }
   .ranking-item { padding: 0.6rem 0.75rem; gap: 0.75rem; }
 
-  /* Překlopení rytmů na řádky */
   .chart-container { 
     flex-direction: column; 
     align-items: stretch; 
@@ -552,15 +549,6 @@ onMounted(() => {
 </style>
 
 <style>
-/* Vynucení zarovnání kalendářů doprava v rámci statistik */
-.statistics-page .dp__menu, 
-.statistics-page .datepicker-calendar,
-.statistics-page .datepicker-container {
-  left: auto !important;
-  right: 0 !important;
-  transform: none !important;
-}
-
 /* Rozšíření selektoru období, aby se texty nelámaly */
 .statistics-page .mode-wrapper {
   width: 240px !important;

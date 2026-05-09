@@ -14,7 +14,7 @@
     </div>
 
     <transition name="fade-popover">
-      <div v-if="isOpen" class="calendar-popover" @click.stop>
+      <div v-if="isOpen" class="calendar-popover" :class="{ 'align-right': align === 'right' }" @click.stop>
         <div class="calendar-header">
           <button type="button" @click="prevMonth" class="cal-btn"><ChevronLeftIcon :size="18" /></button>
           
@@ -84,7 +84,11 @@ import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: String,
-  label: String
+  label: String,
+  align: {
+    type: String,
+    default: 'left'
+  }
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -207,6 +211,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 .input-wrapper:hover .base-input { border-color: var(--primary); }
 
 .calendar-popover { position: absolute; top: calc(100% + 0.5rem); left: 0; width: 310px; background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-floating); padding: 1rem; z-index: 100; transition: all 0.3s ease; }
+.calendar-popover.align-right { left: auto; right: 0; }
+
 .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; color: var(--text-main); gap: 0.5rem; }
 
 .cal-btn { background: none; border: none; padding: 0.25rem; cursor: pointer; border-radius: var(--radius-sm); display: flex; align-items: center; color: var(--text-muted); transition: all 0.2s; }

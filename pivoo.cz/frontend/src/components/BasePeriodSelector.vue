@@ -27,15 +27,15 @@
         <div class="date-input-container">
           <div class="date-field-group">
             <span class="field-label">{{ $t('filter.from') }}</span>
-            <div class="date-input align-calendar-right">
-              <BaseDatePicker v-model="customFrom" :placeholder="$t('filter.from')" />
+            <div class="date-input">
+              <BaseDatePicker v-model="customFrom" :placeholder="$t('filter.from')" align="right" />
             </div>
           </div>
           <span class="sep">-</span>
           <div class="date-field-group">
             <span class="field-label">{{ $t('filter.to') }}</span>
-            <div class="date-input align-calendar-right">
-              <BaseDatePicker v-model="customTo" :placeholder="$t('filter.to')" />
+            <div class="date-input">
+              <BaseDatePicker v-model="customTo" :placeholder="$t('filter.to')" align="right" />
             </div>
           </div>
         </div>
@@ -144,7 +144,7 @@ onMounted(() => emitUpdate())
 }
 
 .mode-wrapper {
-  width: 260px; /* Ještě o kousek víc pro jistotu */
+  width: 260px;
 }
 
 .nav-wrapper {
@@ -244,20 +244,5 @@ onMounted(() => emitUpdate())
   .sep {
     display: none;
   }
-}
-</style>
-
-<style>
-.align-calendar-right .datepicker-calendar,
-.align-calendar-right .datepicker-container {
-  left: auto !important;
-  right: 0 !important;
-  transform: none !important;
-}
-
-/* Pokud tvůj datepicker používá jinou třídu, přidáme i tu nejčastější z knihoven */
-.align-calendar-right .dp__menu {
-  right: 0 !important;
-  left: auto !important;
 }
 </style>

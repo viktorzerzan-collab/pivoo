@@ -14,7 +14,7 @@
           <BaseSelect v-model="form.location_id" :label="$t('modals.checkin.location_label')" searchable required style="flex: 1;">
             <option disabled value="">{{ $t('modals.checkin.select_location') }}</option>
             <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
-              {{ loc.is_favorite ? '⭐' : '📍' }} {{ loc.name }}
+              {{ loc.is_favorite ? '⭐' : '📍' }} {{ translateLocation(loc.name) }}
             </option>
           </BaseSelect>
           
@@ -86,7 +86,7 @@
           <div class="half"></div>
         </div>
 
-        <div class="form-row align-end">
+        <div class="form-row">
           <div class="half" style="display: flex; gap: 0.5rem;">
             <BaseInput 
               style="flex: 2;"
@@ -162,7 +162,7 @@ import { useToastStore } from '../../stores/toast'
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 const props = defineProps({ 
   show: Boolean, 
@@ -181,12 +181,16 @@ const tempCoords = ref(null)
 
 const isAiUpdating = ref(false)
 
-// Unifikované zpracování odpovědi z komponenty MagicScanner
+const translateLocation = (val) => {
+  if (!val) return val
+  const key = `dynamic.locations.${val}`
+  return te(key) ? t(key) : val
+}
+
 const handleAiResponse = (res) => {
   if (res.status === 'success' && res.data) {
     const ai = res.data
 
-    // --- PŘIDÁNO: Pokud AI vytvořila nový koncept pivovaru, přidáme ho dočasně do lokálního katalogu ---
     if (ai.brewery_id && !catalogStore.allBreweries.some(b => b.id == ai.brewery_id)) {
       catalogStore.addBreweryLocally({
         id: ai.brewery_id,
@@ -194,7 +198,6 @@ const handleAiResponse = (res) => {
       })
     }
 
-    // --- PŘIDÁNO: Pokud AI vytvořila nový koncept piva, přidáme ho dočasně do lokálního katalogu ---
     if (ai.beer_id && !catalogStore.allBeers.some(b => b.id == ai.beer_id)) {
       catalogStore.addBeerLocally({
         id: ai.beer_id,
@@ -203,14 +206,12 @@ const handleAiResponse = (res) => {
       })
     }
 
-    // Zapneme zámek, aby Watchery nesmazaly pivo při změně pivovaru
     isAiUpdating.value = true
 
     if (ai.brewery_id) props.form.brewery_id = ai.brewery_id
     if (ai.location_id) props.form.location_id = ai.location_id
     if (ai.currency) props.form.currency = ai.currency
 
-    // Malý timeout, aby Vue stihlo zareagovat na změnu pivovaru a naplnit select piv
     setTimeout(() => {
       if (ai.beer_id) props.form.beer_id = ai.beer_id
       
@@ -230,8 +231,6 @@ const handleAiResponse = (res) => {
       if (ai.packaging) props.form.packaging = ai.packaging
 
       toastStore.addToast(t('modals.checkin.msg_success') || 'Pivo bylo úspěšně rozpoznáno!', 'success')
-
-      // Vypneme zámek
       isAiUpdating.value = false
     }, 150)
   }
@@ -331,7 +330,7 @@ const autodetectLocation = () => {
 
       if (nearestLoc && minDistance <= 0.03) {
         props.form.location_id = nearestLoc.id
-        locationMessage.value = `📍 Nalezeno: ${nearestLoc.name} (${(minDistance * 1000).toFixed(0)} m)`
+        locationMessage.value = `📍 Nalezeno: ${translateLocation(nearestLoc.name)} (${(minDistance * 1000).toFixed(0)} m)`
         locationMessageType.value = 'success'
       } else {
         props.form.location_id = ''

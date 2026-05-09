@@ -11,7 +11,7 @@
         <BaseSelect v-model="form.location_id" :label="$t('modals.checkin.location_label')" searchable required>
           <option disabled value="">{{ $t('modals.checkin.select_location') }}</option>
           <option v-for="loc in catalogStore.allLocations" :key="loc.id" :value="loc.id">
-            {{ loc.name }}
+            {{ translateLocation(loc.name) }}
           </option>
         </BaseSelect>
 
@@ -141,7 +141,7 @@ import { useAuthStore } from '../../stores/auth'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 const props = defineProps({ 
   show: Boolean, 
@@ -151,6 +151,12 @@ defineEmits(['close', 'submit'])
 
 const volumeMode = ref('')
 const customVolume = ref('')
+
+const translateLocation = (val) => {
+  if (!val) return val
+  const key = `dynamic.locations.${val}`
+  return te(key) ? t(key) : val
+}
 
 watch(volumeMode, (newVal) => {
   if (newVal !== 'custom' && newVal !== '') {
