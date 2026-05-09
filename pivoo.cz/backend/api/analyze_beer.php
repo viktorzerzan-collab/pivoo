@@ -23,10 +23,22 @@ if (!defined('GEMINI_API_KEY')) {
     exit();
 }
 
-if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Nebyl přijat žádný obrázek."]);
-    exit();
+// Zpracování pole obrázků nebo starého formátu (pokud by se náhodou poslal původní 'image')
+if (!isset($_FILES['images']) || empty($_FILES['images']['name'][0])) {
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        // Fallback pro starý frontend
+        $_FILES['images'] = [
+            'name' => [$_FILES['image']['name']],
+            'type' => [$_FILES['image']['type']],
+            'tmp_name' => [$_FILES['image']['tmp_name']],
+            'error' => [$_FILES['image']['error']],
+            'size' => [$_FILES['image']['size']]
+        ];
+    } else {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Nebyly přijaty žádné obrázky k analýze."]);
+        exit();
+    }
 }
 
 $database = new Database();
@@ -43,27 +55,48 @@ try {
     $countries_stmt = $db->query("SELECT id, name_cz FROM countries");
     $countries_list = $countries_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 2. Příprava obrázku pro API (Base64)
-    $imagePath = $_FILES['image']['tmp_name'];
-    $imageMime = $_FILES['image']['type'];
-    
-    // Whitelist mime typů
-    if (!in_array($imageMime, ['image/jpeg', 'image/png', 'image/webp'])) {
+    // 2. Příprava obrázků pro API (převod všech fotek do Base64)
+    $imageParts = [];
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+
+    for ($i = 0; $i < count($_FILES['images']['name']); $i++) {
+        if ($_FILES['images']['error'][$i] === UPLOAD_ERR_OK) {
+            $imagePath = $_FILES['images']['tmp_name'][$i];
+            $imageMime = $_FILES['images']['type'][$i];
+
+            if (!in_array($imageMime, $allowedMimes)) {
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "Nepodporovaný formát obrázku (pouze JPG, PNG, WEBP)."]);
+                exit();
+            }
+
+            $imageData = base64_encode(file_get_contents($imagePath));
+
+            $imageParts[] = [
+                "inlineData" => [
+                    "mimeType" => $imageMime,
+                    "data" => $imageData
+                ]
+            ];
+        }
+    }
+
+    if (empty($imageParts)) {
         http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Nepodporovaný formát obrázku (pouze JPG, PNG, WEBP)."]);
+        echo json_encode(["status" => "error", "message" => "Nebylo možné zpracovat přiložené obrázky."]);
         exit();
     }
 
-    $imageData = base64_encode(file_get_contents($imagePath));
-
     // 3. Prompt pro Gemini
-    $promptText = "Jsi pivní expert. Zanalyzuj tuto fotografii piva (etiketa, plechovka, láhev) nebo nápojového lístku.
+    $promptText = "Jsi pivní expert. Zanalyzuj tyto přiložené fotografie piva (mohou obsahovat přední/zadní etiketu, plechovku, láhev, točené pivo ve sklenici nebo i nápojový lístek).
 Tvé úkoly:
-1. Identifikuj přesný název piva a jméno pivovaru.
+1. Identifikuj přesný název piva a jméno pivovaru ze všech dostupných indicií.
 2. Identifikuj pivní styl.
 3. Najdi technické parametry: EPM (Stupňovitost v °), ABV (Alkohol v %), IBU (Hořkost), EBC (Barva).
 4. Zjisti, zda je pivo nefiltrované nebo nepasterizované.
 5. Porovnej nalezený pivovar a styl se seznamy, které ti dodám. Pokud najdeš shodu, vrať jeho ID.
+6. Odhadni z fotek, o jaký typ obalu se jedná (povolené hodnoty: 'točené', 'lahev', 'plechovka', 'pet', 'sud'). Pokud si nejsi jistý, vrať 'točené'.
+7. Odhadni objem piva (např. 0.50, 0.33, 0.30), pokud to lze z obalu, sklenice nebo nápojového lístku vyčíst/odhadnout.
 
 Zde je seznam existujících pivovarů: " . json_encode($breweries_list) . "
 Zde je seznam existujících pivních stylů: " . json_encode($styles_list) . "
@@ -94,25 +127,25 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     \"ibu\": null,
     \"ebc\": null,
     \"is_unfiltered\": false,
-    \"is_unpasteurized\": false
+    \"is_unpasteurized\": false,
+    \"packaging\": \"točené\",
+    \"volume\": null
 }";
 
     // 4. Volání Google Gemini API
     $clean_api_key = trim(GEMINI_API_KEY);
     $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" . $clean_api_key;
 
+    // Sestavení dat pro API (Text prompt následovaný všemi obrázky)
+    $geminiParts = [["text" => $promptText]];
+    foreach ($imageParts as $part) {
+        $geminiParts[] = $part;
+    }
+
     $postData = [
         "contents" => [
             [
-                "parts" => [
-                    ["text" => $promptText],
-                    [
-                        "inlineData" => [
-                            "mimeType" => $imageMime,
-                            "data" => $imageData
-                        ]
-                    ]
-                ]
+                "parts" => $geminiParts
             ]
         ]
     ];
@@ -122,7 +155,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 45); // Zvýšený timeout pro případ více fotek
     curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
     
     $response = curl_exec($ch);
@@ -142,20 +175,19 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     
     if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
         $ai_response_text = trim($result['candidates'][0]['content']['parts'][0]['text']);
-        $ai_response_text = str_replace(['```json', '
-```'], '', $ai_response_text);
+        $ai_response_text = str_replace(['```json', '```'], '', $ai_response_text);
         
         $ai_json = json_decode($ai_response_text, true);
         
         if (json_last_error() === JSON_ERROR_NONE) {
             
-            // --- AUTOMATICKÉ ZALOŽENÍ CHYBĚJÍCÍCH DAT (SHADOW PROFILES) ---
+            // --- AUTOMATICKÉ ZALOŽENÍ CHYBĚJÍCÍCH DAT JAKO KONCEPT (is_approved = 2) ---
             $db->beginTransaction();
             try {
                 $brewery_id = $ai_json['brewery_id'] ?? null;
                 $beer_id = null;
 
-                // A) Pokud pivovar neexistuje, založíme ho jako neschválený a přidáme ID autora
+                // A) Pokud pivovar neexistuje, založíme ho jako KONCEPT (2)
                 if (!$brewery_id || !empty($ai_json['is_new_brewery'])) {
                     $meta = $ai_json['brewery_metadata'] ?? [];
                     $b_name = $ai_json['brewery_name'] ?: 'Neznámý pivovar';
@@ -164,7 +196,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                     $b_lat = $meta['lat'] ?? null;
                     $b_lng = $meta['lng'] ?? null;
 
-                    $stmt = $db->prepare("INSERT INTO breweries (name, city, country_id, lat, lng, is_approved, created_by) VALUES (?, ?, ?, ?, ?, 0, ?)");
+                    $stmt = $db->prepare("INSERT INTO breweries (name, city, country_id, lat, lng, is_approved, created_by) VALUES (?, ?, ?, ?, ?, 2, ?)");
                     $stmt->execute([$b_name, $b_city, $b_country, $b_lat, $b_lng, $user['user_id']]);
                     
                     $brewery_id = $db->lastInsertId();
@@ -175,14 +207,13 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                 // B) Zkontrolujeme, zda existuje pivo
                 if ($brewery_id && !empty($ai_json['beer_name'])) {
                     $find_beer = $db->prepare("SELECT id FROM beers WHERE brewery_id = ? AND name LIKE ? LIMIT 1");
-                    // Rychlý fuzzy match na název piva
                     $find_beer->execute([$brewery_id, '%' . trim($ai_json['beer_name']) . '%']);
                     $existing_beer = $find_beer->fetch();
 
                     if ($existing_beer) {
                         $beer_id = $existing_beer['id'];
                     } else {
-                        // Pivo neexistuje, založíme ho jako neschválené a přidáme ID autora
+                        // Pivo neexistuje, založíme ho jako KONCEPT (2)
                         $style_id = $ai_json['style_id'] ?? null;
                         $epm = $ai_json['epm'] ?? null;
                         $abv = $ai_json['abv'] ?? null;
@@ -192,7 +223,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                         $unpasteurized = !empty($ai_json['is_unpasteurized']) ? 1 : 0;
 
                         $stmt_beer = $db->prepare("INSERT INTO beers (name, brewery_id, style_id, epm, abv, ibu, ebc, is_unfiltered, is_unpasteurized, is_approved, created_by) 
-                                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)");
+                                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 2, ?)");
                         $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $style_id, $epm, $abv, $ibu, $ebc, $unfiltered, $unpasteurized, $user['user_id']]);
                         $beer_id = $db->lastInsertId();
                     }
@@ -216,7 +247,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
         }
     } else {
         http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "AI nedokázala obrázek analyzovat."]);
+        echo json_encode(["status" => "error", "message" => "AI nedokázala obrázky analyzovat."]);
     }
 
 } catch (Exception $e) {

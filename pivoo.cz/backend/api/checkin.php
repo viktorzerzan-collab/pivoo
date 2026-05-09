@@ -1,4 +1,5 @@
 <?php
+// backend/api/checkin.php
 // ZMĚNA: Omezení CORS
 header("Access-Control-Allow-Origin: https://www.pivoo.cz");
 header("Content-Type: application/json; charset=UTF-8");
@@ -108,14 +109,20 @@ if (!empty($data->beer_id) && !empty($data->location_id)) {
             $new_id = $db->lastInsertId();
 
             try {
+                // --- ZMĚNA: Přesun piva z Konceptu do fronty ke schválení ---
+                $db->prepare("UPDATE beers SET is_approved = 0 WHERE id = ? AND is_approved = 2")->execute([$data->beer_id]);
+
                 // Přepočet piva
                 $db->prepare("UPDATE beers SET total_checkins = (SELECT COUNT(id) FROM consumptions WHERE beer_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE beer_id = ?) WHERE id = ?")->execute([$data->beer_id, $data->beer_id, $data->beer_id]);
                 
-                // Přepočet pivovaru
+                // Zjištění a přepočet pivovaru
                 $stmtBrew = $db->prepare("SELECT brewery_id FROM beers WHERE id = ?");
                 $stmtBrew->execute([$data->beer_id]);
                 $brew = $stmtBrew->fetch();
                 if ($brew && $brew['brewery_id']) {
+                    // --- ZMĚNA: Přesun pivovaru z Konceptu do fronty ke schválení ---
+                    $db->prepare("UPDATE breweries SET is_approved = 0 WHERE id = ? AND is_approved = 2")->execute([$brew['brewery_id']]);
+
                     $db->prepare("UPDATE breweries SET avg_rating = (SELECT ROUND(AVG(NULLIF(c.rating_beer, 0)), 1) FROM consumptions c JOIN beers b ON c.beer_id = b.id WHERE b.brewery_id = ?) WHERE id = ?")->execute([$brew['brewery_id'], $brew['brewery_id']]);
                 }
                 

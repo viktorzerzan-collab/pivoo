@@ -6,25 +6,7 @@
     <template #body>
       <form @submit.prevent="$emit('submit')" class="checkin-form">
         
-        <div class="magic-scan-wrapper">
-          <input type="file" accept="image/*" capture="environment" ref="magicInput" class="hidden-input" @change="processMagicScan" />
-          
-          <div class="magic-buttons">
-            <BaseButton type="button" variant="add" @click="magicInput.click()" :disabled="isProcessing" class="magic-btn">
-              <template #icon><CameraIcon :size="18" :class="{'spinning': isProcessing && processType === 'camera'}"/></template>
-              {{ isProcessing && processType === 'camera' ? $t('modals.checkin.btn_scanning') : $t('modals.checkin.btn_photo') }}
-            </BaseButton>
-            
-            <BaseButton type="button" variant="add" @click="startVoiceRecognition" :disabled="isProcessing" class="magic-btn voice-btn" :class="{'is-listening': isListening}">
-              <template #icon><MicIcon :size="18" :class="{'pulse': isListening}"/></template>
-              {{ isListening ? $t('modals.checkin.btn_listening') : (isProcessing && processType === 'voice' ? $t('modals.checkin.btn_processing') : $t('modals.checkin.btn_dictate')) }}
-            </BaseButton>
-          </div>
-        </div>
-
-        <div v-if="magicMessage" class="magic-message" :class="magicMessageType">
-          <span>{{ magicMessage }}</span>
-        </div>
+        <MagicScanner @result="handleAiResponse" />
 
         <BaseDatePicker v-model="form.consumed_at" :label="$t('modals.checkin.date_label')" />
 
@@ -76,6 +58,7 @@
             <BaseSelect v-model="volumeMode" :label="$t('modals.checkin.volume_label')">
               <option value="0.20">{{ $t('modals.checkin.volume.glass') }}</option>
               <option value="0.30">{{ $t('modals.checkin.volume.small') }}</option>
+              <option value="0.33">0,33 l</option>
               <option value="0.40">{{ $t('modals.checkin.volume.snyt') }}</option>
               <option value="0.50">{{ $t('modals.checkin.volume.large') }}</option>
               <option value="1.00">{{ $t('modals.checkin.volume.tuplak') }}</option>
@@ -160,7 +143,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { BeerIcon, CameraIcon, MicIcon } from 'lucide-vue-next'
+import { BeerIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -170,14 +153,16 @@ import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
 import BaseCheckbox from '../BaseCheckbox.vue'
 import GeoLocateButton from '../GeoLocateButton.vue'
-import { apiFetch } from '../../api'
+import MagicScanner from '../MagicScanner.vue'
 
 import { useCatalogStore } from '../../stores/catalog'
 import { useAuthStore } from '../../stores/auth'
+import { useToastStore } from '../../stores/toast'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
-const { t, locale } = useI18n()
+const toastStore = useToastStore()
+const { t } = useI18n()
 
 const props = defineProps({ 
   show: Boolean, 
@@ -194,22 +179,31 @@ const locationMessage = ref('')
 const locationMessageType = ref('')
 const tempCoords = ref(null)
 
-const magicInput = ref(null)
-const isProcessing = ref(false)
-const processType = ref('') // 'camera' nebo 'voice'
-const isListening = ref(false)
-const magicMessage = ref('')
-const magicMessageType = ref('')
-
-// OPRAVA: Zámek proti smazání piva při automatickém vyplňování
 const isAiUpdating = ref(false)
 
-// Unifikované zpracování odpovědi od AI
+// Unifikované zpracování odpovědi z komponenty MagicScanner
 const handleAiResponse = (res) => {
   if (res.status === 'success' && res.data) {
     const ai = res.data
 
-    // Zapneme zámek
+    // --- PŘIDÁNO: Pokud AI vytvořila nový koncept pivovaru, přidáme ho dočasně do lokálního katalogu ---
+    if (ai.brewery_id && !catalogStore.allBreweries.some(b => b.id == ai.brewery_id)) {
+      catalogStore.addBreweryLocally({
+        id: ai.brewery_id,
+        name: ai.brewery_name || 'Neznámý pivovar'
+      })
+    }
+
+    // --- PŘIDÁNO: Pokud AI vytvořila nový koncept piva, přidáme ho dočasně do lokálního katalogu ---
+    if (ai.beer_id && !catalogStore.allBeers.some(b => b.id == ai.beer_id)) {
+      catalogStore.addBeerLocally({
+        id: ai.beer_id,
+        name: ai.beer_name || 'Neznámé pivo',
+        brewery_id: ai.brewery_id
+      })
+    }
+
+    // Zapneme zámek, aby Watchery nesmazaly pivo při změně pivovaru
     isAiUpdating.value = true
 
     if (ai.brewery_id) props.form.brewery_id = ai.brewery_id
@@ -222,7 +216,7 @@ const handleAiResponse = (res) => {
       
       if (ai.volume) {
         const volStr = Number(ai.volume).toFixed(2)
-        const standardVolumes = ['0.20', '0.30', '0.40', '0.50', '1.00']
+        const standardVolumes = ['0.20', '0.30', '0.33', '0.40', '0.50', '1.00']
         if (standardVolumes.includes(volStr)) {
           volumeMode.value = volStr
         } else {
@@ -235,101 +229,12 @@ const handleAiResponse = (res) => {
       if (ai.price) props.form.price = ai.price
       if (ai.packaging) props.form.packaging = ai.packaging
 
-      magicMessageType.value = 'success'
-      magicMessage.value = t('modals.checkin.msg_success')
+      toastStore.addToast(t('modals.checkin.msg_success') || 'Pivo bylo úspěšně rozpoznáno!', 'success')
 
       // Vypneme zámek
       isAiUpdating.value = false
     }, 150)
-  } else {
-    magicMessageType.value = 'error'
-    magicMessage.value = res.message || 'Nepodařilo se rozpoznat data.'
   }
-}
-
-// 1. Zpracování Fotografie
-const processMagicScan = async (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-
-  isProcessing.value = true
-  processType.value = 'camera'
-  magicMessage.value = ''
-
-  const formData = new FormData()
-  formData.append('image', file)
-
-  try {
-    const res = await apiFetch('/analyze_beer.php', {
-      method: 'POST',
-      body: formData,
-      timeout: 30000 
-    })
-    handleAiResponse(res)
-  } catch (e) {
-    magicMessageType.value = 'error'
-    magicMessage.value = 'Chyba AI: ' + e.message
-  } finally {
-    isProcessing.value = false
-    if (magicInput.value) magicInput.value.value = ''
-  }
-}
-
-// 2. Zpracování Hlasu
-const startVoiceRecognition = () => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    magicMessageType.value = 'error';
-    magicMessage.value = t('modals.checkin.msg_unsupported_mic');
-    return;
-  }
-  
-  const recognition = new SpeechRecognition();
-  const langMap = { 'cs': 'cs-CZ', 'en': 'en-US', 'de': 'de-DE', 'pl': 'pl-PL' };
-  recognition.lang = langMap[locale.value] || 'cs-CZ';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  recognition.onstart = () => {
-    isListening.value = true;
-    magicMessage.value = t('modals.checkin.msg_speak');
-    magicMessageType.value = 'success';
-  };
-
-  recognition.onresult = async (event) => {
-    isListening.value = false;
-    const transcript = event.results[0][0].transcript;
-    await processVoiceTranscript(transcript);
-  };
-
-  recognition.onerror = (event) => {
-    isListening.value = false;
-    magicMessageType.value = 'error';
-    magicMessage.value = t('modals.checkin.msg_mic_error') + event.error;
-  };
-
-  recognition.start();
-}
-
-const processVoiceTranscript = async (text) => {
-   isProcessing.value = true;
-   processType.value = 'voice';
-   magicMessage.value = t('modals.checkin.btn_processing');
-   magicMessageType.value = 'warning';
-
-   try {
-     const res = await apiFetch('/analyze_voice.php', {
-       method: 'POST',
-       body: JSON.stringify({ text }),
-       timeout: 30000
-     });
-     handleAiResponse(res);
-   } catch (e) {
-     magicMessageType.value = 'error'
-     magicMessage.value = 'Chyba AI: ' + e.message
-   } finally {
-     isProcessing.value = false;
-   }
 }
 
 watch(volumeMode, (newVal) => {
@@ -355,9 +260,8 @@ watch(() => props.form.is_free, (isFree) => {
 watch(() => props.show, (newVal) => {
   if (newVal) {
     locationMessage.value = ''
-    magicMessage.value = '' 
     const currentVol = props.form.volume
-    const standardVolumes = ['0.20', '0.30', '0.40', '0.50', '1.00']
+    const standardVolumes = ['0.20', '0.30', '0.33', '0.40', '0.50', '1.00']
     
     if (standardVolumes.includes(currentVol)) {
       volumeMode.value = currentVol
@@ -460,7 +364,6 @@ const sortedBeers = computed(() => {
   return [...filtered].sort(sortByFavorite)
 })
 
-// OPRAVA: Pivo se vymaže pouze v případě, že změnu vyvolal uživatel (isAiUpdating == false)
 watch(() => props.form.brewery_id, (newVal, oldVal) => {
   if (!isAiUpdating.value && oldVal !== undefined && oldVal !== '') {
     props.form.beer_id = ''
@@ -496,29 +399,6 @@ watch(() => props.form.location_id, () => {
 .add-loc-link { color: var(--blue); text-decoration: underline; cursor: pointer; }
 .add-loc-link:hover { color: var(--blue-hover); }
 
-.magic-scan-wrapper { margin-bottom: 0.5rem; margin-top: 0.5rem; }
-.magic-buttons { display: flex; gap: 0.5rem; }
-.magic-btn { flex: 1; justify-content: center; }
-.voice-btn { background-color: #8b5cf6; }
-.voice-btn:hover { background-color: #7c3aed; }
-.voice-btn.is-listening { background-color: #ef4444; }
-
-.hidden-input { display: none; }
-.magic-message { font-size: 0.85rem; padding: 0.75rem; border-radius: var(--radius-sm); font-weight: 600; margin-top: -0.5rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
-.magic-message.success { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
-.magic-message.warning { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
-.magic-message.error { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-
-.spinning { animation: spin 1.5s linear infinite; }
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
-.pulse { animation: pulse 1.5s infinite; }
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
 .align-end { align-items: flex-end; }
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
 .input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.3s ease; }
@@ -527,6 +407,5 @@ watch(() => props.form.location_id, () => {
   .form-row { flex-direction: column; gap: 1.25rem; } 
   .half:empty { display: none; }
   .align-end { align-items: stretch; }
-  .magic-buttons { flex-direction: column; }
 }
 </style>
