@@ -4,29 +4,60 @@
       <input 
         type="file" 
         accept="image/*" 
-        ref="photoInput" 
+        capture="environment"
+        ref="cameraInput" 
+        class="hidden-input" 
+        @change="handlePhotoSelect" 
+      />
+      <input 
+        type="file" 
+        accept="image/*" 
+        multiple
+        ref="galleryInput" 
         class="hidden-input" 
         @change="handlePhotoSelect" 
       />
       
-      <BaseButton type="button" variant="primary" @click="triggerPhotoInput" class="magic-btn" :disabled="selectedFiles.length >= 5">
-        <template #icon><CameraIcon :size="18" /></template>
-        {{ selectedFiles.length > 0 ? $t('modals.checkin.btn_add_more_photos') : $t('modals.checkin.btn_photo') }}
-      </BaseButton>
-      
-      <BaseButton 
-        v-if="selectedFiles.length === 0" 
-        type="button" 
-        :variant="isListening ? 'danger' : 'secondary'" 
-        @click="toggleVoiceRecognition" 
-        class="magic-btn"
-      >
-        <template #icon>
-          <AudioLinesIcon v-if="isListening" :size="18" class="pulse" />
-          <MicIcon v-else :size="18" />
-        </template>
-        {{ isListening ? $t('modals.checkin.btn_stop_listening') : $t('modals.checkin.btn_dictate') }}
-      </BaseButton>
+      <template v-if="selectedFiles.length === 0">
+        <div class="photo-buttons-group">
+          <BaseButton v-if="isMobileDevice" type="button" variant="primary" @click="triggerCamera" class="magic-btn">
+            <template #icon><CameraIcon :size="18" /></template>
+            {{ $t('modals.checkin.btn_camera') }}
+          </BaseButton>
+          
+          <BaseButton type="button" variant="primary" @click="triggerGallery" class="magic-btn">
+            <template #icon><ImageIcon :size="18" /></template>
+            {{ $t('modals.checkin.btn_gallery') }}
+          </BaseButton>
+        </div>
+        
+        <BaseButton 
+          type="button" 
+          :variant="isListening ? 'danger' : 'secondary'" 
+          @click="toggleVoiceRecognition" 
+          class="magic-btn dictate-btn"
+        >
+          <template #icon>
+            <AudioLinesIcon v-if="isListening" :size="18" class="pulse" />
+            <MicIcon v-else :size="18" />
+          </template>
+          {{ isListening ? $t('modals.checkin.btn_stop_listening') : $t('modals.checkin.btn_dictate') }}
+        </BaseButton>
+      </template>
+
+      <template v-else>
+        <div class="photo-buttons-group photo-buttons-group-full">
+          <BaseButton v-if="isMobileDevice" type="button" variant="secondary" @click="triggerCamera" class="magic-btn" :disabled="selectedFiles.length >= 5">
+            <template #icon><CameraIcon :size="18" /></template>
+            {{ $t('modals.checkin.btn_camera_more') }}
+          </BaseButton>
+          
+          <BaseButton type="button" variant="secondary" @click="triggerGallery" class="magic-btn" :disabled="selectedFiles.length >= 5">
+            <template #icon><ImageIcon :size="18" /></template>
+            {{ $t('modals.checkin.btn_gallery_more') }}
+          </BaseButton>
+        </div>
+      </template>
     </div>
 
     <div v-if="magicMessage" class="magic-message" :class="magicMessageType">
@@ -55,9 +86,8 @@
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount } from 'vue'
-// Přidán import ikonky AudioLinesIcon pro zobrazení zvukových vln
-import { CameraIcon, MicIcon, XIcon, Wand2Icon, AudioLinesIcon } from 'lucide-vue-next'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { CameraIcon, MicIcon, XIcon, Wand2Icon, AudioLinesIcon, ImageIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseButton from './BaseButton.vue'
 import { apiFetch } from '../api'
@@ -65,7 +95,8 @@ import { apiFetch } from '../api'
 const { t, locale } = useI18n()
 const emit = defineEmits(['result'])
 
-const photoInput = ref(null)
+const cameraInput = ref(null)
+const galleryInput = ref(null)
 const selectedFiles = ref([])
 const previews = ref([])
 
@@ -75,16 +106,27 @@ const isListening = ref(false)
 const magicMessage = ref('')
 const magicMessageType = ref('')
 
+const isMobileDevice = ref(false)
+
 let recognitionInstance = null
 let accumulatedTranscript = ''
+
+onMounted(() => {
+  // Jednoduchá a efektivní detekce mobilních zařízení pomocí User Agentu
+  isMobileDevice.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+})
 
 onBeforeUnmount(() => {
   previews.value.forEach(url => URL.revokeObjectURL(url))
   if (recognitionInstance) recognitionInstance.stop()
 })
 
-const triggerPhotoInput = () => {
-  if (photoInput.value) photoInput.value.click()
+const triggerCamera = () => {
+  if (cameraInput.value) cameraInput.value.click()
+}
+
+const triggerGallery = () => {
+  if (galleryInput.value) galleryInput.value.click()
 }
 
 const handlePhotoSelect = (event) => {
@@ -101,7 +143,9 @@ const handlePhotoSelect = (event) => {
       break
     }
   }
-  if (photoInput.value) photoInput.value.value = ''
+  
+  if (cameraInput.value) cameraInput.value.value = ''
+  if (galleryInput.value) galleryInput.value.value = ''
 }
 
 const removePhoto = (index) => {
@@ -237,6 +281,11 @@ const clearScanner = () => {
 .magic-buttons { display: flex; gap: 0.5rem; }
 .magic-btn { flex: 1; justify-content: center; }
 
+/* Nové rozložení skupin tlačítek */
+.photo-buttons-group { display: flex; gap: 0.5rem; flex: 2; }
+.photo-buttons-group-full { flex: 1; width: 100%; }
+.dictate-btn { flex: 1; }
+
 .magic-message { font-size: 0.85rem; padding: 0.75rem; border-radius: var(--radius-sm); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
 .magic-message.success { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
 .magic-message.warning { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
@@ -248,9 +297,34 @@ const clearScanner = () => {
 
 .preview-item { position: relative; width: 60px; height: 60px; border-radius: var(--radius-sm); overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
 .preview-img { width: 100%; height: 100%; object-fit: cover; }
-.remove-btn { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; line-height: 0; }
-.remove-btn:hover { background: red; }
-.remove-btn :deep(svg) { display: block; margin: auto; }
+
+/* Vycentrované tlačítko odstranění s použitím flexboxu */
+.remove-btn { 
+  position: absolute; 
+  top: 4px; 
+  right: 4px; 
+  background: rgba(239, 68, 68, 0.9); 
+  color: white; 
+  border: none; 
+  border-radius: 50%; 
+  width: 22px; 
+  height: 22px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  cursor: pointer; 
+  padding: 0; 
+  margin: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.remove-btn:hover { background: #ef4444; }
+
+/* OCHRANA PŘED GLOBÁLNÍM STYLEM Z APP.VUE */
+.remove-btn :deep(svg) { 
+  margin: 0 !important; 
+  width: 14px !important; 
+  height: 14px !important; 
+}
 
 .analyze-btn { width: 100%; justify-content: center; }
 
@@ -266,5 +340,6 @@ const clearScanner = () => {
 
 @media (max-width: 600px) { 
   .magic-buttons { flex-direction: column; }
+  .photo-buttons-group { flex-direction: column; flex: auto; }
 }
 </style>
