@@ -117,6 +117,20 @@
     "saturday": "Sobota",
     "sunday": "Niedziela"
   },
+  "months_short": {
+    "jan": "Sty",
+    "feb": "Lut",
+    "mar": "Mar",
+    "apr": "Kwi",
+    "may": "Maj",
+    "jun": "Cze",
+    "jul": "Lip",
+    "aug": "Sie",
+    "sep": "Wrz",
+    "oct": "Paź",
+    "nov": "Lis",
+    "dec": "Gru"
+  },
   "stats": {
     "total_beers": "Liczba piw",
     "total_volume": "Wypita objętość",
@@ -246,12 +260,12 @@
       "title": "Zmień hasło użytkownika",
       "banner": "Zmieniasz hasło dla użytkownika:",
       "new_password": "Nowe hasło *",
-      "new_password_placeholder": "Wpisz nowe hasło (min. 8 znaków)",
+      "new_password_placeholder": "Wpisz nové hasło (min. 8 znaków)",
       "confirm_password": "Potwierdź nowe hasło *",
       "confirm_password_placeholder": "Wpisz hasło ponownie w celu potwierdzenia",
-      "error_length": "Hasło musi składać się z co najmniej 8 znaków.",
+      "error_length": "Hasło musi składać se z co najmniej 8 znaków.",
       "error_match": "Podane hasła nie są identyczne.",
-      "save": "Ustaw nowe hasło"
+      "save": "Ustaw nové hasło"
     },
     "checkin": {
       "title_add": "Zanotuj wypite piwa",
@@ -335,7 +349,7 @@
       "profile": "Profil smakowy:",
       "recent_tastings": "Ostatnie degustacje",
       "no_comments": "Nikt jeszcze nie skomentował tego piwa.",
-      "address": "Adres:",
+      "address": "Adresa:",
       "navigation": "Nawigacja:",
       "open_map": "Otwórz w mapach",
       "opening_hours": "Godziny otwarcia:",
@@ -357,13 +371,13 @@
       "role": "Rola użytkownika *",
       "role_user": "Zwykły piwosz (user)",
       "role_admin": "Administrator (admin)",
-      "self_edit_warning": "Nie możesz zmienić własnej roli, aby nie odciąć się od administracji.",
+      "self_edit_warning": "Nie możesz zmienić własnej roli, aby nie odciąć se od administracji.",
       "save": "Zapisz zmiany"
     },
     "remove_avatar": {
       "title_self": "Usunąć własne zdjęcie?",
       "title_other": "Usunąć zdjęcie profilowe?",
-      "desc_self": "Czy na pewno chcesz usunąć swoje zdjęcie profilowe? Tej akcji nie można cofnąć.",
+      "desc_self": "Czy na pewno chcesz usunąć svoje zdjęcie profilowe? Tej akcji nie można cofnąć.",
       "desc_other": "Czy na pewno chcesz usunąć zdjęcie profilowe użytkownika {user}? To działanie jest nieodwracalne.",
       "confirm": "Tak, usuń zdjęcie"
     }
@@ -375,7 +389,7 @@
       "password": "Hasło",
       "password_placeholder": "••••••••",
       "no_account": "Nie masz konta?",
-      "register_here": "Zarejestruj się tutaj"
+      "register_here": "Zarejestruj se tutaj"
     },
     "register": {
       "title": "Nowa rejestracja",
@@ -397,10 +411,10 @@
       "processing": "Przetwarzanie...",
       "submit": "Utwórz konto",
       "has_account": "Masz już konto?",
-      "login_here": "Zaloguj się tutaj"
+      "login_here": "Zaloguj se tutaj"
     },
     "dashboard": {
-      "record_beers": "Zanotuj wypite piwa",
+      "record_beers": "Zanotuj vypite piwa",
       "me_and_beer_in": "Ja i piwo w",
       "recent_records": "Ostatnie wpisy",
       "no_records": "Brak wpisów.",
@@ -409,14 +423,14 @@
     "profile": {
       "tab_settings": "Ustawienia użytkownika",
       "tab_history": "Moja historia",
-      "no_history": "Nie masz tu jeszcze żadnych wpisów o wypitych piwach.",
+      "no_history": "Nie masz tu jeszcze żadnych wpisów o vypitych piwach.",
       "admin_role": "Administrator",
       "user_role": "Zwykły użytkownik",
       "change_avatar": "Kliknij, aby zmienić zdjęcie",
       "save_avatar": "Zapisz nowe zdjęcie",
       "delete_avatar": "Usuń zdjęcie",
       "theme_title": "Wygląd aplikacji",
-      "theme_desc": "Wybierz jak aplikacja ma wyglądać, lub pozwól by przełączała się na podstawie pory dnia.",
+      "theme_desc": "Wybierz jak aplikacja ma wyglądać, lub pozwól by przełączała se na podstawie pory dnia.",
       "theme_manual": "Ręczny",
       "theme_manual_desc": "Zgodnie z górnym paskiem",
       "theme_auto": "Automatyczny",
@@ -428,25 +442,25 @@
       "new_password": "Nowe hasło",
       "new_password_confirm": "Potwierdź nowe hasło",
       "danger_zone": "Strefa niebezpieczna",
-      "danger_desc": "Usuwając swoje konto bezpowrotnie utracisz swój piwny pamiętnik. Tej akcji nie można cofnąć.",
+      "danger_desc": "Usuwając svoje konto bezpowrotnie utracisz swój piwny pamiętnik. Tej akcji nie można cofnąć.",
       "delete_account": "Trwale usuń konto",
       "delete_confirm_title": "Usunąć konto?",
-      "delete_confirm_desc": "Aby potwierdzić usunięcie konta, podaj swoje obecne hasło.",
+      "delete_confirm_desc": "Aby potwierdzić usunięcie konta, podaj svoje obecne hasło.",
       "delete_password": "Twoje hasło *",
       "delete_submit": "Tak, usuń wszystko"
     },
     "wishlist": {
-      "no_beers": "Nie masz tu jeszcze żadnych piw.",
-      "no_breweries": "Nie masz tu jeszcze żadnych browarów.",
-      "no_locations": "Nie masz tu jeszcze żadnych lokali."
+      "no_beers": "Nie masz tu ještě żadnych piw.",
+      "no_breweries": "Nie masz tu ještě żadnych browarów.",
+      "no_locations": "Nie masz tu ještě żadnych lokali."
     }
   },
   "toast": {
     "login_error": "Błąd logowania.",
     "server_error": "Serwer jest niedostępny. Spróbuj ponownie później.",
     "passwords_mismatch": "Podane hasła nie są identyczne.",
-    "register_success": "Rejestracja przebiegła pomyślnie! Teraz możesz się zalogować.",
-    "register_error": "Rejestracja nie powiodła się.",
+    "register_success": "Rejestracja przebiegła pomyślnie! Teraz możesz se zalogować.",
+    "register_error": "Rejestracja nie powiodła se.",
     "communication_error": "Błąd komunikacji z serwerem.",
     "brewery_added": "Browar dodany!",
     "brewery_add_error": "Błąd podczas zapisywania browaru.",
@@ -455,7 +469,7 @@
     "location_added": "Lokalizacja dodana!",
     "location_add_error": "Błąd serwera podczas dodawania lokalu.",
     "record_added": "Wpis pomyślnie zapisany!",
-    "record_add_error": "Nie udało się utworzyć wpisu.",
+    "record_add_error": "Nie udało se utworzyć wpisu.",
     "record_edited": "Wpis zaktualizowany!",
     "record_deleted": "Wpis usunięty.",
     "delete_error": "Błąd podczas usuwania.",
@@ -576,7 +590,7 @@
     "style_name": "Nazwa stylu *",
     "save_style": "Zapisz styl",
     "merge_title": "Połącz lokale",
-    "merge_desc": "Zamierzasz usunąć duplikat {source}. Wybierz poniżej lokal, który pozostanie w bazie danych i do którego przeniesione zostaną wszystkie istniejące wpisy o wypitych piwach.",
+    "merge_desc": "Zamierzasz usunąć duplikat {source}. Wybierz poniżej lokal, który pozostanie w bazie danych i do którego przeniesione zostaną wszystkie istniejące wpisy o vypitych piwach.",
     "merge_target": "Lokal docelowy (ten, który zostanie) *",
     "merge_target_placeholder": "-- Wyszukaj lokal docelowy --",
     "merge_no_city": "Brak miasta",
@@ -592,9 +606,12 @@
   "statistics": {
     "scope_me": "Moje",
     "scope_global": "Globalne",
-    "period_month": "W tym miesiącu",
-    "period_year": "W tym roku",
+    "period_month": "Miesiąc",
+    "period_year": "Rok",
     "period_all": "Cała historia",
+    "period_custom": "Niestandardowy zakres",
+    "me_and_beer_period": "Ja i piwo w wybranym okresie",
+    "global_and_beer_period": "Wszyscy i piwo w vybranym okresie",
     "fav_beers": "Ulubione piwa",
     "fav_breweries": "Ulubione browary",
     "fav_locations": "Ulubione miejsca",
@@ -602,9 +619,13 @@
     "diversity": "Różnorodność piwna",
     "economy": "Ekonomia piwna",
     "weekly_rhythm": "Tygodniowy rytm piwny",
+    "monthly_rhythm": "Rytm miesięczny",
+    "yearly_rhythm": "Roczny rytm",
     "empty_data": "Brak danych do wyświetlenia.",
     "empty_styles": "Brak stylów do wyświetlenia.",
     "empty_week": "Za mało danych na analizę tygodniową.",
+    "empty_month": "Brak wpisów w tym miesiącu",
+    "empty_year": "Brak wpisów w tym roku",
     "tasted_types": "Spróbowano {count} rodzajów",
     "visits": "{count}x wizyta",
     "unique_beers": "unikalnych piw z {total} łącznie",

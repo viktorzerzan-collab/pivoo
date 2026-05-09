@@ -5,7 +5,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "statistics": "Statistiken",
+    "statistics": "Statistikene",
     "beers": "Biere",
     "breweries": "Brauereien",
     "locations": "Lokale",
@@ -116,6 +116,20 @@
     "friday": "Freitag",
     "saturday": "Samstag",
     "sunday": "Sonntag"
+  },
+  "months_short": {
+    "jan": "Jan",
+    "feb": "Feb",
+    "mar": "Mär",
+    "apr": "Apr",
+    "may": "Mai",
+    "jun": "Jun",
+    "jul": "Jul",
+    "aug": "Aug",
+    "sep": "Sep",
+    "oct": "Okt",
+    "nov": "Nov",
+    "dec": "Dez"
   },
   "stats": {
     "total_beers": "Anzahl Biere",
@@ -347,7 +361,7 @@
     "edit_user": {
       "title": "Benutzer bearbeiten",
       "avatar_title": "Profilbild",
-      "delete_avatar": "Bild löschen",
+      "delete_avatar": "Bild lőschen",
       "no_avatar": "Der Benutzer hat kein Bild hochgeladen.",
       "personal_info": "Persönliche Daten und Rolle",
       "first_name": "Vorname *",
@@ -361,11 +375,11 @@
       "save": "Änderungen speichern"
     },
     "remove_avatar": {
-      "title_self": "Eigenes Bild löschen?",
-      "title_other": "Profilbild löschen?",
-      "desc_self": "Möchten Sie Ihr Profilbild wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-      "desc_other": "Möchten Sie das Profilbild für den Benutzer {user} wirklich löschen? Diese Aktion ist irreversibel.",
-      "confirm": "Ja, Bild löschen"
+      "title_self": "Eigenes Bild lőschen?",
+      "title_other": "Profilbild lőschen?",
+      "desc_self": "Möchten Sie Ihr Profilbild wirklich lőschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "desc_other": "Möchten Sie das Profilbild für den Benutzer {user} wirklich lőschen? Diese Aktion ist irreversibel.",
+      "confirm": "Ja, Bild lőschen"
     }
   },
   "views": {
@@ -433,7 +447,7 @@
       "delete_confirm_title": "Konto löschen?",
       "delete_confirm_desc": "Um die Löschung des Kontos zu bestätigen, geben Sie bitte Ihr aktuelles Passwort ein.",
       "delete_password": "Dein Passwort *",
-      "delete_submit": "Ja, alles löschen"
+      "delete_submit": "Ja, alles lőschen"
     },
     "wishlist": {
       "no_beers": "Du hast hier noch keine Biere.",
@@ -457,8 +471,8 @@
     "record_added": "Eintrag erfolgreich protokolliert!",
     "record_add_error": "Eintrag konnte nicht erstellt werden.",
     "record_edited": "Eintrag aktualisiert!",
-    "record_deleted": "Eintrag gelöscht.",
-    "delete_error": "Fehler beim Löschen.",
+    "record_deleted": "Eintrag gelőscht.",
+    "delete_error": "Fehler beim Lőschen.",
     "theme_saved": "Erscheinungsbildeinstellungen gespeichert.",
     "theme_error": "Fehler beim Speichern der Einstellungen."
   },
@@ -482,10 +496,10 @@
     "placeholder_location": "z.B. Zur Post...",
     "all_styles": "Alle Stile",
     "reset_filters": "Filter zurücksetzen",
-    "cancel_filters": "Filter löschen",
+    "cancel_filters": "Filter lőschen",
     "active_filters": "Aktive Filter:",
     "search_prefix": "Suche",
-    "cancel_filter": "Filter löschen",
+    "cancel_filter": "Filter lőschen",
     "sort_by": "Sortieren nach...",
     "found_beers": "Gefundene Biere:",
     "found_breweries": "Gefundene Brauereien:",
@@ -560,12 +574,12 @@
       "change_pwd": "Passwort ändern",
       "block": "Blockieren",
       "unblock": "Entsperren",
-      "delete_user": "Benutzer löschen",
+      "delete_user": "Benutzer lőschen",
       "merge": "Duplikat zusammenführen",
       "edit": "Bearbeiten",
-      "delete": "Löschen",
+      "delete": "Lőschen",
       "approve": "Eintrag genehmigen",
-      "reject": "Ablehnen und löschen"
+      "reject": "Ablehnen und lőschen"
     },
     "empty_search": "Keine Einträge entsprechen Ihrer Suche.",
     "showing": "Angezeigt",
@@ -576,7 +590,7 @@
     "style_name": "Name des Stils *",
     "save_style": "Stil speichern",
     "merge_title": "Lokale zusammenführen",
-    "merge_desc": "Sie sind dabei, das Duplikat {source} zu löschen. Wählen Sie unten das Lokal aus, das in der Datenbank verbleiben soll und auf das alle bestehenden Bierkonsum-Einträge übertragen werden.",
+    "merge_desc": "Sie sind dabei, das Duplikat {source} zu lőschen. Wählen Sie unten das Lokal aus, das in der Datenbank verbleiben soll und auf das alle bestehenden Bierkonsum-Einträge übertragen werden.",
     "merge_target": "Ziellokal (das Lokal, das erhalten bleibt) *",
     "merge_target_placeholder": "-- Ziellokal suchen --",
     "merge_no_city": "Keine Stadt",
@@ -592,9 +606,12 @@
   "statistics": {
     "scope_me": "Meine",
     "scope_global": "Global",
-    "period_month": "Dieser Monat",
-    "period_year": "Dieses Jahr",
+    "period_month": "Monat",
+    "period_year": "Jahr",
     "period_all": "Gesamte Historie",
+    "period_custom": "Benutzerdefinierter Zeitraum",
+    "me_and_beer_period": "Ich und Bier im gewählten Zeitraum",
+    "global_and_beer_period": "Alle und Bier im gewählten Zeitraum",
     "fav_beers": "Beliebteste Biere",
     "fav_breweries": "Beliebteste Brauereien",
     "fav_locations": "Beliebteste Lokale",
@@ -602,9 +619,13 @@
     "diversity": "Biervielfalt",
     "economy": "Bierwirtschaft",
     "weekly_rhythm": "Wöchentlicher Bier-Rhythmus",
+    "monthly_rhythm": "Monatlicher Rhythmus",
+    "yearly_rhythm": "Jährlicher Rhythmus",
     "empty_data": "Keine Daten zur Anzeige.",
     "empty_styles": "Keine Stile zur Anzeige.",
     "empty_week": "Nicht genug Daten für wöchentliche Analyse.",
+    "empty_month": "Diesen Monat noch keine Einträge",
+    "empty_year": "Dieses Jahr noch keine Einträge.",
     "tasted_types": "{count} Arten probiert",
     "visits": "{count}x Besuch",
     "unique_beers": "einzigartige Biere von {total} insgesamt",

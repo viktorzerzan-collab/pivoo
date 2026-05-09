@@ -5,13 +5,8 @@
         
         <BaseSwitch v-model="scope" :options="scopeOptions" />
 
-        <div class="filter-wrapper">
-          <BaseSelect v-model="period" :searchable="false">
-            <option value="month">{{ $t('statistics.period_month') }}</option>
-            <option value="year">{{ $t('statistics.period_year') }}</option>
-            <option value="all">{{ $t('statistics.period_all') }}</option>
-          </BaseSelect>
-        </div>
+        <BasePeriodSelector v-model="periodSelection" />
+
       </div>
     </div>
 
@@ -19,6 +14,17 @@
       <BaseLoader :show="isLoading" />
 
       <template v-if="!isLoading">
+        
+        <div class="panel-card overview-card mb-4" v-if="statsData.overview">
+          <div class="panel-header">
+            <h3>
+              <BeerIcon class="panel-icon" :size="20" /> 
+              {{ scope === 'me' ? $t('statistics.me_and_beer_period') : $t('statistics.global_and_beer_period') }}
+            </h3>
+          </div>
+          <StatsBoard :stats="statsData.overview" />
+        </div>
+
         <div class="stats-grid-detailed">
           
           <div class="panel-card stats-card">
@@ -115,22 +121,41 @@
             <div class="panel-header">
               <h3><CoinsIcon :size="20" class="panel-icon" /> {{ $t('statistics.economy') }}</h3>
             </div>
-            <div class="price-stats-grid" v-if="statsData.prices">
-              <div class="price-box avg">
-                <span class="p-label">{{ $t('statistics.avg_price') }}</span>
-                <span class="p-val" v-if="isLoadingRate">...</span>
-                <span class="p-val" v-else>{{ avgPrice }} {{ userCurrency }}</span>
+            <div class="ranking-list" v-if="statsData.prices">
+              
+              <div class="ranking-item highlight">
+                <div class="item-info">
+                  <div class="item-name"><strong>{{ $t('statistics.avg_price') }}</strong></div>
+                  <div class="item-sub" v-if="statsData.prices.avg_price > 0">{{ $t('statistics.scope_me') }}</div>
+                </div>
+                <div class="item-count">
+                  <template v-if="isLoadingRate">...</template>
+                  <template v-else>{{ avgPrice }} {{ userCurrency }}</template>
+                </div>
               </div>
-              <div class="price-box min">
-                <span class="p-label">{{ $t('statistics.min_price') }}</span>
-                <span class="p-val" v-if="isLoadingRate">...</span>
-                <span class="p-val" v-else>{{ minPrice }} {{ userCurrency }}</span>
+
+              <div class="ranking-item">
+                <div class="item-info">
+                  <div class="item-name"><strong>{{ $t('statistics.max_price') }}</strong></div>
+                  <div class="item-sub" v-if="statsData.price_details?.max_beer">{{ statsData.price_details.max_beer }}</div>
+                </div>
+                <div class="item-count">
+                  <template v-if="isLoadingRate">...</template>
+                  <template v-else>{{ maxPrice }} {{ userCurrency }}</template>
+                </div>
               </div>
-              <div class="price-box max">
-                <span class="p-label">{{ $t('statistics.max_price') }}</span>
-                <span class="p-val" v-if="isLoadingRate">...</span>
-                <span class="p-val" v-else>{{ maxPrice }} {{ userCurrency }}</span>
+
+              <div class="ranking-item">
+                <div class="item-info">
+                  <div class="item-name"><strong>{{ $t('statistics.min_price') }}</strong></div>
+                  <div class="item-sub" v-if="statsData.price_details?.min_beer">{{ statsData.price_details.min_beer }}</div>
+                </div>
+                <div class="item-count">
+                  <template v-if="isLoadingRate">...</template>
+                  <template v-else>{{ minPrice }} {{ userCurrency }}</template>
+                </div>
               </div>
+
             </div>
           </div>
 
@@ -140,14 +165,46 @@
             </div>
             <div class="chart-container" v-if="dayActivity.length > 0">
               <div v-for="day in dayActivity" :key="day.label" class="chart-column-wrapper">
-                <div class="column-value">{{ day.count }}x</div>
+                <div class="column-value">{{ day.count > 0 ? day.count + 'x' : '' }}</div>
                 <div class="chart-column">
-                  <div class="column-fill" :style="{ height: day.percent + '%' }"></div>
+                  <div class="column-fill" :style="{ '--percent': day.percent + '%' }"></div>
                 </div>
                 <div class="column-label" :class="{ 'weekend': day.isWeekend }">{{ day.label }}</div>
               </div>
             </div>
             <div v-else class="empty-stats">{{ $t('statistics.empty_week') }}</div>
+          </div>
+
+          <div class="panel-card stats-card full-width-card" v-if="periodSelection.mode === 'month'">
+            <div class="panel-header">
+              <h3><CalendarDaysIcon :size="20" class="panel-icon" /> {{ $t('statistics.monthly_rhythm') }}</h3>
+            </div>
+            <div class="chart-container" v-if="monthDaysActivity.length > 0">
+              <div v-for="day in monthDaysActivity" :key="day.label" class="chart-column-wrapper">
+                <div class="column-value">{{ day.count > 0 ? day.count + 'x' : '' }}</div>
+                <div class="chart-column">
+                  <div class="column-fill" :style="{ '--percent': day.percent + '%' }"></div>
+                </div>
+                <div class="column-label">{{ day.label }}</div>
+              </div>
+            </div>
+            <div v-else class="empty-stats">{{ $t('statistics.empty_month') }}</div>
+          </div>
+
+          <div class="panel-card stats-card full-width-card" v-if="periodSelection.mode === 'year'">
+            <div class="panel-header">
+              <h3><CalendarDaysIcon :size="20" class="panel-icon" /> {{ $t('statistics.yearly_rhythm') }}</h3>
+            </div>
+            <div class="chart-container" v-if="monthActivity.length > 0">
+              <div v-for="month in monthActivity" :key="month.label" class="chart-column-wrapper">
+                <div class="column-value">{{ month.count > 0 ? month.count + 'x' : '' }}</div>
+                <div class="chart-column">
+                  <div class="column-fill" :style="{ '--percent': month.percent + '%' }"></div>
+                </div>
+                <div class="column-label">{{ month.label }}</div>
+              </div>
+            </div>
+            <div v-else class="empty-stats">{{ $t('statistics.empty_year') }}</div>
           </div>
 
         </div>
@@ -168,16 +225,24 @@ import { apiFetch } from '../api'
 import { useToastStore } from '../stores/toast'
 import { useAuthStore } from '../stores/auth'
 import BaseLoader from '../components/BaseLoader.vue'
-import BaseSelect from '../components/BaseSelect.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
+import BasePeriodSelector from '../components/BasePeriodSelector.vue'
+import StatsBoard from '../components/StatsBoard.vue'
 
 const toastStore = useToastStore()
 const authStore = useAuthStore()
 const { t, tm, te } = useI18n()
 
 const isLoading = ref(true)
-const period = ref('month')
 const scope = ref('me')
+
+const periodSelection = ref({
+  mode: 'month',
+  from: null,
+  to: null,
+  year: new Date().getFullYear(),
+  month: new Date().getMonth()
+})
 
 const scopeOptions = computed(() => [
   { value: 'me', label: t('statistics.scope_me') },
@@ -185,9 +250,11 @@ const scopeOptions = computed(() => [
 ])
 
 const statsData = ref({
-  beers: [], breweries: [], locations: [], days: [],
+  beers: [], breweries: [], locations: [], days: [], months: [], month_days: [],
   collector: { unique_count: 0, total_count: 0 },
-  styles: [], prices: { avg_price: 0, min_price: 0, max_price: 0 }
+  overview: null,
+  styles: [], prices: { avg_price: 0, min_price: 0, max_price: 0 },
+  price_details: { min_beer: null, max_beer: null }
 })
 
 const userCurrency = computed(() => authStore.defaultCurrency || 'CZK')
@@ -240,7 +307,7 @@ const dayActivity = computed(() => {
   const labels = [dayNames.monday, dayNames.tuesday, dayNames.wednesday, dayNames.thursday, dayNames.friday, dayNames.saturday, dayNames.sunday].map(d => d.substring(0, 2))
   
   if (!statsData.value.days || statsData.value.days.length === 0) return []
-  const maxVal = Math.max(...statsData.value.days.map(d => parseInt(d.count)))
+  const maxVal = Math.max(...statsData.value.days.map(d => parseInt(d.count)), 0)
   return labels.map((name, index) => {
     const dbDay = statsData.value.days.find(d => parseInt(d.day_index) === index)
     const count = dbDay ? parseInt(dbDay.count) : 0
@@ -248,10 +315,55 @@ const dayActivity = computed(() => {
   })
 })
 
+const monthActivity = computed(() => {
+  const monthNames = tm('months_short')
+  const labels = [
+    monthNames.jan, monthNames.feb, monthNames.mar, monthNames.apr, 
+    monthNames.may, monthNames.jun, monthNames.jul, monthNames.aug, 
+    monthNames.sep, monthNames.oct, monthNames.nov, monthNames.dec
+  ]
+  
+  if (!statsData.value.months || statsData.value.months.length === 0) return []
+  const maxVal = Math.max(...statsData.value.months.map(m => parseInt(m.count)), 0)
+  return labels.map((name, index) => {
+    const dbMonth = statsData.value.months.find(m => parseInt(m.month_index) === (index + 1))
+    const count = dbMonth ? parseInt(dbMonth.count) : 0
+    return { label: name, count: count, percent: maxVal > 0 ? (count / maxVal) * 100 : 0 }
+  })
+})
+
+const monthDaysActivity = computed(() => {
+  if (periodSelection.value.mode !== 'month' || periodSelection.value.year === null) return []
+
+  const daysInMonth = new Date(periodSelection.value.year, periodSelection.value.month + 1, 0).getDate()
+  const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1))
+
+  if (!statsData.value.month_days || statsData.value.month_days.length === 0) return []
+  const maxVal = Math.max(...statsData.value.month_days.map(d => parseInt(d.count)), 0)
+
+  return labels.map((label, index) => {
+    const dayNum = index + 1
+    const dbDay = statsData.value.month_days.find(d => parseInt(d.day_index) === dayNum)
+    const count = dbDay ? parseInt(dbDay.count) : 0
+    return {
+      label: label,
+      count: count,
+      percent: maxVal > 0 ? (count / maxVal) * 100 : 0
+    }
+  })
+})
+
 const fetchDetailedStats = async () => {
   isLoading.value = true
   try {
-    const res = await apiFetch(`/detailed_stats.php?period=${period.value}&scope=${scope.value}`)
+    const { from, to } = periodSelection.value
+    let url = `/detailed_stats.php?scope=${scope.value}`
+    
+    if (from && to) {
+      url += `&date_from=${from}&date_to=${to}`
+    }
+
+    const res = await apiFetch(url)
     if (res.status === 'success') {
       statsData.value = res.data
     }
@@ -262,11 +374,10 @@ const fetchDetailedStats = async () => {
   }
 }
 
-watch([period, scope], () => fetchDetailedStats())
+watch([periodSelection, scope], () => fetchDetailedStats(), { deep: true })
 watch(userCurrency, () => fetchRate())
 
 onMounted(() => {
-  fetchDetailedStats()
   fetchRate()
 })
 </script>
@@ -286,10 +397,21 @@ onMounted(() => {
   padding: 1rem 0; 
   margin-bottom: 1.5rem; 
   transition: background-color 0.3s ease;
+  position: relative;
+  z-index: 10; /* Zajištění zobrazení kalendáře nad panely */
 }
 
-.header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
-.filter-wrapper { width: 220px; }
+.header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;}
+
+.panel-card { background: var(--bg-panel); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.3s ease, border-color 0.3s ease; }
+.panel-card:hover { border-color: var(--primary); }
+.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.3s ease; }
+.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.3s ease; }
+.panel-icon { color: var(--primary); }
+
+.overview-card {
+  margin-bottom: 2rem;
+}
 
 .stats-grid-detailed { 
   display: grid; 
@@ -298,15 +420,12 @@ onMounted(() => {
 }
 
 .full-width-card { grid-column: 1 / -1; }
-.stats-card { background: var(--bg-panel); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.5rem; transition: border-color 0.3s ease, background-color 0.3s ease; }
-.stats-card:hover { border-color: var(--primary); }
-.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem; transition: border-color 0.3s ease; }
-.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.3s ease; }
-.panel-icon { color: var(--primary); }
 
 .ranking-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .ranking-item { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius-md); transition: all 0.2s; min-width: 0; }
 .ranking-item:hover { border-color: var(--primary); }
+.ranking-item.highlight { border-color: var(--primary); background: rgba(250, 204, 21, 0.05); }
+
 .rank-number { width: 28px; height: 28px; background: var(--primary); color: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
 
 .item-info { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
@@ -339,32 +458,117 @@ onMounted(() => {
 .progress-fill { height: 100%; background: var(--primary); border-radius: 5px; transition: width 1s ease; }
 .progress-text { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; transition: color 0.3s ease; }
 
-.price-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 0.5rem 0; }
-.price-box { display: flex; flex-direction: column; align-items: center; padding: 1rem 0.5rem; background: var(--bg-app); border-radius: var(--radius-md); border: 1px solid var(--border); min-width: 0; transition: background-color 0.3s ease, border-color 0.3s ease; }
-.p-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem; text-align: center; line-height: 1.2; display: flex; align-items: center; justify-content: center; width: 100%; transition: color 0.3s ease; }
-.p-val { font-size: 1.05rem; font-weight: 800; color: var(--text-main); white-space: nowrap; transition: color 0.3s ease; }
-.price-box.avg { border-color: var(--primary); background: rgba(250, 204, 21, 0.05); }
-
-.chart-container { display: flex; justify-content: space-between; align-items: flex-end; height: 180px; padding: 1rem 0.5rem; gap: 0.5rem; overflow: hidden; }
-.chart-column-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; height: 100%; min-width: 0; }
-.chart-column { width: 100%; flex: 1; background: var(--bg-app); border-radius: 6px; position: relative; display: flex; align-items: flex-end; overflow: hidden; transition: background-color 0.3s ease; }
-.column-fill { width: 100%; background: var(--primary); border-radius: 4px; transition: height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.column-value { font-size: 0.75rem; font-weight: 800; color: var(--text-main); transition: color 0.3s ease; }
+/* Desktop Grafy - sloupce */
+.chart-container { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-end; 
+  height: 180px; 
+  padding: 1rem 0.5rem; 
+  gap: 0.25rem; 
+  overflow: hidden; 
+}
+.chart-column-wrapper { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 0.5rem; 
+  height: 100%; 
+  min-width: 0; 
+}
+.chart-column { 
+  width: 100%; 
+  flex: 1; 
+  background: var(--bg-app); 
+  border-radius: 6px; 
+  display: flex; 
+  align-items: flex-end; 
+  overflow: hidden; 
+  transition: background-color 0.3s ease; 
+}
+.column-fill { 
+  width: 100%; 
+  height: var(--percent, 0%); 
+  background: var(--primary); 
+  border-radius: 4px; 
+  transition: height 0.8s ease; 
+}
+.column-value { font-size: 0.75rem; font-weight: 800; color: var(--text-main); transition: color 0.3s ease; min-height: 1rem;}
 .column-label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); transition: color 0.3s ease; }
 .column-label.weekend { color: var(--orange); }
 
 .empty-stats { padding: 3rem 1rem; text-align: center; color: var(--text-muted); font-style: italic; transition: color 0.3s ease; }
 
+/* MOBILNÍ ZOBRAZENÍ - PRUHY POD SEBOU */
 @media (max-width: 800px) {
   .header-actions { flex-direction: column; align-items: stretch; }
-  .filter-wrapper { width: 100%; }
   
   .stats-grid-detailed { grid-template-columns: 1fr; }
-  .chart-container { height: 140px; padding: 0.5rem 0; gap: 0.25rem; }
-  .price-stats-grid { grid-template-columns: 1fr; }
-  
-  .stats-card { padding: 1rem; }
+  .panel-card { padding: 1rem; }
   .ranking-item { padding: 0.6rem 0.75rem; gap: 0.75rem; }
-  .price-box { padding: 0.75rem; }
+
+  /* Překlopení rytmů na řádky */
+  .chart-container { 
+    flex-direction: column; 
+    align-items: stretch; 
+    height: auto; 
+    padding: 0.5rem 0; 
+    gap: 0.6rem; 
+  }
+  .chart-column-wrapper { 
+    flex-direction: row; 
+    height: auto; 
+    gap: 0.75rem; 
+    align-items: center;
+  }
+  .chart-column { 
+    height: 8px; 
+    flex: 1; 
+    width: auto; 
+    align-items: stretch; 
+    background: var(--bg-app);
+    border-radius: 4px;
+    order: 2;
+  }
+  .column-fill { 
+    height: 100%; 
+    width: var(--percent, 0%); 
+    background: var(--primary);
+  }
+  .column-label { 
+    order: 1; 
+    width: 32px; 
+    text-align: left; 
+    font-size: 0.8rem;
+  }
+  .column-value { 
+    order: 3; 
+    width: 35px; 
+    text-align: right; 
+    font-size: 0.75rem;
+  }
+}
+</style>
+
+<style>
+/* Vynucení zarovnání kalendářů doprava v rámci statistik */
+.statistics-page .dp__menu, 
+.statistics-page .datepicker-calendar,
+.statistics-page .datepicker-container {
+  left: auto !important;
+  right: 0 !important;
+  transform: none !important;
+}
+
+/* Rozšíření selektoru období, aby se texty nelámaly */
+.statistics-page .mode-wrapper {
+  width: 240px !important;
+}
+
+@media (max-width: 600px) {
+  .statistics-page .mode-wrapper {
+    width: 100% !important;
+  }
 }
 </style>
