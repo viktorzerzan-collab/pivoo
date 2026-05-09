@@ -17,8 +17,28 @@ $user_id = $user['user_id'];
 $db = (new Database())->getConnection();
 
 if ($db) {
-    // ZMĚNA: Přidán try-catch blok
     try {
+        // --- PŘIDÁNO: Logika pro stránkování ---
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 12;
+        
+        if ($page < 1) $page = 1;
+        if ($limit < 1) $limit = 12;
+        
+        $offset = ($page - 1) * $limit;
+
+        // --- PŘIDÁNO: Zjištění celkového počtu záznamů uživatele ---
+        $countQuery = "SELECT COUNT(*) as total FROM consumptions WHERE user_id = :uid";
+        $countStmt = $db->prepare($countQuery);
+        $countStmt->bindParam(':uid', $user_id, PDO::PARAM_INT);
+        $countStmt->execute();
+        $totalRow = $countStmt->fetch(PDO::FETCH_ASSOC);
+        $totalRecords = (int)$totalRow['total'];
+        
+        // Výpočet celkového počtu stránek
+        $totalPages = ceil($totalRecords / $limit);
+
+        // --- UPRAVENO: Hlavní dotaz nyní používá LIMIT a OFFSET ---
         $query = "SELECT c.*,
                          b.name as beer_name, 
                          br.name as brewery_name,
@@ -29,16 +49,27 @@ if ($db) {
                   JOIN locations l ON c.location_id = l.id
                   WHERE c.user_id = :uid
                   ORDER BY c.consumed_at DESC, c.id DESC
-                  LIMIT 12";
+                  LIMIT :limit OFFSET :offset";
                   
         $stmt = $db->prepare($query);
-        $stmt->bindParam(':uid', $user_id);
+        $stmt->bindParam(':uid', $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        echo json_encode(["status" => "success", "data" => $history]);
+        // --- UPRAVENO: Odpověď nyní obsahuje objekt 'pagination' ---
+        echo json_encode([
+            "status" => "success", 
+            "data" => $history,
+            "pagination" => [
+                "current_page" => $page,
+                "total_pages" => $totalPages,
+                "total_records" => $totalRecords
+            ]
+        ]);
     } catch (PDOException $e) {
-        // ZMĚNA: Tiché logování chyby
+        // Tiché logování chyby
         error_log("DB Error (history): " . $e->getMessage());
         http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Vnitřní chyba při načítání historie."]);

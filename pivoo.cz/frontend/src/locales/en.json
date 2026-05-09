@@ -261,6 +261,7 @@
       "btn_photo": "Take photo",
       "btn_dictate": "Dictate",
       "btn_listening": "Listening...",
+      "btn_stop_listening": "Stop listening",
       "btn_processing": "Processing...",
       "btn_add_more_photos": "Add photo",
       "btn_analyze_photos": "Analyze photos",
@@ -402,6 +403,9 @@
       "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     },
     "profile": {
+      "tab_settings": "User settings",
+      "tab_history": "My history",
+      "no_history": "You have no beer consumption records here yet.",
       "admin_role": "Administrator",
       "user_role": "Regular user",
       "change_avatar": "Click to change picture",

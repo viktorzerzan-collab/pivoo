@@ -51,12 +51,26 @@ const toggleLanguage = () => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  color: var(--primary);
+  color: var(--primary); /* Změněno z var(--text-main) na var(--primary) */
   font-weight: 700;
   font-size: 0.85rem;
 }
 
-.lang-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+.lang-toggle-btn:hover { 
+  background: rgba(255, 255, 255, 0.2); 
+  color: var(--primary); /* Barva zůstává pivní i po najetí */
+}
+
+/* Ošetření pro světlý motiv / automatický motiv ve dne */
+.theme-auto .lang-toggle-btn,
+.theme-light .lang-toggle-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--primary); /* Změněno z var(--text-main) na var(--primary) */
+}
+
+.theme-auto .lang-toggle-btn:hover,
+.theme-light .lang-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--primary); /* Barva zůstává pivní i po najetí */
 }
 </style>

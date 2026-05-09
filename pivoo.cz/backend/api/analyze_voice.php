@@ -41,7 +41,7 @@ try {
     $locations_stmt = $db->query("SELECT id, name FROM locations");
     $locations_list = $locations_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 2. Prompt pro Gemini
+    // 2. Prompt pro Gemini (UPRAVENO: Přidány body 10 a 11 pro hodnocení a doplněn JSON)
     $promptText = "Jsi pivní asistent. Uživatel ti nadiktoval, jaké pivo právě pije. Přepis jeho hlasu zní takto: '" . addslashes($data->text) . "'.\n\n" .
     "Tvé úkoly:\n" .
     "1. Identifikuj přesný název piva a jméno pivovaru.\n" .
@@ -52,7 +52,9 @@ try {
     "6. Identifikuj měnu (CZK, EUR, PLN, GBP). Pokud uživatel řekne 'euro' nebo 'éčka', použij EUR.\n" .
     "7. Identifikuj název podniku (lokace), pokud ho uživatel zmínil.\n" .
     "8. Porovnej nalezený pivovar se seznamem: " . json_encode($breweries_list) . ". Pokud najdeš shodu, vrať jeho ID.\n" .
-    "9. Porovnej nalezený podnik se seznamem: " . json_encode($locations_list) . ". Pokud najdeš shodu, vrať jeho ID.\n\n" .
+    "9. Porovnej nalezený podnik se seznamem: " . json_encode($locations_list) . ". Pokud najdeš shodu, vrať jeho ID.\n" .
+    "10. Identifikuj hodnocení piva (pokud uživatel zmíní hodnocení hvězdičkami, body apod., např. 'dávám pět hvězdiček', 'pivo má čtyři body'). Vrať jako celé číslo (1-5). Pokud nezmíní, vrať null.\n" .
+    "11. Identifikuj hodnocení podniku/obsluhy (pokud uživatel zmíní hodnocení podniku, např. 'podniku čtyři', 'obsluha za jedna'). Vrať jako celé číslo (1-5). Pokud nezmíní, vrať null.\n\n" .
     "DŮLEŽITÉ: Pokud pivovar v seznamu NENÍ, nastav 'brewery_id' na null a 'is_new_brewery' na true.\n\n" .
     "Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu. Zde je požadovaná struktura:\n" .
     "{\n" .
@@ -65,7 +67,9 @@ try {
     "    \"quantity\": 1,\n" .
     "    \"price\": null,\n" .
     "    \"currency\": \"CZK\",\n" .
-    "    \"packaging\": \"točené\"\n" .
+    "    \"packaging\": \"točené\",\n" .
+    "    \"rating_beer\": null,\n" .
+    "    \"rating_care\": null\n" .
     "}";
 
     // 3. Volání Google Gemini API
@@ -120,7 +124,7 @@ try {
 
                 if (!$brewery_id || !empty($ai_json['is_new_brewery'])) {
                     $b_name = $ai_json['brewery_name'] ?: 'Neznámý pivovar';
-                    // PŘIDÁNO: Uložení autora
+                    // Uložení autora
                     $stmt = $db->prepare("INSERT INTO breweries (name, country_id, is_approved, created_by) VALUES (?, 1, 0, ?)");
                     $stmt->execute([$b_name, $user['user_id']]);
                     
@@ -137,7 +141,7 @@ try {
                     if ($existing_beer) {
                         $beer_id = $existing_beer['id'];
                     } else {
-                        // PŘIDÁNO: Uložení autora
+                        // Uložení autora
                         $stmt_beer = $db->prepare("INSERT INTO beers (name, brewery_id, is_approved, created_by) VALUES (?, ?, 0, ?)");
                         $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $user['user_id']]);
                         $beer_id = $db->lastInsertId();

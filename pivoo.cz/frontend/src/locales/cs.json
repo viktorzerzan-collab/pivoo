@@ -261,6 +261,7 @@
       "btn_photo": "Vyfotit",
       "btn_dictate": "Diktovat",
       "btn_listening": "Poslouchám...",
+      "btn_stop_listening": "Ukončit diktování",
       "btn_processing": "Zpracovávám...",
       "btn_add_more_photos": "Přidat fotku",
       "btn_analyze_photos": "Analyzovat fotky",
@@ -402,6 +403,9 @@
       "months": ["lednu", "únoru", "březnu", "dubnu", "květnu", "červnu", "červenci", "srpnu", "září", "říjnu", "listopadu", "prosinci"]
     },
     "profile": {
+      "tab_settings": "Uživatelské nastavení",
+      "tab_history": "Moje historie",
+      "no_history": "Zatím zde nemáš žádné záznamy o vypitých pivech.",
       "admin_role": "Administrátor",
       "user_role": "Běžný pivař",
       "change_avatar": "Klikni pro změnu fotky",

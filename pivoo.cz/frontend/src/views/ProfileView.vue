@@ -4,11 +4,21 @@
       <h1 class="section-title">{{ $t('nav.profile') }}</h1>
     </div>
 
+    <div class="profile-tabs-wrapper">
+      <BaseSwitch 
+        v-model="activeTab"
+        :options="[
+          { value: 'settings', label: $t('views.profile.tab_settings'), icon: SettingsIcon },
+          { value: 'history', label: $t('views.profile.tab_history'), icon: HistoryIcon }
+        ]"
+      />
+    </div>
+
     <BaseLoader :show="isLoading" />
 
     <div class="profile-content" v-if="!isLoading">
       
-      <div class="profile-grid">
+      <div v-show="activeTab === 'settings'" class="profile-grid">
         
         <div class="panel-card avatar-card">
           <div class="avatar-wrapper">
@@ -45,24 +55,16 @@
             </div>
             <p class="setting-desc">{{ $t('views.profile.theme_desc') }}</p>
             
-            <div class="theme-options">
-              <label class="theme-card" :class="{ 'active': localThemeMode === 'manual' }">
-                <input type="radio" v-model="localThemeMode" value="manual" class="hidden-input" @change="saveThemeSettings">
-                <div class="theme-card-content">
-                  <SunMoonIcon :size="24" />
-                  <strong>{{ $t('views.profile.theme_manual') }}</strong>
-                  <span>{{ $t('views.profile.theme_manual_desc') }}</span>
-                </div>
-              </label>
-
-              <label class="theme-card" :class="{ 'active': localThemeMode === 'auto' }">
-                <input type="radio" v-model="localThemeMode" value="auto" class="hidden-input" @change="saveThemeSettings">
-                <div class="theme-card-content">
-                  <ClockIcon :size="24" />
-                  <strong>{{ $t('views.profile.theme_auto') }}</strong>
-                  <span>{{ $t('views.profile.theme_auto_desc') }}</span>
-                </div>
-              </label>
+            <div class="theme-options-wrapper">
+              <BaseSwitch
+                :modelValue="localThemeMode"
+                :options="[
+                  { value: 'manual', label: $t('views.profile.theme_manual'), icon: SunMoonIcon },
+                  { value: 'auto', label: $t('views.profile.theme_auto'), icon: ClockIcon }
+                ]"
+                :fullWidth="true"
+                @update:modelValue="handleThemeChange"
+              />
             </div>
           </div>
 
@@ -96,7 +98,6 @@
                 <BaseInput class="half" v-model="pwdForm.new_password_confirm" type="password" :label="$t('views.profile.new_password_confirm')" required />
               </div>
 
-              <!-- Nová komponenta -->
               <PasswordStrength 
                 ref="pwdStrengthRef"
                 :password="pwdForm.new_password" 
@@ -119,9 +120,34 @@
 
         </div>
       </div>
+
+      <div v-show="activeTab === 'history'" class="history-tab-content">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h3><HistoryIcon :size="20" class="panel-icon" /> {{ $t('views.profile.tab_history') }}</h3>
+          </div>
+          
+          <div v-if="isHistoryLoading" style="position: relative; min-height: 200px;">
+            <BaseLoader :show="true" />
+          </div>
+          
+          <div v-else>
+            <HistoryList v-if="historyRecords.length > 0" :history="historyRecords" @edit="openEditModal" @delete="openDeleteConfirm" />
+            
+            <div v-else class="empty-state">
+              <p>{{ $t('views.profile.no_history') }}</p>
+            </div>
+
+            <BasePagination 
+              v-if="historyTotalPages > 1"
+              v-model:currentPage="historyPage"
+              :totalPages="historyTotalPages"
+            />
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Modál pro smazání avataru -->
     <RemoveAvatarConfirmModal
       :show="showRemoveAvatarModal"
       :isCurrentUser="true"
@@ -129,7 +155,6 @@
       @confirm="removeAvatar"
     />
 
-    <!-- Modál pro smazání účtu (požaduje heslo) -->
     <BaseModal :show="showDeleteModal" @close="showDeleteModal = false">
       <template #header>
         <h2 style="display:flex; align-items:center; gap:0.5rem; margin:0; color:var(--danger);"><AlertTriangleIcon :size="26" /> {{ $t('views.profile.delete_confirm_title') }}</h2>
@@ -146,17 +171,30 @@
       </template>
     </BaseModal>
 
+    <EditCheckInModal 
+      :show="showEditHistoryModal" 
+      :form="editForm" 
+      @close="showEditHistoryModal = false" 
+      @submit="submitEdit" 
+    />
+
+    <DeleteConfirmModal
+      :show="showDeleteRecordModal"
+      @close="showDeleteRecordModal = false"
+      @confirm="deleteHistoryRecord"
+    />
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { 
   UserIcon, CameraIcon, KeyIcon, SunMoonIcon, 
-  ClockIcon, AlertTriangleIcon, Trash2Icon, BanknoteIcon 
+  ClockIcon, AlertTriangleIcon, BanknoteIcon, SettingsIcon, HistoryIcon 
 } from 'lucide-vue-next'
 
 import BaseLoader from '../components/BaseLoader.vue'
@@ -164,22 +202,32 @@ import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import BaseSwitch from '../components/BaseSwitch.vue'
+import BasePagination from '../components/BasePagination.vue'
 import PasswordStrength from '../components/PasswordStrength.vue'
 import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
+import EditCheckInModal from '../components/modals/EditCheckInModal.vue'
+import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
+import HistoryList from '../components/HistoryList.vue'
 
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useCatalogStore } from '../stores/catalog'
 import { apiFetch } from '../api'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const catalogStore = useCatalogStore()
 const { user } = storeToRefs(authStore)
+const { allBeers, allBreweries, allLocations } = storeToRefs(catalogStore)
 const { t } = useI18n()
 
 const isLoading = ref(false)
 const isUploading = ref(false)
+const activeTab = ref('settings')
 
+// Uživatelské nastavení - Stav
 const newAvatarFile = ref(null)
 const showRemoveAvatarModal = ref(false)
 
@@ -198,13 +246,133 @@ const localCurrency = ref('CZK')
 const showDeleteModal = ref(false)
 const deletePassword = ref('')
 
+// Historie - Stav
+const isHistoryLoading = ref(false)
+const historyRecords = ref([])
+const historyPage = ref(1)
+const historyTotalPages = ref(1)
+
+const showEditHistoryModal = ref(false)
+const selectedEditRecordId = ref(null)
+const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', original_price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
+
+const showDeleteRecordModal = ref(false)
+const recordIdToDelete = ref(null)
+
 onMounted(() => {
   if (user.value) {
     localThemeMode.value = user.value.theme_mode || 'manual'
     localCurrency.value = user.value.default_currency || 'CZK'
   }
+  
+  if (allBeers.value.length === 0) {
+    catalogStore.fetchAllData()
+  }
 })
 
+// === TABS & HISTORIE LOGIKA ===
+const fetchHistory = async () => {
+  isHistoryLoading.value = true
+  try {
+    const res = await apiFetch(`/history.php?page=${historyPage.value}&limit=12`)
+    if (res.status === 'success') {
+      historyRecords.value = res.data
+      historyTotalPages.value = res.pagination ? res.pagination.total_pages : 1
+    }
+  } catch (err) {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+  } finally {
+    isHistoryLoading.value = false
+  }
+}
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'history' && historyRecords.value.length === 0) {
+    fetchHistory()
+  }
+})
+
+watch(historyPage, () => {
+  if (activeTab.value === 'history') {
+    fetchHistory()
+  }
+})
+
+const openEditModal = (record) => {
+  selectedEditRecordId.value = record.id
+  const currentBeer = allBeers.value.find(b => b.id == record.beer_id)
+  const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''
+  editForm.value = { 
+    ...record, 
+    consumed_at: record.consumed_at || '', 
+    brewery_id: Number(prefillBreweryId), 
+    beer_id: Number(record.beer_id), 
+    location_id: Number(record.location_id), 
+    quantity: Number(record.quantity), 
+    is_free: !!Number(record.is_free), 
+    currency: record.currency || 'CZK', 
+    original_price: record.original_price || record.price 
+  }
+  showEditHistoryModal.value = true
+}
+
+const submitEdit = async () => {
+  try {
+    const res = await apiFetch('/update_checkin.php', { method: 'POST', body: JSON.stringify({ id: selectedEditRecordId.value, ...editForm.value }) })
+    if (res.status === 'success') { 
+       showEditHistoryModal.value = false
+       
+       const beer = allBeers.value.find(b => b.id == editForm.value.beer_id)
+       const brewery = allBreweries.value.find(b => b.id == editForm.value.brewery_id)
+       const loc = allLocations.value.find(l => l.id == editForm.value.location_id)
+       
+       catalogStore.updateCheckinLocally({
+           id: selectedEditRecordId.value,
+           ...editForm.value,
+           price: res.price,           
+           currency: res.currency,     
+           original_price: res.original_price, 
+           beer_name: beer ? beer.name : 'Neznámé pivo',
+           brewery_name: brewery ? brewery.name : 'Neznámý pivovar',
+           location_name: loc ? loc.name : 'Neznámý podnik'
+       })
+       toastStore.showToast(t('toast.record_edited'), 'toast-success') 
+       fetchHistory()
+    } else {
+      toastStore.showToast(res.message || 'Error', 'toast-error')
+    }
+  } catch (e) { 
+    toastStore.showToast(e.message || t('toast.communication_error'), 'toast-error') 
+  }
+}
+
+const openDeleteConfirm = (id) => {
+  recordIdToDelete.value = id
+  showDeleteRecordModal.value = true
+}
+
+const deleteHistoryRecord = async () => {
+  try {
+    const res = await apiFetch('/delete_checkin.php', {
+      method: 'POST',
+      body: JSON.stringify({ id: recordIdToDelete.value })
+    })
+    
+    if (res.status === 'success') {
+      showDeleteRecordModal.value = false
+      catalogStore.removeCheckinLocally(recordIdToDelete.value)
+      toastStore.showToast(t('toast.record_deleted'), 'toast-success')
+      fetchHistory()
+    } else {
+      toastStore.showToast(res.message || t('toast.delete_error'), 'toast-error')
+    }
+  } catch (e) {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+  }
+}
+
+
+// === UŽIVATELSKÉ NASTAVENÍ LOGIKA ===
 const handleAvatarChange = (event) => {
   const file = event.target.files[0]
   if (file) {
@@ -312,6 +480,12 @@ const removeAvatar = async () => {
   }
 }
 
+// Funkce pro zpracování změny BaseSwitch (v-model se rovnou nepropisuje bez emit)
+const handleThemeChange = async (newVal) => {
+  localThemeMode.value = newVal
+  await saveThemeSettings()
+}
+
 const saveThemeSettings = async () => {
   authStore.updateUser({ theme_mode: localThemeMode.value })
   try {
@@ -404,9 +578,11 @@ const deleteAccount = async () => {
 
 <style scoped>
 .profile-view { flex: 1; display: flex; flex-direction: column; }
-.view-header { margin-bottom: 2rem; }
-.profile-content { display: flex; flex-direction: column; }
+.view-header { margin-bottom: 1.5rem; }
 
+.profile-tabs-wrapper { margin-bottom: 2rem; display: flex; justify-content: flex-start; }
+
+.profile-content { display: flex; flex-direction: column; }
 .profile-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; align-items: start; }
 
 .panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; transition: background-color 0.3s ease, border-color 0.3s ease; }
@@ -431,13 +607,7 @@ const deleteAccount = async () => {
 
 .settings-column { display: flex; flex-direction: column; gap: 2rem; }
 
-.theme-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.theme-card { display: block; cursor: pointer; position: relative; }
-.theme-card-content { border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; transition: all 0.2s ease; background: var(--bg-app); color: var(--text-muted); }
-.theme-card:hover .theme-card-content { border-color: var(--primary); background: var(--card-hover-bg); }
-.theme-card.active .theme-card-content { border-color: var(--primary); background: rgba(250, 204, 21, 0.1); color: var(--primary); }
-.theme-card-content strong { color: var(--text-main); font-size: 1rem; transition: color 0.3s ease; }
-.theme-card-content span { font-size: 0.8rem; }
+.theme-options-wrapper { margin-top: 1rem; }
 
 .currency-form { display: flex; align-items: flex-end; gap: 1rem; }
 
@@ -448,6 +618,8 @@ const deleteAccount = async () => {
 
 .danger-zone { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.02); }
 .danger-title { color: var(--danger) !important; }
+
+.empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
 
 @media (max-width: 900px) {
   .profile-grid { grid-template-columns: 1fr; }

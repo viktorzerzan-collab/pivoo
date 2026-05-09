@@ -261,6 +261,7 @@
       "btn_photo": "Foto aufnehmen",
       "btn_dictate": "Diktieren",
       "btn_listening": "Ich höre zu...",
+      "btn_stop_listening": "Diktat beenden",
       "btn_processing": "Wird verarbeitet...",
       "btn_add_more_photos": "Weiteres Foto",
       "btn_analyze_photos": "Fotos analysieren",
@@ -402,6 +403,9 @@
       "months": ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
     },
     "profile": {
+      "tab_settings": "Benutzereinstellungen",
+      "tab_history": "Meine Historie",
+      "no_history": "Du hast hier noch keine Einträge über getrunkene Biere.",
       "admin_role": "Administrator",
       "user_role": "Regulärer Benutzer",
       "change_avatar": "Klicken, um Bild zu ändern",
