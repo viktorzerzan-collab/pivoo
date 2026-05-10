@@ -4,9 +4,10 @@
 
     <div class="catalog-header-layout">
       <div class="mobile-action-bar">
-        <button v-if="authStore.user" class="btn-add" @click="openAddModal">
-          <PlusCircleIcon :size="20" /> {{ $t('catalog.add_beer') }}
-        </button>
+        <BaseButton v-if="authStore.user" variant="add" @click="openAddModal">
+          <template #icon><PlusIcon :size="20" /></template>
+          {{ $t('catalog.add_beer') }}
+        </BaseButton>
       </div>
 
       <BasePanel 
@@ -38,7 +39,7 @@
             </div>
             
             <div class="filters-footer">
-              <button class="btn-secondary" @click="resetFilters">{{ $t('catalog.reset_filters') }}</button>
+              <BaseButton variant="edit" @click="resetFilters">{{ $t('catalog.reset_filters') }}</BaseButton>
             </div>
           </div>
         </transition>
@@ -70,9 +71,10 @@
         <span class="results-count">{{ $t('catalog.found_beers') }} <strong>{{ totalItems }}</strong></span>
         
         <div class="desktop-action-bar">
-          <button v-if="authStore.user" class="btn-add" @click="openAddModal">
-            <PlusCircleIcon :size="20" /> {{ $t('catalog.add_beer') }}
-          </button>
+          <BaseButton v-if="authStore.user" variant="add" @click="openAddModal">
+            <template #icon><PlusIcon :size="20" /></template>
+            {{ $t('catalog.add_beer') }}
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -108,7 +110,7 @@
         :text="$t('catalog.empty_beers')" 
         :icon="BeerIcon"
       >
-        <button class="btn-secondary mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</button>
+        <BaseButton variant="edit" class="mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</BaseButton>
       </BaseEmptyState>
     </div>
 
@@ -138,7 +140,7 @@ import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
-import { PlusCircleIcon, FilterIcon, ChevronDownIcon, BeerIcon, XIcon } from 'lucide-vue-next'
+import { PlusIcon, FilterIcon, ChevronDownIcon, BeerIcon, XIcon } from 'lucide-vue-next'
 
 import FilterInput from '../components/FilterInput.vue'
 import FilterRange from '../components/FilterRange.vue'
@@ -148,6 +150,7 @@ import BaseLoader from '../components/BaseLoader.vue'
 import BasePanel from '../components/BasePanel.vue'
 import BaseEmptyState from '../components/BaseEmptyState.vue'
 import BasePagination from '../components/BasePagination.vue'
+import BaseButton from '../components/BaseButton.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 
@@ -457,7 +460,14 @@ const openDetail = async (beer) => {
 .mobile-action-bar { display: none; }
 
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
-.beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+
+/* Upraveno: max 2 sloupce */
+.beers-grid { 
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 1.5rem; 
+  margin-bottom: 2rem; 
+}
 
 .mt-2 { margin-top: 0.5rem; }
 
@@ -470,8 +480,13 @@ const openDetail = async (beer) => {
 .mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
 
 @media (max-width: 768px) {
+  /* Upraveno: na mobilu 1 sloupec */
+  .beers-grid { 
+    grid-template-columns: 1fr; 
+  }
+
   .mobile-action-bar { display: block; margin-bottom: 1.5rem; }
-  .mobile-action-bar .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
+  .mobile-action-bar :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
   .desktop-action-bar { display: none; }
   
   .results-bar { 

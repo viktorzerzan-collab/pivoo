@@ -7,9 +7,10 @@
         <BaseSwitch v-model="viewMode" :options="viewModeOptions" />
 
         <div class="mobile-action-bar">
-          <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
-            <PlusIcon :size="20" /> {{ $t('catalog.add_brewery') }}
-          </button>
+          <BaseButton v-if="isAdmin" variant="add" @click="isAddModalOpen = true">
+            <template #icon><PlusIcon :size="20" /></template>
+            {{ $t('catalog.add_brewery') }}
+          </BaseButton>
         </div>
       </div>
 
@@ -32,7 +33,7 @@
               <FilterInput v-model="filters.country" :label="$t('catalog.filter_country_short')" :placeholder="$t('catalog.placeholder_country')" />
             </div>
             <div class="filters-footer">
-              <button class="btn-secondary" @click="resetFilters">{{ $t('catalog.reset_filters') }}</button>
+              <BaseButton variant="edit" @click="resetFilters">{{ $t('catalog.reset_filters') }}</BaseButton>
             </div>
           </div>
         </transition>
@@ -58,9 +59,10 @@
         <span class="results-count">{{ $t('catalog.found_breweries') }} <strong>{{ totalItems }}</strong></span>
         
         <div class="desktop-action-bar">
-          <button v-if="isAdmin" class="btn-add" @click="isAddModalOpen = true">
-            <PlusIcon :size="20" /> {{ $t('catalog.add_brewery') }}
-          </button>
+          <BaseButton v-if="isAdmin" variant="add" @click="isAddModalOpen = true">
+            <template #icon><PlusIcon :size="20" /></template>
+            {{ $t('catalog.add_brewery') }}
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -90,7 +92,7 @@
         :text="$t('catalog.empty_breweries')" 
         :icon="FactoryIcon"
       >
-        <button class="btn-secondary mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</button>
+        <BaseButton variant="edit" class="mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</BaseButton>
       </BaseEmptyState>
     </div>
 
@@ -114,6 +116,7 @@ import BasePanel from '../components/BasePanel.vue'
 import BaseEmptyState from '../components/BaseEmptyState.vue'
 import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import BaseButton from '../components/BaseButton.vue'
 import BreweryCard from '../components/BreweryCard.vue'
 import MapView from '../components/MapView.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
@@ -262,11 +265,6 @@ onUnmounted(() => { if (observer) observer.disconnect() })
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
 
-.btn-add { 
-  display: flex; align-items: center; gap: 0.5rem; 
-  padding: 0.75rem 1.5rem; font-weight: 700; 
-}
-
 .filters-section { margin-bottom: 1.5rem; position: relative; z-index: 20; }
 .filters-section :deep(.panel-header) { border-bottom: none; margin-bottom: 0; padding-bottom: 1rem; }
 .filters-section :deep(.panel-header h3) { font-size: 1.1rem; }
@@ -289,14 +287,25 @@ onUnmounted(() => { if (observer) observer.disconnect() })
 .map-wrapper { margin-bottom: 2rem; }
 .map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
 
-.breweries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+/* Upraveno: max 2 sloupce */
+.breweries-grid { 
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 1.5rem; 
+  margin-bottom: 2rem; 
+}
 
 .mt-2 { margin-top: 0.5rem; }
 
 @media (max-width: 800px) {
+  /* Upraveno: na mobilu 1 sloupec */
+  .breweries-grid { 
+    grid-template-columns: 1fr; 
+  }
+
   .header-top-row { flex-direction: column; align-items: stretch; }
   .mobile-action-bar { display: block; margin-bottom: 1.5rem; }
-  .mobile-action-bar .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
+  .mobile-action-bar :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
   .desktop-action-bar { display: none; }
   .results-bar { flex-direction: column; align-items: stretch; gap: 1rem; border-bottom: none; }
   .sort-control-wrapper { width: 100%; }

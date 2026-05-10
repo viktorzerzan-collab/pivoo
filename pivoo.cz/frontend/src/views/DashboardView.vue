@@ -1,9 +1,10 @@
 <template>
   <div class="dashboard-page">
     <div class="section-actions">
-      <button class="btn-add" @click="openCheckInModal">
-        <PlusCircleIcon /> {{ $t('views.dashboard.record_beers') }}
-      </button>
+      <BaseButton variant="add" @click="openCheckInModal">
+        <template #icon><PlusIcon :size="20" /></template>
+        {{ $t('views.dashboard.record_beers') }}
+      </BaseButton>
     </div>
 
     <div class="dashboard-layout">
@@ -23,7 +24,8 @@
           />
           
           <BaseEmptyState 
-            v-if="!isLoading && (!history || history.length === 0)" 
+            v-if="!isLoading" 
+            v-show="!history || history.length === 0"
             :text="$t('views.dashboard.no_records')" 
             :icon="BeerIcon" 
           />
@@ -90,13 +92,14 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusCircleIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
+import { PlusIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
 
+import BaseButton from '../components/BaseButton.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePanel from '../components/BasePanel.vue'
 import BaseEmptyState from '../components/BaseEmptyState.vue'
@@ -196,11 +199,15 @@ const submitNewBrewery = async () => {
     if (res.status === 'success') {
       isAddBreweryModalOpen.value = false
       
+      const country = catalogStore.countries.find(c => c.id == breweryForm.value.country_id)
+      
       const newBrewery = {
         id: res.id,
         name: breweryForm.value.name,
         city: breweryForm.value.city,
         country_id: breweryForm.value.country_id,
+        country: country ? country.name_cz : '',
+        country_code: country ? country.code : '',
         is_favorite: 0,
         avg_rating: null,
         total_beers_in_catalog: 0
@@ -222,11 +229,14 @@ const submitNewBeer = async () => {
     if (res.status === 'success') {
       isAddBeerModalOpen.value = false
       
+      const style = styles.value.find(s => s.id == beerForm.value.style_id)
+      
       const newBeer = {
         id: res.id,
         name: beerForm.value.name,
         brewery_id: beerForm.value.brewery_id,
         style_id: beerForm.value.style_id,
+        style: style ? style.name : '',
         is_unfiltered: beerForm.value.is_unfiltered,
         is_unpasteurized: beerForm.value.is_unpasteurized,
         avg_rating: null,
@@ -257,12 +267,16 @@ const submitNewLocation = async () => {
     if (result.status === 'success') { 
       isAddLocationModalOpen.value = false
       
+      const country = countries.value.find(c => c.id == locationForm.value.country_id)
+      
       const newLoc = {
          id: result.id,
          name: locationForm.value.name,
          type: locationForm.value.type,
          city: locationForm.value.city,
          country_id: locationForm.value.country_id,
+         country: country ? country.name_cz : '',
+         country_code: country ? country.code : '',
          is_favorite: 0,
          avg_rating: null,
          total_visits: 0
@@ -366,10 +380,9 @@ const executeDelete = async () => {
 <style scoped>
 .dashboard-layout { position: relative; min-height: 400px; }
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
-.btn-add { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; font-weight: 600; }
 .dashboard-content { display: flex; flex-direction: column; gap: 2rem; }
 
 @media (max-width: 600px) {
-  .section-actions .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
+  .section-actions :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
 }
 </style>
