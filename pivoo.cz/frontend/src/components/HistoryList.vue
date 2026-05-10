@@ -57,12 +57,12 @@
                   </template>
                   <template v-else>
                     <template v-if="(record.currency || 'CZK') !== userCurrency">
-                      <span class="price-total">{{ (record.original_price || record.price) * record.quantity }} {{ record.currency || 'CZK' }}</span>
+                      <span class="price-total">{{ ((record.original_price || record.price) * record.quantity).toFixed(2) }} {{ record.currency || 'CZK' }}</span>
                       <small class="unit" v-if="isLoadingRate">(...)</small>
                       <small class="unit" v-else>({{ Math.round(record.price * record.quantity * exchangeRate) }} {{ userCurrency }} {{ $t('history.total') }})</small>
                     </template>
                     <template v-else>
-                      <span class="price-total">{{ (record.original_price || record.price) * record.quantity }} {{ userCurrency }}</span>
+                      <span class="price-total">{{ ((record.original_price || record.price) * record.quantity).toFixed(2) }} {{ userCurrency }}</span>
                       <small class="unit">({{ record.original_price || record.price }} {{ userCurrency }}/{{ $t('history.per_piece') }})</small>
                     </template>
                   </template>
