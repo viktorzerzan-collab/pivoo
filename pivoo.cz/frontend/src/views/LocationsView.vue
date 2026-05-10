@@ -1,125 +1,77 @@
 <template>
-  <div class="locations-page">
-    <BaseLoader :show="isLoading" />
+  <BaseCatalogLayout
+    v-model:filters-open="filtersOpen"
+    v-model:sort-by="sortBy"
+    v-model:current-page="currentPage"
+    :is-loading="isLoading"
+    :is-appending="isAppending"
+    :active-filters="activeFilters"
+    :sort-options="sortOptions"
+    :show-sort="viewMode === 'list'"
+    :total-items="totalItems"
+    :found-label="$t('catalog.found_locations')"
+    :show-add-button="isAdmin"
+    :add-label="$t('catalog.add_location')"
+    :has-items="locations.length > 0"
+    :empty-text="$t('catalog.empty_locations')"
+    :empty-icon="MapIcon"
+    :total-pages="totalPages"
+    @reset-filters="resetFilters"
+    @remove-filter="removeFilter"
+    @add="openAddModal"
+    @load-more="loadNextPage"
+  >
+    <template #header-top>
+      <BaseSwitch v-model="viewMode" :options="viewModeOptions" />
+    </template>
 
-    <div class="catalog-header-layout">
-      <div class="header-top-row">
-        <BaseSwitch v-model="viewMode" :options="viewModeOptions" />
+    <template #filters>
+      <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_location')" :placeholder="$t('catalog.placeholder_location')" />
+      <FilterInput v-model="filters.city" :label="$t('catalog.filter_city')" :placeholder="$t('catalog.placeholder_city')" />
+      <FilterInput v-model="filters.country" :label="$t('catalog.filter_country_short')" :placeholder="$t('catalog.placeholder_country')" />
+    </template>
 
-        <div class="mobile-action-bar">
-          <BaseButton v-if="isAdmin" variant="add" @click="openAddModal">
-            <template #icon><PlusIcon :size="20" /></template>
-            {{ $t('catalog.add_location') }}
-          </BaseButton>
-        </div>
-      </div>
-
-      <BasePanel 
-        :title="$t('catalog.filters_title')" 
-        :icon="FilterIcon" 
-        class="filters-section"
-        @click="filtersOpen = !filtersOpen"
-        style="cursor: pointer;"
-      >
-        <template #header-actions>
-          <ChevronDownIcon :class="{ 'rotated': filtersOpen }" :size="20" class="toggle-icon" />
-        </template>
-        
-        <transition name="slide-fade">
-          <div v-show="filtersOpen" class="filters-body" @click.stop>
-            <div class="filters-grid">
-              <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_location')" :placeholder="$t('catalog.placeholder_location')" />
-              <FilterInput v-model="filters.city" :label="$t('catalog.filter_city')" :placeholder="$t('catalog.placeholder_city')" />
-              <FilterInput v-model="filters.country" :label="$t('catalog.filter_country_short')" :placeholder="$t('catalog.placeholder_country')" />
-            </div>
-            <div class="filters-footer">
-              <BaseButton variant="edit" @click="resetFilters">{{ $t('catalog.reset_filters') }}</BaseButton>
-            </div>
-          </div>
-        </transition>
-      </BasePanel>
-
-      <ActiveFilterChips 
-        :filters="activeFilters" 
-        @remove="removeFilter" 
-      />
-
-      <div class="results-bar">
-        <div v-if="viewMode === 'list'" class="sort-control-wrapper">
-          <BaseSelect v-model="sortBy" :placeholder="$t('catalog.sort_by')" :searchable="false">
-            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </BaseSelect>
-        </div>
-        <div v-else class="sort-control-placeholder"></div>
-
-        <span class="results-count">{{ $t('catalog.found_locations') }} <strong>{{ totalItems }}</strong></span>
-        
-        <div class="desktop-action-bar">
-          <BaseButton v-if="isAdmin" variant="add" @click="openAddModal">
-            <template #icon><PlusIcon :size="20" /></template>
-            {{ $t('catalog.add_location') }}
-          </BaseButton>
-        </div>
+    <div v-if="viewMode === 'list'" class="list-wrapper">
+      <div class="locations-grid">
+        <CatalogCard 
+          v-for="loc in locations" 
+          :key="loc.id" 
+          :item="loc" 
+          type="location"
+          @showDetail="openDetail" 
+        />
       </div>
     </div>
 
-    <div class="catalog-container">
-      <template v-if="locations.length > 0">
-        <div v-if="viewMode === 'list'" class="list-wrapper">
-          <div class="locations-grid">
-            <LocationCard v-for="loc in locations" :key="loc.id" :location="loc" @showDetail="openDetail" />
-          </div>
-          <div class="desktop-pagination">
-            <BasePagination v-if="totalPages > 1" v-model:currentPage="currentPage" :total-pages="totalPages" />
-          </div>
-          <div ref="loadMoreTrigger" class="load-more-trigger">
-            <div v-if="isAppending" class="mobile-loader">{{ $t('catalog.loading_more') }}</div>
-          </div>
-        </div>
-
-        <div v-else class="map-wrapper">
-          <MapView :items="locations" type="location" @showDetail="openDetail" />
-          <p class="map-info">{{ $t('catalog.map_info', { count: locations.length }) }}</p>
-        </div>
-      </template>
-      
-      <BaseEmptyState 
-        v-else-if="!isLoading" 
-        :text="$t('catalog.empty_locations')" 
-        :icon="MapIcon"
-      >
-        <BaseButton variant="edit" class="mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</BaseButton>
-      </BaseEmptyState>
+    <div v-else class="map-wrapper">
+      <MapView :items="locations" type="location" @showDetail="openDetail" />
+      <p class="map-info">{{ $t('catalog.map_info', { count: locations.length }) }}</p>
     </div>
 
-    <DetailModal :show="isDetailOpen" :item="selectedItem" type="location" @close="isDetailOpen = false" />
-    <AddLocationModal :show="isAddModalOpen" :countries="countries" :form="form" @close="isAddModalOpen = false" @submit="submitLocation" />
-  </div>
+    <template #modals>
+      <DetailModal :show="isDetailOpen" :item="selectedItem" type="location" @close="isDetailOpen = false" />
+      <AddLocationModal :show="isAddModalOpen" :countries="countries" :form="form" @close="isAddModalOpen = false" @submit="submitLocation" />
+    </template>
+  </BaseCatalogLayout>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
-import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon, LayoutGridIcon } from 'lucide-vue-next'
+import { MapIcon, LayoutGridIcon } from 'lucide-vue-next'
 
-import BaseLoader from '../components/BaseLoader.vue'
-import BasePanel from '../components/BasePanel.vue'
-import BaseEmptyState from '../components/BaseEmptyState.vue'
+import BaseCatalogLayout from '../components/BaseCatalogLayout.vue'
+import CatalogCard from '../components/CatalogCard.vue'
 import FilterInput from '../components/FilterInput.vue'
-import BaseSelect from '../components/BaseSelect.vue'
-import BaseButton from '../components/BaseButton.vue'
-import LocationCard from '../components/LocationCard.vue'
 import MapView from '../components/MapView.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
-import BasePagination from '../components/BasePagination.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
-import ActiveFilterChips from '../components/ActiveFilterChips.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -129,13 +81,18 @@ const { t } = useI18n()
 const { user } = storeToRefs(authStore)
 const { locations, locationsPagination, countries, isLoading } = storeToRefs(catalogStore)
 
+const isAdmin = computed(() => user.value?.role === 'admin')
 const viewMode = ref('list')
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
 const isAppending = ref(false)
-const loadMoreTrigger = ref(null)
+
+const viewModeOptions = computed(() => [
+  { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
+  { value: 'map', label: t('catalog.view_map'), icon: MapIcon }
+])
 
 const form = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
 const currentPage = ref(1)
@@ -144,15 +101,6 @@ const sortBy = ref('name_asc')
 
 const initialFilters = { search: '', city: '', country: '' }
 const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
-
-let observer = null
-
-const isAdmin = computed(() => user.value?.role === 'admin')
-
-const viewModeOptions = computed(() => [
-  { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
-  { value: 'map', label: t('catalog.view_map'), icon: MapIcon }
-])
 
 const totalPages = computed(() => locationsPagination.value?.total_pages || 1)
 const totalItems = computed(() => locationsPagination.value?.total || 0)
@@ -185,8 +133,7 @@ const sortOptions = computed(() => [
 const removeFilter = (chip) => {
   if (chip.partValue) {
     let parts = String(filters.value[chip.realKey]).split(',').map(s => s.trim()).filter(s => s)
-    parts = parts.filter(p => p !== chip.partValue)
-    filters.value[chip.realKey] = parts.join(', ')
+    filters.value[chip.realKey] = parts.filter(p => p !== chip.partValue).join(', ')
   } else { filters.value[chip.realKey] = '' }
 }
 
@@ -196,7 +143,7 @@ const loadLocations = async (append = false) => {
 }
 
 const loadNextPage = async () => {
-  if (currentPage.value < totalPages.value && !isLoading.value && !isAppending.value) {
+  if (currentPage.value < totalPages.value && !isLoading.value && !isAppending.value && viewMode.value === 'list') {
     isAppending.value = true
     currentPage.value++
     await loadLocations(true)
@@ -252,18 +199,6 @@ const submitLocation = async () => {
   } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-watch(loadMoreTrigger, (el) => {
-  if (observer) observer.disconnect()
-  if (el) {
-    observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && window.innerWidth <= 800 && viewMode.value === 'list') {
-        loadNextPage()
-      }
-    }, { rootMargin: '200px' })
-    observer.observe(el)
-  }
-})
-
 watch([filters, sortBy], () => { currentPage.value = 1; loadLocations(false) }, { deep: true })
 watch(currentPage, () => { if (!isAppending.value) loadLocations(false) })
 
@@ -271,59 +206,17 @@ onMounted(async () => {
   await catalogStore.fetchAllData()
   loadLocations(false) 
 })
-
-onUnmounted(() => { 
-  if (observer) observer.disconnect() 
-})
 </script>
 
 <style scoped>
-.catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
-.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
-
-.filters-section { margin-bottom: 1.5rem; position: relative; z-index: 20; }
-.filters-section :deep(.panel-header) { border-bottom: none; margin-bottom: 0; padding-bottom: 1rem; }
-.filters-section :deep(.panel-header h3) { font-size: 1.1rem; }
-
-.toggle-icon { color: var(--text-muted); transition: transform 0.3s ease; }
-.toggle-icon.rotated { transform: rotate(180deg); }
-.filters-body { padding-top: 1.5rem; border-top: 1px solid var(--border); }
-.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-.filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
-
-.results-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 0 0 1rem 0; border-bottom: 1px solid var(--border); }
-.results-count { color: var(--text-muted); font-size: 0.95rem; flex: 1; text-align: center; }
-.sort-control-wrapper, .sort-control-placeholder { width: 260px; }
-.desktop-action-bar { width: 260px; display: flex; justify-content: flex-end; }
-.mobile-action-bar { display: none; }
-
-.map-wrapper { margin-bottom: 2rem; }
-.map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
-
 .locations-grid { 
   display: grid; 
-  grid-template-columns: repeat(2, 1fr); 
+  /* Zastropováno na max 2 sloupce, plynule přejde na 1 při nedostatku místa */
+  grid-template-columns: repeat(auto-fit, minmax(max(300px, calc((100% - 1.5rem) / 2)), 1fr));
   gap: 1.5rem; 
   margin-bottom: 2rem; 
 }
 
-.desktop-pagination { display: block; }
-.load-more-trigger { height: 20px; width: 100%; }
-.mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
-
-@media (max-width: 800px) {
-  .locations-grid { 
-    grid-template-columns: 1fr; 
-  }
-
-  .header-top-row { flex-direction: column; align-items: stretch; }
-  .mobile-action-bar { display: block; margin-bottom: 1.5rem; }
-  .mobile-action-bar :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
-  .desktop-action-bar { display: none; }
-  .results-bar { flex-direction: column; align-items: stretch; gap: 1rem; border-bottom: none; }
-  .sort-control-wrapper { width: 100%; }
-  .results-count { text-align: center; padding-top: 0.5rem; border-top: 1px solid var(--border); }
-  .desktop-pagination { display: none; }
-  .mobile-loader { display: block; }
-}
+.map-wrapper { margin-bottom: 2rem; }
+.map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
 </style>
