@@ -34,6 +34,7 @@
     <CheckInModal 
       :show="isModalOpen" 
       :form="form" 
+      :isEditing="false"
       @close="isModalOpen = false" 
       @submit="submitCheckIn"
       @open-add-location="openAddLocationFromCheckin" 
@@ -41,11 +42,15 @@
       @magic-add-beer="handleMagicAddBeer"
     />
     
-    <EditCheckInModal 
+    <CheckInModal 
       :show="isEditModalOpen" 
       :form="editForm" 
+      :isEditing="true"
       @close="isEditModalOpen = false" 
-      @submit="submitEdit" 
+      @submit="submitEdit"
+      @open-add-location="openAddLocationFromCheckin" 
+      @magic-add-brewery="handleMagicAddBrewery"
+      @magic-add-beer="handleMagicAddBeer" 
     />
     
     <DeleteConfirmModal 
@@ -95,7 +100,6 @@ import BaseLoader from '../components/BaseLoader.vue'
 import StatsBoard from '../components/StatsBoard.vue'
 import HistoryList from '../components/HistoryList.vue'
 import CheckInModal from '../components/modals/CheckInModal.vue'
-import EditCheckInModal from '../components/modals/EditCheckInModal.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -135,8 +139,8 @@ const pendingAiData = ref(null)
 onMounted(() => { if (authStore.user) catalogStore.fetchAllData() })
 watch(() => authStore.user, (newUser) => { if (newUser) catalogStore.fetchAllData() })
 
-const openCheckInModal = async () => {
-  await catalogStore.fetchAllData(true)
+const openCheckInModal = () => {
+  catalogStore.fetchAllData(true)
   isModalOpen.value = true
 }
 
@@ -269,7 +273,11 @@ const submitNewLocation = async () => {
   } catch (e) { toastStore.showToast(t('toast.location_add_error'), 'toast-error') }
 }
 
-const openEditModal = (record) => {
+const openEditModal = async (record) => {
+  if (!catalogStore.isFormDataLoaded) {
+    await catalogStore.fetchFormData()
+  }
+  
   selectedEditRecordId.value = record.id
   const currentBeer = allBeers.value.find(b => b.id == record.beer_id)
   const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''

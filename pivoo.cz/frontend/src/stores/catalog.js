@@ -18,18 +18,26 @@ export const useCatalogStore = defineStore('catalog', {
     stats: null,
     detailedStats: null,
     history: [],
-    pendingApprovals: [], // PŘIDÁNO: Fronta ke schválení
+    pendingApprovals: [], // Fronta ke schválení
     isLoading: false,
+    isInitialLoaded: false, // Sleduje, zda už byla prvotní data načtena
+    isFormDataLoaded: false, // PŘIDÁNO: Sleduje, zda se stáhly kompletní číselníky
+    isLoadingFormData: false, // PŘIDÁNO: Chrání před vícenásobným spouštěním stahování
     error: null,
   }),
   actions: {
-    async fetchAllData(silent = false) {
+    // ZMĚNA: Přidán parametr 'force' pro možnost vynuceného obnovení
+    async fetchAllData(silent = false, force = false) {
       if (this.isLoading && !silent) return
+      
+      // Pokud už jsou data načtena a nevyžadujeme vynucenou aktualizaci, tak zbytečně nestahujeme
+      if (this.isInitialLoaded && !force) return
       
       if (!silent) this.isLoading = true
       this.error = null
       
       try {
+        // ZMĚNA: Odsud zmizely 3 nejtěžší 'compact=1' requesty. Dashboard se tak načte bleskově.
         const results = await Promise.allSettled([
           apiFetch('/beers.php'),
           apiFetch('/breweries.php'),   
@@ -37,17 +45,10 @@ export const useCatalogStore = defineStore('catalog', {
           apiFetch('/styles.php'),      
           apiFetch('/countries.php'),   
           apiFetch('/stats.php?period=month'),
-          apiFetch('/history.php'),
-          apiFetch('/beers.php?compact=1'),
-          apiFetch('/breweries.php?compact=1'),
-          apiFetch('/locations.php?compact=1&include_all=1')
+          apiFetch('/history.php')
         ])
 
-        const [
-          beersRes, breweriesRes, locationsRes, 
-          stylesRes, countriesRes, statsRes, historyRes,
-          allBeersRes, allBreweriesRes, allLocationsRes
-        ] = results
+        const [beersRes, breweriesRes, locationsRes, stylesRes, countriesRes, statsRes, historyRes] = results
 
         if (beersRes.status === 'fulfilled' && beersRes.value.status === 'success') this.beers = beersRes.value.data
         if (breweriesRes.status === 'fulfilled' && breweriesRes.value.status === 'success') this.breweries = breweriesRes.value.data
@@ -57,9 +58,10 @@ export const useCatalogStore = defineStore('catalog', {
         if (statsRes.status === 'fulfilled' && statsRes.value.status === 'success') this.stats = statsRes.value.data
         if (historyRes.status === 'fulfilled' && historyRes.value.status === 'success') this.history = historyRes.value.data
 
-        if (allBeersRes.status === 'fulfilled' && allBeersRes.value.status === 'success') this.allBeers = allBeersRes.value.data
-        if (allBreweriesRes.status === 'fulfilled' && allBreweriesRes.value.status === 'success') this.allBreweries = allBreweriesRes.value.data
-        if (allLocationsRes.status === 'fulfilled' && allLocationsRes.value.status === 'success') this.allLocations = allLocationsRes.value.data
+        this.isInitialLoaded = true
+
+        // PŘIDÁNO: Nyní odstartujeme stahování "těžkých" dat formulářů na pozadí, aniž by to blokovalo UI (nečekáme na await)
+        this.fetchFormData(force)
 
       } catch (err) {
         if (!silent) this.error = 'Došlo ke kritické chybě při načítání dat.'
@@ -69,7 +71,33 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // PŘIDÁNO: Načtení fronty schvalování pro administrátory
+    // PŘIDÁNO: Samostatná funkce pro načtení obřích seznamů pro formuláře
+    async fetchFormData(force = false) {
+      if (this.isLoadingFormData) return
+      if (this.isFormDataLoaded && !force) return
+
+      this.isLoadingFormData = true
+      try {
+        const results = await Promise.allSettled([
+          apiFetch('/beers.php?compact=1'),
+          apiFetch('/breweries.php?compact=1'),
+          apiFetch('/locations.php?compact=1&include_all=1')
+        ])
+
+        const [allBeersRes, allBreweriesRes, allLocationsRes] = results
+
+        if (allBeersRes.status === 'fulfilled' && allBeersRes.value.status === 'success') this.allBeers = allBeersRes.value.data
+        if (allBreweriesRes.status === 'fulfilled' && allBreweriesRes.value.status === 'success') this.allBreweries = allBreweriesRes.value.data
+        if (allLocationsRes.status === 'fulfilled' && allLocationsRes.value.status === 'success') this.allLocations = allLocationsRes.value.data
+        
+        this.isFormDataLoaded = true
+      } catch (err) {
+        console.error('Chyba při načítání dat pro formuláře:', err)
+      } finally {
+        this.isLoadingFormData = false
+      }
+    },
+
     async fetchPendingApprovals() {
       this.isLoading = true
       try {
@@ -214,6 +242,9 @@ export const useCatalogStore = defineStore('catalog', {
             allItem.is_favorite = res.is_favorite ? 1 : 0
           }
 
+          // Pokud se oblíbenost mění, doporučuje se formulářová data při nejbližší příležitosti obnovit
+          this.isFormDataLoaded = false;
+          
           return true
         }
       } catch (error) {

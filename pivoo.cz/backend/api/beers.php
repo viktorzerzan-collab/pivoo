@@ -16,13 +16,14 @@ $db = (new Database())->getConnection();
 if ($db) {
     try {
         if (isset($_GET['compact']) && $_GET['compact'] == 1) {
+            // ZMĚNA: Přidáno ORDER BY is_favorite DESC, aby se řadilo už v databázi
             $query = "SELECT b.id, b.name, b.brewery_id, 
                              IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                              IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                       FROM beers b 
                       LEFT JOIN user_favorites fav ON b.id = fav.entity_id AND fav.entity_type = 'beer' AND fav.user_id = :uid 
                       LEFT JOIN user_wishlists wl ON b.id = wl.entity_id AND wl.entity_type = 'beer' AND wl.user_id = :uid
-                      WHERE b.is_approved = 1 ORDER BY b.name ASC";
+                      WHERE b.is_approved = 1 ORDER BY is_favorite DESC, b.name ASC";
             $stmt = $db->prepare($query);
             $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
             $stmt->execute();
@@ -48,7 +49,6 @@ if ($db) {
 
         $sort = $_GET['sort'] ?? 'name_asc';
         
-        // PŘIDÁNO: Filtrování podle stavu schválení (pouze admin může vidět pending)
         $status = $_GET['status'] ?? 'approved';
         if ($status === 'pending' && $userRole === 'admin') {
             $whereParts = ["b.is_approved = 0"];
@@ -91,8 +91,16 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        // ZMĚNA: Přidán JOIN i do COUNT dotazu kvůli konzistenci a hledání (pokud by se hledalo dle autora)
-        $countQuery = "SELECT COUNT(DISTINCT b.id) as total FROM beers b LEFT JOIN breweries br ON b.brewery_id = br.id LEFT JOIN countries c ON br.country_id = c.id LEFT JOIN users u ON b.created_by = u.id $whereSql";
+        // ZMĚNA: Odstraněny nepotřebné JOINy pro zrychlení COUNT dotazu
+        $countJoins = "";
+        if (trim($brewery) !== '' || trim($country) !== '') {
+            $countJoins .= " LEFT JOIN breweries br ON b.brewery_id = br.id";
+        }
+        if (trim($country) !== '') {
+            $countJoins .= " LEFT JOIN countries c ON br.country_id = c.id";
+        }
+        
+        $countQuery = "SELECT COUNT(DISTINCT b.id) as total FROM beers b $countJoins $whereSql";
         $countParams = $params;
         unset($countParams[':uid']); 
         $countStmt = $db->prepare($countQuery);
@@ -121,7 +129,6 @@ if ($db) {
             default: $orderBy .= ", b.name ASC"; break;
         }
 
-        // PŘIDÁNO: Připojení jména autora (created_by_user)
         $query = "SELECT b.*, br.name as brewery_name, br.lat as brewery_lat, br.lng as brewery_lng, c.name_cz as brewery_country, c.code as brewery_country_code, bs.name as style, u.username as created_by_user,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                          IF(wl.id IS NOT NULL, 1, 0) as is_wishlist

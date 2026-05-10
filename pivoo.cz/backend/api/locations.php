@@ -22,13 +22,14 @@ if ($db) {
                 $where .= " AND loc.type != 'jine'"; 
             }
             
+            // ZMĚNA: Přidáno ORDER BY is_favorite DESC, aby se řadilo už v databázi
             $query = "SELECT loc.id, loc.name, loc.type, loc.city, 
                              IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                              IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                       FROM locations loc 
                       LEFT JOIN user_favorites fav ON loc.id = fav.entity_id AND fav.entity_type = 'location' AND fav.user_id = :uid 
                       LEFT JOIN user_wishlists wl ON loc.id = wl.entity_id AND wl.entity_type = 'location' AND wl.user_id = :uid
-                      WHERE $where ORDER BY loc.name ASC";
+                      WHERE $where ORDER BY is_favorite DESC, loc.name ASC";
             $stmt = $db->prepare($query);
             $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
             $stmt->execute();
@@ -46,7 +47,6 @@ if ($db) {
         $sort = $_GET['sort'] ?? 'name_asc';
         $includeAll = isset($_GET['include_all']) && $_GET['include_all'] == 1;
 
-        // PŘIDÁNO: Filtrování podle stavu
         $status = $_GET['status'] ?? 'approved';
         $whereParts = [];
         
@@ -83,7 +83,13 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(loc.id) as total FROM locations loc LEFT JOIN countries c ON loc.country_id = c.id LEFT JOIN users u ON loc.created_by = u.id $whereSql";
+        // ZMĚNA: Odstraněny nepotřebné JOINy pro zrychlení COUNT dotazu
+        $countJoins = "";
+        if (trim($country) !== '') {
+            $countJoins .= " LEFT JOIN countries c ON loc.country_id = c.id";
+        }
+        $countQuery = "SELECT COUNT(loc.id) as total FROM locations loc $countJoins $whereSql";
+        
         $countParams = $params;
         unset($countParams[':uid']);
         $countStmt = $db->prepare($countQuery);
@@ -104,7 +110,6 @@ if ($db) {
             default: $orderBy .= ", loc.name ASC"; break;
         }
 
-        // PŘIDÁNO: Připojení jména autora
         $query = "SELECT loc.*, c.name_cz as country, c.code as country_code, u.username as created_by_user,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                          IF(wl.id IS NOT NULL, 1, 0) as is_wishlist

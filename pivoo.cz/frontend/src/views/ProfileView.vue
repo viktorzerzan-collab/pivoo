@@ -171,9 +171,10 @@
       </template>
     </BaseModal>
 
-    <EditCheckInModal 
+    <CheckInModal 
       :show="showEditHistoryModal" 
       :form="editForm" 
+      :isEditing="true"
       @close="showEditHistoryModal = false" 
       @submit="submitEdit" 
     />
@@ -206,7 +207,8 @@ import BaseSwitch from '../components/BaseSwitch.vue'
 import BasePagination from '../components/BasePagination.vue'
 import PasswordStrength from '../components/PasswordStrength.vue'
 import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
-import EditCheckInModal from '../components/modals/EditCheckInModal.vue'
+// ZMĚNA: Importujeme CheckInModal namísto EditCheckInModal
+import CheckInModal from '../components/modals/CheckInModal.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import HistoryList from '../components/HistoryList.vue'
 
@@ -298,7 +300,12 @@ watch(historyPage, () => {
   }
 })
 
-const openEditModal = (record) => {
+// ZMĚNA: Přidán async a Lazy Loading (čekání na stažení dat formulářů)
+const openEditModal = async (record) => {
+  if (!catalogStore.isFormDataLoaded) {
+    await catalogStore.fetchFormData()
+  }
+
   selectedEditRecordId.value = record.id
   const currentBeer = allBeers.value.find(b => b.id == record.beer_id)
   const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''
@@ -480,7 +487,6 @@ const removeAvatar = async () => {
   }
 }
 
-// Funkce pro zpracování změny BaseSwitch (v-model se rovnou nepropisuje bez emit)
 const handleThemeChange = async (newVal) => {
   localThemeMode.value = newVal
   await saveThemeSettings()

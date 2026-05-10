@@ -16,13 +16,14 @@ $db = (new Database())->getConnection();
 if ($db) {
     try {
         if (isset($_GET['compact']) && $_GET['compact'] == 1) {
+            // ZMĚNA: Přidáno ORDER BY is_favorite DESC, aby se řadilo už v databázi
             $query = "SELECT br.id, br.name, 
                              IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                              IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                       FROM breweries br 
                       LEFT JOIN user_favorites fav ON br.id = fav.entity_id AND fav.entity_type = 'brewery' AND fav.user_id = :uid 
                       LEFT JOIN user_wishlists wl ON br.id = wl.entity_id AND wl.entity_type = 'brewery' AND wl.user_id = :uid
-                      WHERE br.is_approved = 1 ORDER BY br.name ASC";
+                      WHERE br.is_approved = 1 ORDER BY is_favorite DESC, br.name ASC";
             $stmt = $db->prepare($query);
             $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
             $stmt->execute();
@@ -39,7 +40,6 @@ if ($db) {
         $country = $_GET['country'] ?? '';
         $sort = $_GET['sort'] ?? 'name_asc';
 
-        // PŘIDÁNO: Filtrování podle stavu
         $status = $_GET['status'] ?? 'approved';
         if ($status === 'pending' && $userRole === 'admin') {
             $whereParts = ["br.is_approved = 0"];
@@ -70,7 +70,13 @@ if ($db) {
 
         $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
-        $countQuery = "SELECT COUNT(br.id) as total FROM breweries br LEFT JOIN countries c ON br.country_id = c.id LEFT JOIN users u ON br.created_by = u.id $whereSql";
+        // ZMĚNA: Odstraněny nepotřebné JOINy pro zrychlení COUNT dotazu
+        $countJoins = "";
+        if (trim($country) !== '') {
+            $countJoins .= " LEFT JOIN countries c ON br.country_id = c.id";
+        }
+        $countQuery = "SELECT COUNT(br.id) as total FROM breweries br $countJoins $whereSql";
+        
         $countParams = $params;
         unset($countParams[':uid']);
         $countStmt = $db->prepare($countQuery);
@@ -91,7 +97,6 @@ if ($db) {
             default: $orderBy .= ", br.name ASC"; break;
         }
 
-        // PŘIDÁNO: Připojení jména autora
         $query = "SELECT br.*, c.name_cz as country, c.code as country_code, u.username as created_by_user,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                          IF(wl.id IS NOT NULL, 1, 0) as is_wishlist

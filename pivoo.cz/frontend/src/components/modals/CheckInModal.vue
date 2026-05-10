@@ -1,7 +1,11 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')">
     <template #header>
-      <h2 class="modal-title"><BeerIcon class="title-icon" :size="28" /> {{ $t('modals.checkin.title_add') }}</h2>
+      <h2 class="modal-title">
+        <PencilIcon v-if="isEditing" class="title-icon" :size="24" />
+        <BeerIcon v-else class="title-icon" :size="28" />
+        {{ isEditing ? $t('modals.checkin.title_edit') : $t('modals.checkin.title_add') }}
+      </h2>
     </template>
     <template #body>
       <form @submit.prevent="$emit('submit')" class="checkin-form">
@@ -11,9 +15,9 @@
         <BaseDatePicker v-model="form.consumed_at" :label="$t('modals.checkin.date_label')" />
 
         <div class="location-detect-wrapper">
-          <BaseSelect v-model="form.location_id" :label="$t('modals.checkin.location_label')" searchable required style="flex: 1;">
+          <BaseSelect v-model="form.location_id" :label="$t('modals.checkin.location_label')" searchable required style="flex: 1; min-width: 0;">
             <option disabled value="">{{ $t('modals.checkin.select_location') }}</option>
-            <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
+            <option v-for="loc in catalogStore.allLocations" :key="loc.id" :value="loc.id">
               {{ loc.is_favorite ? '⭐' : '📍' }} {{ translateLocation(loc.name) }}
             </option>
           </BaseSelect>
@@ -33,7 +37,7 @@
 
         <BaseSelect v-model="form.brewery_id" :label="$t('modals.checkin.brewery_label')" searchable required>
           <option disabled value="">{{ $t('modals.checkin.select_brewery') }}</option>
-          <option v-for="brewery in sortedBreweries" :key="brewery.id" :value="brewery.id">
+          <option v-for="brewery in catalogStore.allBreweries" :key="brewery.id" :value="brewery.id">
             {{ brewery.is_favorite ? '⭐' : '🏭' }} {{ brewery.name }}
           </option>
         </BaseSelect>
@@ -82,7 +86,7 @@
         </div>
 
         <div class="form-row">
-          <BaseInput class="half" v-model="form.quantity" type="number" min="1" :label="$t('modals.checkin.quantity_label')" required />
+          <BaseInput class="half" v-model="form.quantity" type="number" min="1" :label="isEditing ? $t('modals.checkin.quantity_edit_label') : $t('modals.checkin.quantity_label')" required />
           <div class="half"></div>
         </div>
 
@@ -90,7 +94,7 @@
           <div class="half" style="display: flex; gap: 0.5rem;">
             <BaseInput 
               style="flex: 2;"
-              v-model="form.price" 
+              v-model="priceValue" 
               type="number" 
               step="0.01" 
               :label="$t('modals.checkin.price_label')" 
@@ -132,8 +136,8 @@
 
         <BaseInput v-model="form.note" :label="$t('modals.checkin.note_label')" :placeholder="$t('modals.checkin.note_placeholder')" />
 
-        <BaseButton type="submit" variant="primary" style="margin-top: 1rem; width: 100%;">
-          {{ $t('modals.checkin.save_add') }}
+        <BaseButton type="submit" :variant="isEditing ? 'edit' : 'primary'" style="margin-top: 1rem; width: 100%;">
+          {{ isEditing ? $t('modals.checkin.save_edit') : $t('modals.checkin.save_add') }}
         </BaseButton>
 
       </form>
@@ -143,7 +147,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { BeerIcon } from 'lucide-vue-next'
+import { BeerIcon, PencilIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -164,14 +168,16 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t, te } = useI18n()
 
+// PŘIDÁNO: isEditing prop
 const props = defineProps({ 
   show: Boolean, 
-  form: Object 
+  form: Object,
+  isEditing: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['close', 'submit', 'open-add-location'])
 
-const volumeMode = ref(props.form.volume)
+const volumeMode = ref(props.form.volume || '')
 const customVolume = ref('')
 
 const isLocating = ref(false)
@@ -180,6 +186,15 @@ const locationMessageType = ref('')
 const tempCoords = ref(null)
 
 const isAiUpdating = ref(false)
+
+// PŘIDÁNO: Univerzální správa ceny (při editaci se používá original_price, při přidání price)
+const priceValue = computed({
+  get: () => props.isEditing ? props.form.original_price : props.form.price,
+  set: (val) => {
+    if (props.isEditing) props.form.original_price = val
+    else props.form.price = val
+  }
+})
 
 const translateLocation = (val) => {
   if (!val) return val
@@ -220,6 +235,7 @@ const handleAiResponse = (res) => {
         const standardVolumes = ['0.20', '0.30', '0.33', '0.40', '0.50', '1.00']
         if (standardVolumes.includes(volStr)) {
           volumeMode.value = volStr
+          customVolume.value = ''
         } else {
           volumeMode.value = 'custom'
           customVolume.value = volStr
@@ -227,19 +243,23 @@ const handleAiResponse = (res) => {
       }
       
       if (ai.quantity) props.form.quantity = ai.quantity
-      if (ai.price) props.form.price = ai.price
       if (ai.packaging) props.form.packaging = ai.packaging
+      
+      if (ai.price) {
+        if (props.isEditing) props.form.original_price = ai.price
+        else props.form.price = ai.price
+      }
 
-      toastStore.addToast(t('modals.checkin.msg_success') || 'Pivo bylo úspěšně rozpoznáno!', 'success')
+      toastStore.showToast(t('modals.checkin.msg_success') || 'Pivo bylo úspěšně rozpoznáno!', 'success')
       isAiUpdating.value = false
     }, 150)
   }
 }
 
 watch(volumeMode, (newVal) => {
-  if (newVal !== 'custom') {
+  if (newVal !== 'custom' && newVal !== '') {
     props.form.volume = newVal
-  } else {
+  } else if (newVal === 'custom') {
     props.form.volume = customVolume.value
   }
 })
@@ -252,6 +272,7 @@ watch(customVolume, (newVal) => {
 
 watch(() => props.form.is_free, (isFree) => {
   if (isFree) {
+    if (props.isEditing) props.form.original_price = ''
     props.form.price = ''
   }
 })
@@ -259,17 +280,20 @@ watch(() => props.form.is_free, (isFree) => {
 watch(() => props.show, (newVal) => {
   if (newVal) {
     locationMessage.value = ''
-    const currentVol = props.form.volume
+    const currentVol = String(props.form.volume)
     const standardVolumes = ['0.20', '0.30', '0.33', '0.40', '0.50', '1.00']
     
     if (standardVolumes.includes(currentVol)) {
       volumeMode.value = currentVol
-    } else if (currentVol) {
+      customVolume.value = ''
+    } else if (currentVol && currentVol !== 'undefined') {
       volumeMode.value = 'custom'
       customVolume.value = currentVol
+    } else {
+      volumeMode.value = '0.50' // default fallback
     }
 
-    if (!props.form.consumed_at) {
+    if (!props.form.consumed_at && !props.isEditing) {
       const now = new Date();
       const localDateTime = now.getFullYear() + '-' + 
         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -283,6 +307,10 @@ watch(() => props.show, (newVal) => {
 
     if (!props.form.currency) {
       props.form.currency = authStore.defaultCurrency || 'CZK'
+    }
+    
+    if (props.isEditing && !props.form.original_price && props.form.price) {
+      props.form.original_price = props.form.price
     }
   }
 })
@@ -347,20 +375,9 @@ const autodetectLocation = () => {
   )
 }
 
-const sortByFavorite = (a, b) => (b.is_favorite || 0) - (a.is_favorite || 0);
-
-const sortedLocations = computed(() => {
-  return [...catalogStore.allLocations].sort(sortByFavorite);
-})
-
-const sortedBreweries = computed(() => {
-  return [...catalogStore.allBreweries].sort(sortByFavorite);
-})
-
 const sortedBeers = computed(() => {
   if (!props.form.brewery_id) return []
-  const filtered = catalogStore.allBeers.filter(b => b.brewery_id == props.form.brewery_id)
-  return [...filtered].sort(sortByFavorite)
+  return catalogStore.allBeers.filter(b => b.brewery_id == props.form.brewery_id);
 })
 
 watch(() => props.form.brewery_id, (newVal, oldVal) => {
@@ -384,11 +401,17 @@ watch(() => props.form.location_id, () => {
 <style scoped>
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--primary); }
+
 .checkin-form { display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 
-.location-detect-wrapper { display: flex; align-items: flex-end; gap: 0.5rem; }
+.location-detect-wrapper { 
+  display: flex; 
+  align-items: flex-end; 
+  gap: 0.5rem; 
+  flex-wrap: nowrap; 
+}
 
 .location-message { font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-weight: 600; margin-top: -0.5rem; }
 .location-message.success { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
