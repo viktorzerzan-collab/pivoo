@@ -2,7 +2,7 @@
   <Teleport to="body">
     <transition name="modal-fade">
       <div v-if="show" class="modal-overlay" @click.self="$emit('close')">
-        <div class="modal-container">
+        <div class="modal-container" :style="customStyle">
           <header class="modal-header">
             <slot name="header"></slot>
             <button class="btn-close" @click="$emit('close')" aria-label="Zavřít">
@@ -24,7 +24,11 @@ import { watch, onUnmounted } from 'vue'
 import { XIcon } from 'lucide-vue-next'
 
 const props = defineProps({ 
-  show: Boolean 
+  show: Boolean,
+  customStyle: {
+    type: [String, Object],
+    default: ''
+  }
 })
 defineEmits(['close'])
 
@@ -42,7 +46,7 @@ watch(() => props.show, (isShown) => {
     document.body.style.width = '100%'
     document.body.style.overflowY = 'scroll'
     
-    // PŘIDÁNO: Zafixujeme i výšku, aby se obsah nesmrsknul a blur fungoval až dolů
+    // Zafixujeme i výšku, aby se obsah nesmrsknul a blur fungoval až dolů
     document.body.style.height = `${docHeight}px`
     
     document.body.classList.add('modal-open')
@@ -53,7 +57,7 @@ watch(() => props.show, (isShown) => {
     document.body.style.width = ''
     document.body.style.overflowY = ''
     
-    // PŘIDÁNO: Odstraníme vynucenou výšku
+    // Odstraníme vynucenou výšku
     document.body.style.height = ''
     
     document.body.classList.remove('modal-open')

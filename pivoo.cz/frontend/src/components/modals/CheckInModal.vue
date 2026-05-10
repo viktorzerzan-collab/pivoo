@@ -175,7 +175,8 @@ const props = defineProps({
   isEditing: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['close', 'submit', 'open-add-location'])
+// OPRAVENO: Přidány eventy magicAddBrewery a magicAddBeer, aby nepropadávaly do BaseModal
+const emit = defineEmits(['close', 'submit', 'open-add-location', 'magicAddBrewery', 'magicAddBeer'])
 
 const volumeMode = ref(props.form.volume || '')
 const customVolume = ref('')

@@ -13,17 +13,19 @@
         </div>
       </div>
 
-      <div class="filters-section panel-card">
-        <div class="filters-header" @click="filtersOpen = !filtersOpen">
-          <div class="filters-title">
-            <FilterIcon :size="20" class="panel-icon" /> 
-            <h3>{{ $t('catalog.filters_title') }}</h3>
-          </div>
+      <BasePanel 
+        :title="$t('catalog.filters_title')" 
+        :icon="FilterIcon" 
+        class="filters-section"
+        @click="filtersOpen = !filtersOpen"
+        style="cursor: pointer;"
+      >
+        <template #header-actions>
           <ChevronDownIcon :class="{ 'rotated': filtersOpen }" :size="20" class="toggle-icon" />
-        </div>
+        </template>
         
         <transition name="slide-fade">
-          <div v-show="filtersOpen" class="filters-body">
+          <div v-show="filtersOpen" class="filters-body" @click.stop>
             <div class="filters-grid">
               <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_location')" :placeholder="$t('catalog.placeholder_location')" />
               <FilterInput v-model="filters.city" :label="$t('catalog.filter_city')" :placeholder="$t('catalog.placeholder_city')" />
@@ -34,7 +36,7 @@
             </div>
           </div>
         </transition>
-      </div>
+      </BasePanel>
 
       <div v-if="activeFilters.length > 0" class="active-filters-chips">
         <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
@@ -83,11 +85,13 @@
         </div>
       </template>
       
-      <div v-else-if="!isLoading" class="empty-state">
-        <MapIcon :size="48" color="#cbd5e1" />
-        <p>{{ $t('catalog.empty_locations') }}</p>
+      <BaseEmptyState 
+        v-else-if="!isLoading" 
+        :text="$t('catalog.empty_locations')" 
+        :icon="MapIcon"
+      >
         <button class="btn-secondary mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</button>
-      </div>
+      </BaseEmptyState>
     </div>
 
     <DetailModal :show="isDetailOpen" :item="selectedItem" type="location" @close="isDetailOpen = false" />
@@ -99,12 +103,15 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
+import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIcon } from 'lucide-vue-next'
+
 import BaseLoader from '../components/BaseLoader.vue'
+import BasePanel from '../components/BasePanel.vue'
+import BaseEmptyState from '../components/BaseEmptyState.vue'
 import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import LocationCard from '../components/LocationCard.vue'
@@ -114,6 +121,7 @@ import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import BasePagination from '../components/BasePagination.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
 
+// --- Všechny deklarace stavů na začátku ---
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
@@ -122,18 +130,13 @@ const { t } = useI18n()
 const { user } = storeToRefs(authStore)
 const { locations, locationsPagination, countries, isLoading } = storeToRefs(catalogStore)
 
-const isAdmin = computed(() => user.value?.role === 'admin')
 const viewMode = ref('list')
-
-const viewModeOptions = computed(() => [
-  { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
-  { value: 'map', label: t('catalog.view_map'), icon: MapIcon }
-])
-
 const isAddModalOpen = ref(false)
 const filtersOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
+const isAppending = ref(false)
+const loadMoreTrigger = ref(null) // Deklarováno včas pro watch a template ref
 
 const form = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
 const currentPage = ref(1)
@@ -142,6 +145,16 @@ const sortBy = ref('name_asc')
 
 const initialFilters = { search: '', city: '', country: '' }
 const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
+
+let observer = null
+
+// --- Computed vlastnosti ---
+const isAdmin = computed(() => user.value?.role === 'admin')
+
+const viewModeOptions = computed(() => [
+  { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
+  { value: 'map', label: t('catalog.view_map'), icon: MapIcon }
+])
 
 const totalPages = computed(() => locationsPagination.value?.total_pages || 1)
 const totalItems = computed(() => locationsPagination.value?.total || 0)
@@ -160,6 +173,18 @@ const activeFilters = computed(() => {
   return active
 })
 
+const sortOptions = computed(() => [
+  { value: 'name_asc', label: t('catalog.sort.name_asc') },
+  { value: 'name_desc', label: t('catalog.sort.name_desc') },
+  { value: 'city_asc', label: t('catalog.sort.city_asc') },
+  { value: 'city_desc', label: t('catalog.sort.city_desc') },
+  { value: 'rating_desc', label: t('catalog.sort.rating_desc') },
+  { value: 'rating_asc', label: t('catalog.sort.rating_asc') },
+  { value: 'newest', label: t('catalog.sort.newest') },
+  { value: 'oldest', label: t('catalog.sort.oldest') }
+])
+
+// --- Logika a Funkce ---
 const removeFilter = (chip) => {
   if (chip.partValue) {
     let parts = String(filters.value[chip.realKey]).split(',').map(s => s.trim()).filter(s => s)
@@ -167,10 +192,6 @@ const removeFilter = (chip) => {
     filters.value[chip.realKey] = parts.join(', ')
   } else { filters.value[chip.realKey] = '' }
 }
-
-const loadMoreTrigger = ref(null)
-const isAppending = ref(false)
-let observer = null
 
 const loadLocations = async (append = false) => {
   const params = { page: currentPage.value, limit: itemsPerPage, search: filters.value.search, city: filters.value.city, country: filters.value.country, sort: sortBy.value }
@@ -186,40 +207,12 @@ const loadNextPage = async () => {
   }
 }
 
-watch(loadMoreTrigger, (el) => {
-  if (observer) observer.disconnect()
-  if (el) {
-    observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && window.innerWidth <= 800 && viewMode.value === 'list') {
-        loadNextPage()
-      }
-    }, { rootMargin: '200px' })
-    observer.observe(el)
-  }
-})
-
-onUnmounted(() => { if (observer) observer.disconnect() })
-
 const resetFilters = () => {
   filters.value = JSON.parse(JSON.stringify(initialFilters))
   sortBy.value = 'name_asc'
   currentPage.value = 1
   loadLocations(false)
 }
-
-watch([filters, sortBy], () => { currentPage.value = 1; loadLocations(false) }, { deep: true })
-watch(currentPage, () => { if (!isAppending.value) loadLocations(false) })
-
-const sortOptions = computed(() => [
-  { value: 'name_asc', label: t('catalog.sort.name_asc') },
-  { value: 'name_desc', label: t('catalog.sort.name_desc') },
-  { value: 'city_asc', label: t('catalog.sort.city_asc') },
-  { value: 'city_desc', label: t('catalog.sort.city_desc') },
-  { value: 'rating_desc', label: t('catalog.sort.rating_desc') },
-  { value: 'rating_asc', label: t('catalog.sort.rating_asc') },
-  { value: 'newest', label: t('catalog.sort.newest') },
-  { value: 'oldest', label: t('catalog.sort.oldest') }
-])
 
 const openAddModal = () => {
   form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null }
@@ -233,9 +226,7 @@ const submitLocation = async () => {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
       isAddModalOpen.value = false
-      
       const country = countries.value.find(c => c.id == form.value.country_id)
-
       catalogStore.addLocationLocally({
          id: result.id,
          name: form.value.name,
@@ -256,7 +247,6 @@ const submitLocation = async () => {
          lat: form.value.lat,
          lng: form.value.lng
       })
-
       currentPage.value = 1
       toastStore.showToast(t('toast.location_added')) 
     } else {
@@ -265,7 +255,31 @@ const submitLocation = async () => {
   } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-onMounted(async () => { await catalogStore.fetchAllData(); loadLocations(false) })
+// --- Watchery ---
+watch(loadMoreTrigger, (el) => {
+  if (observer) observer.disconnect()
+  if (el) {
+    observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && window.innerWidth <= 800 && viewMode.value === 'list') {
+        loadNextPage()
+      }
+    }, { rootMargin: '200px' })
+    observer.observe(el)
+  }
+})
+
+watch([filters, sortBy], () => { currentPage.value = 1; loadBreweries(false) }, { deep: true })
+watch(currentPage, () => { if (!isAppending.value) loadBreweries(false) })
+
+// --- Lifecycle Hooky ---
+onMounted(async () => { 
+  await catalogStore.fetchAllData()
+  loadLocations(false) 
+})
+
+onUnmounted(() => { 
+  if (observer) observer.disconnect() 
+})
 </script>
 
 <style scoped>
@@ -277,12 +291,14 @@ onMounted(async () => { await catalogStore.fetchAllData(); loadLocations(false) 
   padding: 0.75rem 1.5rem; font-weight: 700; 
 }
 
-.panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 1.5rem; position: relative; z-index: 20; }
-.filters-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; cursor: pointer; }
-.filters-title { display: flex; align-items: center; gap: 0.75rem; }
-.filters-title h3 { margin: 0; font-size: 1.1rem; color: var(--text-main); }
-.filters-body { padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border); }
-.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.filters-section { margin-bottom: 1.5rem; position: relative; z-index: 20; }
+.filters-section :deep(.panel-header) { border-bottom: none; margin-bottom: 0; padding-bottom: 1rem; }
+.filters-section :deep(.panel-header h3) { font-size: 1.1rem; }
+
+.toggle-icon { color: var(--text-muted); transition: transform 0.3s ease; }
+.toggle-icon.rotated { transform: rotate(180deg); }
+.filters-body { padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
 .active-filters-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; padding: 0 0.5rem; }
@@ -300,7 +316,6 @@ onMounted(async () => { await catalogStore.fetchAllData(); loadLocations(false) 
 .map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
 
 .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-.empty-state { text-align: center; padding: 4rem; color: var(--text-muted); }
 
 .desktop-pagination { display: block; }
 .load-more-trigger { height: 20px; width: 100%; }

@@ -13,17 +13,19 @@
         </div>
       </div>
 
-      <div class="filters-section panel-card">
-        <div class="filters-header" @click="filtersOpen = !filtersOpen">
-          <div class="filters-title">
-            <FilterIcon :size="20" class="panel-icon" /> 
-            <h3>{{ $t('catalog.filters_title') }}</h3>
-          </div>
+      <BasePanel 
+        :title="$t('catalog.filters_title')" 
+        :icon="FilterIcon" 
+        class="filters-section"
+        @click="filtersOpen = !filtersOpen"
+        style="cursor: pointer;"
+      >
+        <template #header-actions>
           <ChevronDownIcon :class="{ 'rotated': filtersOpen }" :size="20" class="toggle-icon" />
-        </div>
+        </template>
         
         <transition name="slide-fade">
-          <div v-show="filtersOpen" class="filters-body">
+          <div v-show="filtersOpen" class="filters-body" @click.stop>
             <div class="filters-grid">
               <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_brewery')" :placeholder="$t('catalog.placeholder_brewery')" />
               <FilterInput v-model="filters.city" :label="$t('catalog.filter_city')" :placeholder="$t('catalog.placeholder_city')" />
@@ -34,7 +36,7 @@
             </div>
           </div>
         </transition>
-      </div>
+      </BasePanel>
 
       <div v-if="activeFilters.length > 0" class="active-filters-chips">
         <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
@@ -83,11 +85,13 @@
         </div>
       </template>
       
-      <div v-else-if="!isLoading" class="empty-state">
-        <FactoryIcon :size="48" color="#cbd5e1" />
-        <p>{{ $t('catalog.empty_breweries') }}</p>
+      <BaseEmptyState 
+        v-else-if="!isLoading" 
+        :text="$t('catalog.empty_breweries')" 
+        :icon="FactoryIcon"
+      >
         <button class="btn-secondary mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</button>
-      </div>
+      </BaseEmptyState>
     </div>
 
     <DetailModal :show="isDetailOpen" :item="selectedItem" type="brewery" @close="isDetailOpen = false" />
@@ -104,7 +108,10 @@ import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
+
 import BaseLoader from '../components/BaseLoader.vue'
+import BasePanel from '../components/BasePanel.vue'
+import BaseEmptyState from '../components/BaseEmptyState.vue'
 import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import BreweryCard from '../components/BreweryCard.vue'
@@ -260,12 +267,14 @@ onUnmounted(() => { if (observer) observer.disconnect() })
   padding: 0.75rem 1.5rem; font-weight: 700; 
 }
 
-.panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 1.5rem; position: relative; z-index: 20; }
-.filters-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; cursor: pointer; }
-.filters-title { display: flex; align-items: center; gap: 0.75rem; }
-.filters-title h3 { margin: 0; font-size: 1.1rem; color: var(--text-main); }
-.filters-body { padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border); }
-.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.filters-section { margin-bottom: 1.5rem; position: relative; z-index: 20; }
+.filters-section :deep(.panel-header) { border-bottom: none; margin-bottom: 0; padding-bottom: 1rem; }
+.filters-section :deep(.panel-header h3) { font-size: 1.1rem; }
+
+.toggle-icon { color: var(--text-muted); transition: transform 0.3s ease; }
+.toggle-icon.rotated { transform: rotate(180deg); }
+.filters-body { padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
 .active-filters-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; padding: 0 0.5rem; }
@@ -281,7 +290,8 @@ onUnmounted(() => { if (observer) observer.disconnect() })
 .map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
 
 .breweries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-.empty-state { text-align: center; padding: 4rem; color: var(--text-muted); }
+
+.mt-2 { margin-top: 0.5rem; }
 
 @media (max-width: 800px) {
   .header-top-row { flex-direction: column; align-items: stretch; }

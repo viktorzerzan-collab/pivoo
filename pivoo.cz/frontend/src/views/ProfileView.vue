@@ -20,7 +20,7 @@
       
       <div v-show="activeTab === 'settings'" class="profile-grid">
         
-        <div class="panel-card avatar-card">
+        <BasePanel class="avatar-card">
           <div class="avatar-wrapper">
             <img v-if="user?.avatar" :src="'https://www.pivoo.cz/backend/uploads/avatars/' + user.avatar" alt="Avatar" class="avatar-image" />
             <div v-else class="avatar-placeholder"><UserIcon :size="64" color="var(--text-muted)" /></div>
@@ -45,14 +45,11 @@
               {{ $t('views.profile.delete_avatar') }}
             </BaseButton>
           </div>
-        </div>
+        </BasePanel>
 
         <div class="settings-column">
           
-          <div class="panel-card">
-            <div class="panel-header">
-              <h3><SunMoonIcon :size="20" class="panel-icon" /> {{ $t('views.profile.theme_title') }}</h3>
-            </div>
+          <BasePanel :title="$t('views.profile.theme_title')" :icon="SunMoonIcon">
             <p class="setting-desc">{{ $t('views.profile.theme_desc') }}</p>
             
             <div class="theme-options-wrapper">
@@ -66,12 +63,9 @@
                 @update:modelValue="handleThemeChange"
               />
             </div>
-          </div>
+          </BasePanel>
 
-          <div class="panel-card">
-            <div class="panel-header">
-              <h3><BanknoteIcon :size="20" class="panel-icon" /> {{ $t('views.profile.currency_title') }}</h3>
-            </div>
+          <BasePanel :title="$t('views.profile.currency_title')" :icon="BanknoteIcon">
             <p class="setting-desc">{{ $t('views.profile.currency_desc') }}</p>
             
             <div class="currency-form">
@@ -83,13 +77,9 @@
               </BaseSelect>
               <BaseButton @click="saveCurrency" variant="edit" :disabled="localCurrency === authStore.defaultCurrency">{{ $t('buttons.save') }}</BaseButton>
             </div>
-          </div>
+          </BasePanel>
 
-          <div class="panel-card">
-            <div class="panel-header">
-              <h3><KeyIcon :size="20" class="panel-icon" /> {{ $t('views.profile.password_title') }}</h3>
-            </div>
-            
+          <BasePanel :title="$t('views.profile.password_title')" :icon="KeyIcon">
             <form @submit.prevent="changePassword" class="password-form">
               <BaseInput v-model="pwdForm.old_password" type="password" :label="$t('views.profile.old_password')" required />
               
@@ -108,24 +98,18 @@
                 <BaseButton type="submit" variant="edit" :disabled="!isPasswordValid">{{ $t('buttons.save') }}</BaseButton>
               </div>
             </form>
-          </div>
+          </BasePanel>
 
-          <div class="panel-card danger-zone">
-            <div class="panel-header">
-              <h3 class="danger-title"><AlertTriangleIcon :size="20" /> {{ $t('views.profile.danger_zone') }}</h3>
-            </div>
+          <BasePanel :title="$t('views.profile.danger_zone')" :icon="AlertTriangleIcon" class="danger-zone">
             <p class="setting-desc">{{ $t('views.profile.danger_desc') }}</p>
             <BaseButton @click="showDeleteModal = true" variant="danger">{{ $t('views.profile.delete_account') }}</BaseButton>
-          </div>
+          </BasePanel>
 
         </div>
       </div>
 
       <div v-show="activeTab === 'history'" class="history-tab-content">
-        <div class="panel-card">
-          <div class="panel-header">
-            <h3><HistoryIcon :size="20" class="panel-icon" /> {{ $t('views.profile.tab_history') }}</h3>
-          </div>
+        <BasePanel :title="$t('views.profile.tab_history')" :icon="HistoryIcon">
           
           <div v-if="isHistoryLoading" style="position: relative; min-height: 200px;">
             <BaseLoader :show="true" />
@@ -134,9 +118,11 @@
           <div v-else>
             <HistoryList v-if="historyRecords.length > 0" :history="historyRecords" @edit="openEditModal" @delete="openDeleteConfirm" />
             
-            <div v-else class="empty-state">
-              <p>{{ $t('views.profile.no_history') }}</p>
-            </div>
+            <BaseEmptyState 
+              v-else 
+              :text="$t('views.profile.no_history')" 
+              :icon="HistoryIcon" 
+            />
 
             <BasePagination 
               v-if="historyTotalPages > 1"
@@ -144,7 +130,7 @@
               :totalPages="historyTotalPages"
             />
           </div>
-        </div>
+        </BasePanel>
       </div>
     </div>
 
@@ -202,12 +188,13 @@ import BaseLoader from '../components/BaseLoader.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 import BaseModal from '../components/BaseModal.vue'
+import BasePanel from '../components/BasePanel.vue'
+import BaseEmptyState from '../components/BaseEmptyState.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
 import BasePagination from '../components/BasePagination.vue'
 import PasswordStrength from '../components/PasswordStrength.vue'
 import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
-// ZMĚNA: Importujeme CheckInModal namísto EditCheckInModal
 import CheckInModal from '../components/modals/CheckInModal.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import HistoryList from '../components/HistoryList.vue'
@@ -300,7 +287,6 @@ watch(historyPage, () => {
   }
 })
 
-// ZMĚNA: Přidán async a Lazy Loading (čekání na stažení dat formulářů)
 const openEditModal = async (record) => {
   if (!catalogStore.isFormDataLoaded) {
     await catalogStore.fetchFormData()
@@ -591,12 +577,6 @@ const deleteAccount = async () => {
 .profile-content { display: flex; flex-direction: column; }
 .profile-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; align-items: start; }
 
-.panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; transition: background-color 0.3s ease, border-color 0.3s ease; }
-.panel-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.3s ease; }
-.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.3s ease; }
-.panel-icon { color: var(--primary); }
-.setting-desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem; line-height: 1.5; transition: color 0.3s ease; }
-
 .avatar-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.5rem; }
 .avatar-wrapper { position: relative; width: 140px; height: 140px; border-radius: 50%; border: 4px solid var(--bg-app); box-shadow: var(--shadow-floating); overflow: hidden; background: var(--bg-app); transition: all 0.3s ease; }
 .avatar-image { width: 100%; height: 100%; object-fit: cover; }
@@ -622,10 +602,9 @@ const deleteAccount = async () => {
 .half { flex: 1; }
 .form-actions { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 
+/* Přepsání barvy titulu v nebezpečné zóně (vyžaduje selektor h3 v BasePanel) */
+.danger-zone :deep(.panel-header h3) { color: var(--danger) !important; }
 .danger-zone { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.02); }
-.danger-title { color: var(--danger) !important; }
-
-.empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
 
 @media (max-width: 900px) {
   .profile-grid { grid-template-columns: 1fr; }

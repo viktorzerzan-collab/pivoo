@@ -10,24 +10,24 @@
       <BaseLoader :show="isLoading" />
 
       <div class="dashboard-content">
-        <div class="panel-card">
-          <div class="panel-header">
-            <h3><BeerIcon class="panel-icon" /> {{ $t('views.dashboard.me_and_beer_in') }} {{ currentMonthName }}</h3>
-          </div>
+        <BasePanel :title="$t('views.dashboard.me_and_beer_in') + ' ' + currentMonthName" :icon="BeerIcon">
           <StatsBoard :stats="stats" />
-        </div>
+        </BasePanel>
 
-        <div class="panel-card">
-          <div class="panel-header">
-            <h3><HistoryIcon class="panel-icon" /> {{ $t('views.dashboard.recent_records') }}</h3>
-          </div>
-          <HistoryList :history="history" @edit="openEditModal" @delete="confirmDelete" />
+        <BasePanel :title="$t('views.dashboard.recent_records')" :icon="HistoryIcon">
+          <HistoryList 
+            v-if="history && history.length > 0"
+            :history="history" 
+            @edit="openEditModal" 
+            @delete="confirmDelete" 
+          />
           
-          <div v-if="!isLoading && (!history || history.length === 0)" class="empty-dashboard">
-            <BeerIcon :size="48" color="#cbd5e1" stroke-width="1" />
-            <p>{{ $t('views.dashboard.no_records') }}</p>
-          </div>
-        </div>
+          <BaseEmptyState 
+            v-if="!isLoading && (!history || history.length === 0)" 
+            :text="$t('views.dashboard.no_records')" 
+            :icon="BeerIcon" 
+          />
+        </BasePanel>
       </div>
     </div>
 
@@ -96,7 +96,10 @@ import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
+
 import BaseLoader from '../components/BaseLoader.vue'
+import BasePanel from '../components/BasePanel.vue'
+import BaseEmptyState from '../components/BaseEmptyState.vue'
 import StatsBoard from '../components/StatsBoard.vue'
 import HistoryList from '../components/HistoryList.vue'
 import CheckInModal from '../components/modals/CheckInModal.vue'
@@ -365,13 +368,8 @@ const executeDelete = async () => {
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
 .btn-add { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; font-weight: 600; }
 .dashboard-content { display: flex; flex-direction: column; gap: 2rem; }
-.panel-card { background: var(--bg-panel); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.3s ease, border-color 0.3s ease; }
-.panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.3s ease; }
-.panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.3s ease; }
-.panel-icon { color: var(--primary); }
-.empty-dashboard { text-align: center; color: var(--text-muted); padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: color 0.3s ease; }
+
 @media (max-width: 600px) {
   .section-actions .btn-add { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
-  .panel-card { padding: 1rem; }
 }
 </style>

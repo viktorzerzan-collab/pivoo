@@ -9,22 +9,22 @@
         </button>
       </div>
 
-      <div class="filters-section panel-card">
-        <div class="filters-header" @click="filtersOpen = !filtersOpen">
-          <div class="filters-title">
-            <FilterIcon :size="20" class="panel-icon" /> 
-            <h3>{{ $t('catalog.filters_title') }}</h3>
-          </div>
+      <BasePanel 
+        :title="$t('catalog.filters_title')" 
+        :icon="FilterIcon" 
+        class="filters-section"
+        @click="filtersOpen = !filtersOpen"
+        style="cursor: pointer;"
+      >
+        <template #header-actions>
           <ChevronDownIcon :class="{ 'rotated': filtersOpen }" :size="20" class="toggle-icon" />
-        </div>
-        
+        </template>
+
         <transition name="slide-fade">
-          <div v-show="filtersOpen" class="filters-body">
+          <div v-show="filtersOpen" class="filters-body" @click.stop>
             <div class="filters-grid">
               <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_beer')" :placeholder="$t('catalog.placeholder_beer')" />
-              
               <FilterInput v-model="filters.brewery" :label="$t('catalog.filter_brewery')" :placeholder="$t('catalog.placeholder_brewery')" />
-
               <FilterInput v-model="filters.country" :label="$t('catalog.filter_country')" :placeholder="$t('catalog.placeholder_country')" />
 
               <BaseSelect v-model="filters.style" :label="$t('catalog.filter_style')" :placeholder="$t('catalog.all_styles')" searchable>
@@ -42,7 +42,7 @@
             </div>
           </div>
         </transition>
-      </div>
+      </BasePanel>
 
       <div v-if="activeFilters.length > 0" class="active-filters-chips">
         <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
@@ -103,11 +103,13 @@
         </div>
       </template>
       
-      <div v-else-if="!isLoading" class="empty-state">
-        <BeerIcon :size="48" color="#cbd5e1" :stroke-width="1" />
-        <p>{{ $t('catalog.empty_beers') }}</p>
+      <BaseEmptyState 
+        v-else-if="!isLoading" 
+        :text="$t('catalog.empty_beers')" 
+        :icon="BeerIcon"
+      >
         <button class="btn-secondary mt-2" @click="resetFilters">{{ $t('catalog.cancel_filters') }}</button>
-      </div>
+      </BaseEmptyState>
     </div>
 
     <AddBeerModal 
@@ -143,6 +145,8 @@ import FilterRange from '../components/FilterRange.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import BeerCard from '../components/BeerCard.vue'
 import BaseLoader from '../components/BaseLoader.vue'
+import BasePanel from '../components/BasePanel.vue'
+import BaseEmptyState from '../components/BaseEmptyState.vue'
 import BasePagination from '../components/BasePagination.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
@@ -391,17 +395,14 @@ const openDetail = async (beer) => {
 <style scoped>
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
 
-.panel-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 1.5rem; position: relative; z-index: 20; }
-.filters-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; cursor: pointer; user-select: none; }
-.filters-title { display: flex; align-items: center; gap: 0.75rem; }
-.filters-title h3 { margin: 0; font-size: 1.1rem; color: var(--text-main); }
-
-.panel-icon { color: var(--primary); }
+.filters-section { margin-bottom: 1.5rem; position: relative; z-index: 20; }
+.filters-section :deep(.panel-header) { border-bottom: none; margin-bottom: 0; padding-bottom: 1rem; }
+.filters-section :deep(.panel-header h3) { font-size: 1.1rem; }
 
 .toggle-icon { color: var(--text-muted); transition: transform 0.3s ease; }
 .toggle-icon.rotated { transform: rotate(180deg); }
-.filters-body { padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border); }
-.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.filters-body { padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
 .active-filters-chips {
@@ -458,7 +459,6 @@ const openDetail = async (beer) => {
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
 .beers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 
-.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 1rem; text-align: center; color: var(--text-muted); }
 .mt-2 { margin-top: 0.5rem; }
 
 .slide-fade-enter-active { transition: all 0.3s ease-out; }

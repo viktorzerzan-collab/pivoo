@@ -8,7 +8,6 @@
 
     <div v-if="!catalogStore.isLoading" class="wishlist-content">
       
-      <!-- PIVA -->
       <div v-if="activeTab === 'beers'" class="items-grid">
         <BeerCard 
           v-for="beer in wishlistBeers" 
@@ -16,12 +15,13 @@
           :beer="beer" 
           @showDetail="openDetail(beer, 'beer')" 
         />
-        <div v-if="wishlistBeers.length === 0" class="empty-state">
-          {{ $t('views.wishlist.no_beers') }}
-        </div>
+        <BaseEmptyState 
+          v-if="wishlistBeers.length === 0" 
+          :text="$t('views.wishlist.no_beers')" 
+          :icon="BeerIcon"
+        />
       </div>
 
-      <!-- PIVOVARY -->
       <div v-if="activeTab === 'breweries'" class="items-grid">
         <BreweryCard 
           v-for="brewery in wishlistBreweries" 
@@ -29,12 +29,13 @@
           :brewery="brewery" 
           @showDetail="openDetail(brewery, 'brewery')" 
         />
-        <div v-if="wishlistBreweries.length === 0" class="empty-state">
-          {{ $t('views.wishlist.no_breweries') }}
-        </div>
+        <BaseEmptyState 
+          v-if="wishlistBreweries.length === 0" 
+          :text="$t('views.wishlist.no_breweries')" 
+          :icon="FactoryIcon"
+        />
       </div>
 
-      <!-- PODNIKY -->
       <div v-if="activeTab === 'locations'" class="items-grid">
         <LocationCard 
           v-for="location in wishlistLocations" 
@@ -42,9 +43,11 @@
           :location="location" 
           @showDetail="openDetail(location, 'location')" 
         />
-        <div v-if="wishlistLocations.length === 0" class="empty-state">
-          {{ $t('views.wishlist.no_locations') }}
-        </div>
+        <BaseEmptyState 
+          v-if="wishlistLocations.length === 0" 
+          :text="$t('views.wishlist.no_locations')" 
+          :icon="MapPinIcon"
+        />
       </div>
 
     </div>
@@ -72,6 +75,7 @@ import LocationCard from '../components/LocationCard.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
+import BaseEmptyState from '../components/BaseEmptyState.vue'
 
 const catalogStore = useCatalogStore()
 const { t } = useI18n()
@@ -132,18 +136,6 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
-}
-
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 4rem 2rem;
-  background: var(--bg-panel);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  font-size: 1.1rem;
-  font-style: italic;
 }
 
 @media (max-width: 768px) {
