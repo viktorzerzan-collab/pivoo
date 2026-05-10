@@ -418,7 +418,10 @@ const handleApprove = async (item, action) => { try { const res = await apiFetch
 
 <style scoped>
 .admin-page { flex: 1; display: flex; flex-direction: column; }
-.admin-header { margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+
+/* ODSTRANĚNA ČÁRA (border-bottom) A ZBYTEČNÝ PADDING */
+.admin-header { margin-bottom: 2rem; overflow-x: auto; }
+
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
 .admin-section { display: flex; flex-direction: column; flex: 1; }
 .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; gap: 2rem; }

@@ -1,26 +1,35 @@
 <template>
   <div 
     class="base-tooltip-wrapper" 
-    @mouseenter="show = true" 
-    @mouseleave="show = false"
-    @focusin="show = true"
-    @focusout="show = false"
+    ref="wrapper"
+    @mouseenter="onEnter" 
+    @mouseleave="onLeave"
+    @focusin="onEnter"
+    @focusout="onLeave"
   >
     <slot></slot>
 
-    <transition name="tooltip-fade">
-      <div v-show="show && text" class="tooltip-box" :class="position">
-        {{ text }}
-        <div class="tooltip-arrow"></div>
-      </div>
-    </transition>
+    <Teleport to="body">
+      <transition name="tooltip-fade">
+        <div 
+          v-show="show && text" 
+          class="tooltip-box" 
+          :class="position"
+          :style="tooltipStyle"
+          ref="tooltip"
+        >
+          {{ text }}
+          <div class="tooltip-arrow"></div>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick, onBeforeUnmount } from 'vue'
 
-defineProps({
+const props = defineProps({
   text: {
     type: String,
     required: true
@@ -32,6 +41,72 @@ defineProps({
 })
 
 const show = ref(false)
+const wrapper = ref(null)
+const tooltip = ref(null)
+const tooltipStyle = ref({})
+
+// Dynamický výpočet pozice vůči obrazovce
+const updatePosition = async () => {
+  if (!show.value || !wrapper.value) return
+  
+  // Počkáme na bezpečné vykreslení DOMu, abychom mohli změřit šířku a výšku
+  await nextTick()
+  
+  if (!tooltip.value) return
+
+  const rect = wrapper.value.getBoundingClientRect()
+  const tipRect = tooltip.value.getBoundingClientRect()
+  
+  const scrollY = window.scrollY || window.pageYOffset
+  const scrollX = window.scrollX || window.pageXOffset
+
+  let top = 0
+  let left = 0
+
+  // Výpočet souřadnic
+  if (props.position === 'top') {
+    top = rect.top + scrollY - tipRect.height - 8
+    left = rect.left + scrollX + (rect.width / 2) - (tipRect.width / 2)
+  } else if (props.position === 'bottom') {
+    top = rect.bottom + scrollY + 8
+    left = rect.left + scrollX + (rect.width / 2) - (tipRect.width / 2)
+  } else if (props.position === 'left') {
+    top = rect.top + scrollY + (rect.height / 2) - (tipRect.height / 2)
+    left = rect.left + scrollX - tipRect.width - 8
+  } else if (props.position === 'right') {
+    top = rect.top + scrollY + (rect.height / 2) - (tipRect.height / 2)
+    left = rect.right + scrollX + 8
+  } else if (props.position === 'top-end') {
+    top = rect.top + scrollY - tipRect.height - 8
+    left = rect.right + scrollX - tipRect.width
+  }
+
+  tooltipStyle.value = {
+    top: `${top}px`,
+    left: `${left}px`,
+    position: 'absolute',
+    zIndex: 99999 // Vždy navrchu i nad jakýmkoliv modálem
+  }
+}
+
+const onEnter = () => {
+  show.value = true
+  updatePosition()
+  // Přídání eventListenerů, aby tooltip sledoval tlačítko, pokud uživatel scrolluje
+  window.addEventListener('scroll', updatePosition, true)
+  window.addEventListener('resize', updatePosition)
+}
+
+const onLeave = () => {
+  show.value = false
+  window.removeEventListener('scroll', updatePosition, true)
+  window.removeEventListener('resize', updatePosition)
+}
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updatePosition, true)
+  window.removeEventListener('resize', updatePosition)
+})
 </script>
 
 <style scoped>
@@ -43,18 +118,15 @@ const show = ref(false)
 }
 
 .tooltip-box {
-  position: absolute;
   background-color: #1e293b; 
   color: #f8fafc;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.4rem 0.75rem;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   white-space: nowrap;
-  z-index: 9999;
   pointer-events: none;
-  box-shadow: var(--shadow-floating);
-  letter-spacing: 0.02em;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .tooltip-arrow {
@@ -64,12 +136,7 @@ const show = ref(false)
   border-style: solid;
 }
 
-/* POZICE: TOP */
-.tooltip-box.top {
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-}
+/* Úprava chování šipek - absolutní pozicování tooltipů obstaráváme inline styly */
 .tooltip-box.top .tooltip-arrow {
   bottom: -4px;
   left: 50%;
@@ -78,24 +145,6 @@ const show = ref(false)
   border-color: #1e293b transparent transparent transparent;
 }
 
-/* POZICE: TOP-END */
-.tooltip-box.top-end {
-  bottom: calc(100% + 8px);
-  right: -6px; 
-}
-.tooltip-box.top-end .tooltip-arrow {
-  bottom: -4px;
-  right: 18px; 
-  border-width: 5px 5px 0 5px;
-  border-color: #1e293b transparent transparent transparent;
-}
-
-/* POZICE: BOTTOM */
-.tooltip-box.bottom {
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-}
 .tooltip-box.bottom .tooltip-arrow {
   top: -4px;
   left: 50%;
@@ -104,12 +153,6 @@ const show = ref(false)
   border-color: transparent transparent #1e293b transparent;
 }
 
-/* POZICE: LEFT */
-.tooltip-box.left {
-  right: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-}
 .tooltip-box.left .tooltip-arrow {
   right: -4px;
   top: 50%;
@@ -118,12 +161,6 @@ const show = ref(false)
   border-color: transparent transparent transparent #1e293b;
 }
 
-/* POZICE: RIGHT */
-.tooltip-box.right {
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-}
 .tooltip-box.right .tooltip-arrow {
   left: -4px;
   top: 50%;
@@ -132,20 +169,23 @@ const show = ref(false)
   border-color: transparent #1e293b transparent transparent;
 }
 
-/* ANIMACE */
+.tooltip-box.top-end .tooltip-arrow {
+  bottom: -4px;
+  right: 12px;
+  border-width: 5px 5px 0 5px;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+/* Animace (vyhlazena pro čistější scale) */
 .tooltip-fade-enter-active,
 .tooltip-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform-origin: center;
 }
 
 .tooltip-fade-enter-from,
 .tooltip-fade-leave-to {
   opacity: 0;
+  transform: scale(0.95);
 }
-
-.tooltip-fade-enter-from.top { transform: translate(-50%, 5px); }
-.tooltip-fade-enter-from.top-end { transform: translateY(5px); }
-.tooltip-fade-enter-from.bottom { transform: translate(-50%, -5px); }
-.tooltip-fade-enter-from.left { transform: translate(5px, -50%); }
-.tooltip-fade-enter-from.right { transform: translate(-5px, -50%); }
 </style>

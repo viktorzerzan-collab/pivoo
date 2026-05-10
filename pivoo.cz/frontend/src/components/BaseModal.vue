@@ -36,39 +36,27 @@ let scrollPosition = 0
 
 watch(() => props.show, (isShown) => {
   if (isShown) {
-    // Uložíme aktuální pozici scrollu a celkovou výšku dokumentu
     scrollPosition = window.scrollY
     const docHeight = document.documentElement.scrollHeight
     
-    // Zafixujeme body
     document.body.style.position = 'fixed'
     document.body.style.top = `-${scrollPosition}px`
     document.body.style.width = '100%'
     document.body.style.overflowY = 'scroll'
-    
-    // Zafixujeme i výšku, aby se obsah nesmrsknul a blur fungoval až dolů
     document.body.style.height = `${docHeight}px`
-    
     document.body.classList.add('modal-open')
   } else {
-    // Vrátíme styly do původního stavu
     document.body.style.position = ''
     document.body.style.top = ''
     document.body.style.width = ''
     document.body.style.overflowY = ''
-    
-    // Odstraníme vynucenou výšku
     document.body.style.height = ''
-    
     document.body.classList.remove('modal-open')
-    
-    // Vrátíme uživatele tam, kde byl
     window.scrollTo(0, scrollPosition)
   }
 }, { immediate: true })
 
 onUnmounted(() => {
-  // Pojistka pro vyčištění
   document.body.style.position = ''
   document.body.style.top = ''
   document.body.style.width = ''
@@ -84,15 +72,16 @@ onUnmounted(() => {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box; /* Pojistka pro správné započítání paddingu */
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  padding: 1.5rem;
+  padding: 1.25rem; /* Zaručená mezera od kraje (cca 20px) pro mobily i desktop */
 }
 
 .modal-container {
@@ -100,11 +89,13 @@ onUnmounted(() => {
   color: var(--text-main);
   width: 100%;
   max-width: 500px;
+  max-height: 100%; /* OPRAVA: Kontejner už nikdy nepřeteče rodiče s paddingem */
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-floating);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -114,6 +105,8 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border);
+  position: relative;
+  flex-shrink: 0; /* OPRAVA: Hlavička se nesmí nikdy scvrknout */
   transition: border-color 0.3s ease;
 }
 
@@ -124,10 +117,23 @@ onUnmounted(() => {
   transition: color 0.3s ease;
 }
 
+.btn-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
 .modal-body {
   padding: 1.5rem;
-  max-height: 80vh;
   overflow-y: auto;
+  flex: 1; /* OPRAVA: Tělo zabere zbývající místo po hlavičce */
+  min-height: 0; /* OPRAVA: Extrémně důležité pro flexbox, aby povolil scrollování a neroztahoval kontejner */
 }
 
 .modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.3s ease; }

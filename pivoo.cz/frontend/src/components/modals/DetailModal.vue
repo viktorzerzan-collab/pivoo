@@ -1,13 +1,14 @@
 <template>
-  <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 600px;">
+  <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 600px; overflow: hidden;">
     <template #header>
+      <div class="background-watermark" :class="{ 'is-logo': type === 'brewery' && item?.logo }">
+        <img v-if="type === 'brewery' && item?.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" class="watermark-logo-img" />
+        <BeerIcon v-else-if="type === 'beer'" :size="180" color="var(--primary)" />
+        <FactoryIcon v-else-if="type === 'brewery'" :size="180" color="var(--primary)" />
+        <MapPinIcon v-else :size="180" color="var(--primary)" />
+      </div>
+
       <div class="detail-header">
-        <div class="icon-box" :class="[type, {'has-logo': item?.logo}]">
-          <img v-if="type === 'brewery' && item?.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" class="detail-logo-img" />
-          <BeerIcon v-else-if="type === 'beer'" :size="32" />
-          <FactoryIcon v-else-if="type === 'brewery'" :size="32" />
-          <MapPinIcon v-else :size="32" />
-        </div>
         <div class="header-text">
           <div class="title-with-badges">
             <h2 class="modal-title">{{ item?.name }}</h2>
@@ -266,14 +267,44 @@ const getCountryName = (code, fallback) => {
 </script>
 
 <style scoped>
-.detail-header { display: flex; align-items: center; gap: 1.25rem; }
-.icon-box { padding: 0.8rem; border-radius: var(--radius-md); width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.icon-box.beer { background: #fef9c3; color: #ca8a04; }
-.icon-box.brewery { background: #ffedd5; color: #b45309; }
-.icon-box.location { background: #e0f2fe; color: #0369a1; }
-.icon-box.has-logo { padding: 0; background: transparent; overflow: hidden; border: 1px solid var(--border); }
-.detail-logo-img { width: 100%; height: 100%; object-fit: contain; }
+/* Zajištění, aby texty v modálu byly vždy nad vodoznakem */
+.detail-header, .detail-content { 
+  position: relative; 
+  z-index: 1; 
+}
 
+/* Vodoznak na pozadí */
+.background-watermark {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.background-watermark.is-logo {
+  right: -10px;
+  top: -10px;
+  width: 220px;
+  height: 220px;
+  transform: rotate(-10deg);
+  opacity: 0.06;
+}
+
+.watermark-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: grayscale(1);
+}
+
+/* Hlavička detailu (upravená) */
+.detail-header { display: flex; align-items: center; }
 .header-text { flex: 1; }
 .title-with-badges { display: flex; flex-direction: column; gap: 0.4rem; }
 .modal-title { margin: 0; font-size: 1.6rem; font-weight: 800; color: var(--text-main); line-height: 1.1; }
