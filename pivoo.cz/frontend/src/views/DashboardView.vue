@@ -34,25 +34,14 @@
     </div>
 
     <CheckInModal 
-      :show="isModalOpen" 
-      :form="form" 
-      :isEditing="false"
-      @close="isModalOpen = false" 
-      @submit="submitCheckIn"
+      :show="isModalOpen || isEditModalOpen" 
+      :form="isEditModalOpen ? editForm : form" 
+      :isEditing="isEditModalOpen"
+      @close="isEditModalOpen ? (isEditModalOpen = false) : (isModalOpen = false)" 
+      @submit="isEditModalOpen ? submitEdit() : submitCheckIn()"
       @open-add-location="openAddLocationFromCheckin" 
       @magic-add-brewery="handleMagicAddBrewery"
       @magic-add-beer="handleMagicAddBeer"
-    />
-    
-    <CheckInModal 
-      :show="isEditModalOpen" 
-      :form="editForm" 
-      :isEditing="true"
-      @close="isEditModalOpen = false" 
-      @submit="submitEdit"
-      @open-add-location="openAddLocationFromCheckin" 
-      @magic-add-brewery="handleMagicAddBrewery"
-      @magic-add-beer="handleMagicAddBeer" 
     />
     
     <DeleteConfirmModal 
@@ -152,6 +141,7 @@ const openCheckInModal = () => {
 
 const handleMagicAddBrewery = (aiData) => {
   isModalOpen.value = false
+  isEditModalOpen.value = false
   pendingAiData.value = aiData
   
   breweryForm.value = { 
@@ -173,6 +163,7 @@ const handleMagicAddBrewery = (aiData) => {
 
 const handleMagicAddBeer = (aiData) => {
   isModalOpen.value = false
+  isEditModalOpen.value = false
   pendingAiData.value = aiData
   beerForm.value = {
     name: aiData.beer_name,
@@ -257,6 +248,7 @@ const submitNewBeer = async () => {
 
 const openAddLocationFromCheckin = (coords) => {
   isModalOpen.value = false
+  isEditModalOpen.value = false
   locationForm.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: coords?.lat || null, lng: coords?.lng || null }
   isAddLocationModalOpen.value = true
 }

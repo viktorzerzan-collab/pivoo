@@ -39,14 +39,10 @@
         </transition>
       </BasePanel>
 
-      <div v-if="activeFilters.length > 0" class="active-filters-chips">
-        <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
-        <div class="chips-container">
-          <button v-for="chip in activeFilters" :key="chip.id" class="filter-chip" @click="removeFilter(chip)" :title="$t('catalog.cancel_filter')">
-            {{ chip.label }} <XIcon :size="14" />
-          </button>
-        </div>
-      </div>
+      <ActiveFilterChips 
+        :filters="activeFilters" 
+        @remove="removeFilter" 
+      />
 
       <div class="results-bar">
         <div v-if="viewMode === 'list'" class="sort-control-wrapper">
@@ -109,7 +105,7 @@ import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
-import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIcon } from 'lucide-vue-next'
+import { PlusIcon, MapIcon, FilterIcon, ChevronDownIcon, LayoutGridIcon } from 'lucide-vue-next'
 
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePanel from '../components/BasePanel.vue'
@@ -123,8 +119,8 @@ import DetailModal from '../components/modals/DetailModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import BasePagination from '../components/BasePagination.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
+import ActiveFilterChips from '../components/ActiveFilterChips.vue'
 
-// --- Všechny deklarace stavů na začátku ---
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
@@ -139,7 +135,7 @@ const filtersOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
 const isAppending = ref(false)
-const loadMoreTrigger = ref(null) // Deklarováno včas pro watch a template ref
+const loadMoreTrigger = ref(null)
 
 const form = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
 const currentPage = ref(1)
@@ -151,7 +147,6 @@ const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 
 let observer = null
 
-// --- Computed vlastnosti ---
 const isAdmin = computed(() => user.value?.role === 'admin')
 
 const viewModeOptions = computed(() => [
@@ -187,7 +182,6 @@ const sortOptions = computed(() => [
   { value: 'oldest', label: t('catalog.sort.oldest') }
 ])
 
-// --- Logika a Funkce ---
 const removeFilter = (chip) => {
   if (chip.partValue) {
     let parts = String(filters.value[chip.realKey]).split(',').map(s => s.trim()).filter(s => s)
@@ -258,7 +252,6 @@ const submitLocation = async () => {
   } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-// --- Watchery ---
 watch(loadMoreTrigger, (el) => {
   if (observer) observer.disconnect()
   if (el) {
@@ -271,10 +264,9 @@ watch(loadMoreTrigger, (el) => {
   }
 })
 
-watch([filters, sortBy], () => { currentPage.value = 1; loadBreweries(false) }, { deep: true })
-watch(currentPage, () => { if (!isAppending.value) loadBreweries(false) })
+watch([filters, sortBy], () => { currentPage.value = 1; loadLocations(false) }, { deep: true })
+watch(currentPage, () => { if (!isAppending.value) loadLocations(false) })
 
-// --- Lifecycle Hooky ---
 onMounted(async () => { 
   await catalogStore.fetchAllData()
   loadLocations(false) 
@@ -299,11 +291,6 @@ onUnmounted(() => {
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
-.active-filters-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; padding: 0 0.5rem; }
-.chips-label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-.chips-container { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.filter-chip { display: inline-flex; align-items: center; gap: 0.4rem; background-color: var(--primary); color: #1e293b; border: none; padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
-
 .results-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 0 0 1rem 0; border-bottom: 1px solid var(--border); }
 .results-count { color: var(--text-muted); font-size: 0.95rem; flex: 1; text-align: center; }
 .sort-control-wrapper, .sort-control-placeholder { width: 260px; }
@@ -313,7 +300,6 @@ onUnmounted(() => {
 .map-wrapper { margin-bottom: 2rem; }
 .map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
 
-/* Upraveno: max 2 sloupce */
 .locations-grid { 
   display: grid; 
   grid-template-columns: repeat(2, 1fr); 
@@ -326,7 +312,6 @@ onUnmounted(() => {
 .mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
 
 @media (max-width: 800px) {
-  /* Upraveno: na mobilu 1 sloupec */
   .locations-grid { 
     grid-template-columns: 1fr; 
   }

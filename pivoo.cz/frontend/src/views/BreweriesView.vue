@@ -39,14 +39,10 @@
         </transition>
       </BasePanel>
 
-      <div v-if="activeFilters.length > 0" class="active-filters-chips">
-        <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
-        <div class="chips-container">
-          <button v-for="chip in activeFilters" :key="chip.id" class="filter-chip" @click="removeFilter(chip)" :title="$t('catalog.cancel_filter')">
-            {{ chip.label }} <XIcon :size="14" />
-          </button>
-        </div>
-      </div>
+      <ActiveFilterChips 
+        :filters="activeFilters" 
+        @remove="removeFilter" 
+      />
 
       <div class="results-bar">
         <div v-if="viewMode === 'list'" class="sort-control-wrapper">
@@ -105,7 +101,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { PlusIcon, FactoryIcon, FilterIcon, ChevronDownIcon, XIcon, LayoutGridIcon, MapIcon } from 'lucide-vue-next'
+import { PlusIcon, FactoryIcon, FilterIcon, ChevronDownIcon, LayoutGridIcon, MapIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -123,6 +119,7 @@ import DetailModal from '../components/modals/DetailModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
 import BasePagination from '../components/BasePagination.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
+import ActiveFilterChips from '../components/ActiveFilterChips.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -275,9 +272,6 @@ onUnmounted(() => { if (observer) observer.disconnect() })
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
-.active-filters-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; padding: 0 0.5rem; }
-.filter-chip { display: inline-flex; align-items: center; gap: 0.4rem; background-color: var(--primary); color: #1e293b; padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: none; }
-
 .results-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 0 0 1rem 0; border-bottom: 1px solid var(--border); }
 .results-count { color: var(--text-muted); font-size: 0.95rem; flex: 1; text-align: center; }
 .sort-control-wrapper, .sort-control-placeholder { width: 260px; }
@@ -287,7 +281,6 @@ onUnmounted(() => { if (observer) observer.disconnect() })
 .map-wrapper { margin-bottom: 2rem; }
 .map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
 
-/* Upraveno: max 2 sloupce */
 .breweries-grid { 
   display: grid; 
   grid-template-columns: repeat(2, 1fr); 
@@ -298,7 +291,6 @@ onUnmounted(() => { if (observer) observer.disconnect() })
 .mt-2 { margin-top: 0.5rem; }
 
 @media (max-width: 800px) {
-  /* Upraveno: na mobilu 1 sloupec */
   .breweries-grid { 
     grid-template-columns: 1fr; 
   }

@@ -45,21 +45,10 @@
         </transition>
       </BasePanel>
 
-      <div v-if="activeFilters.length > 0" class="active-filters-chips">
-        <span class="chips-label">{{ $t('catalog.active_filters') }}</span>
-        <div class="chips-container">
-          <button 
-            v-for="chip in activeFilters" 
-            :key="chip.id" 
-            class="filter-chip"
-            @click="removeFilter(chip)"
-            :title="$t('catalog.cancel_filter')"
-          >
-            {{ chip.label }}
-            <XIcon :size="14" />
-          </button>
-        </div>
-      </div>
+      <ActiveFilterChips 
+        :filters="activeFilters" 
+        @remove="removeFilter" 
+      />
 
       <div class="results-bar">
         <div class="sort-control-wrapper">
@@ -140,7 +129,7 @@ import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
-import { PlusIcon, FilterIcon, ChevronDownIcon, BeerIcon, XIcon } from 'lucide-vue-next'
+import { PlusIcon, FilterIcon, ChevronDownIcon, BeerIcon } from 'lucide-vue-next'
 
 import FilterInput from '../components/FilterInput.vue'
 import FilterRange from '../components/FilterRange.vue'
@@ -153,6 +142,7 @@ import BasePagination from '../components/BasePagination.vue'
 import BaseButton from '../components/BaseButton.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
+import ActiveFilterChips from '../components/ActiveFilterChips.vue'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
@@ -408,43 +398,6 @@ const openDetail = async (beer) => {
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
-.active-filters-chips {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding: 0 0.5rem;
-}
-.chips-label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-.chips-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background-color: var(--primary);
-  color: #1e293b;
-  border: none;
-  padding: 0.3rem 0.8rem;
-  border-radius: 99px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.filter-chip:hover {
-  background-color: var(--primary-hover);
-}
-
 .results-bar { 
   display: flex; 
   justify-content: space-between; 
@@ -461,7 +414,6 @@ const openDetail = async (beer) => {
 
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
 
-/* Upraveno: max 2 sloupce */
 .beers-grid { 
   display: grid; 
   grid-template-columns: repeat(2, 1fr); 
@@ -480,7 +432,6 @@ const openDetail = async (beer) => {
 .mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
 
 @media (max-width: 768px) {
-  /* Upraveno: na mobilu 1 sloupec */
   .beers-grid { 
     grid-template-columns: 1fr; 
   }
