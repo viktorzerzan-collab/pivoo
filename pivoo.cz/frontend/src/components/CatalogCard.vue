@@ -1,17 +1,18 @@
 <template>
   <div class="card catalog-card" :class="cardClasses">
+    
+    <div class="background-watermark" :class="{ 'is-logo': type === 'brewery' && item.logo }">
+      <template v-if="type === 'brewery' && item.logo">
+        <img :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" alt="Logo background" class="watermark-logo-img" />
+      </template>
+      <template v-else>
+        <component :is="itemIcon" :size="140" :color="iconColor" />
+      </template>
+    </div>
+
     <div class="card-body">
       <div class="card-main-info">
         
-        <div class="icon-wrapper" :class="iconClasses">
-          <template v-if="type === 'brewery' && item.logo">
-            <img :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" alt="Logo" class="item-logo-img" />
-          </template>
-          <template v-else>
-            <component :is="itemIcon" :size="24" :color="iconColor" />
-          </template>
-        </div>
-
         <div class="text-content">
           <div class="title-row">
             <h3 class="card-title">{{ item.name }}</h3>
@@ -125,11 +126,6 @@ const cardClasses = computed(() => {
   }
 })
 
-const iconClasses = computed(() => {
-  if (props.type === 'brewery' && props.item.logo) return 'has-logo'
-  return `${props.type}-bg`
-})
-
 const itemIcon = computed(() => {
   if (props.type === 'beer') return BeerIcon
   if (props.type === 'brewery') return FactoryIcon
@@ -197,19 +193,55 @@ const translateFermentation = (val) => {
   height: 100%; 
   position: relative; 
   z-index: 1;
+  overflow: hidden; /* Důležité pro oříznutí vodoznaku */
 }
 
 .card.is-fav { border-color: var(--primary); outline: 1px solid var(--primary); }
 .card:hover { border-color: var(--primary); background-color: var(--card-hover-bg); z-index: 10; }
 
-.card-body { padding: 1.25rem; flex-grow: 1; }
-.card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
+/* Vodoznak na pozadí */
+.background-watermark {
+  position: absolute;
+  right: -15px;
+  top: 10px;
+  opacity: 0.04; /* Velmi jemná průhlednost (4%) */
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  transition: all 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-/* Ikony */
-.icon-wrapper { padding: 0.75rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.beer-bg, .brewery-bg, .location-bg { background: #1e293b; width: 48px; height: 48px; }
-.has-logo { padding: 0; background: transparent; border: 1px solid var(--border); overflow: hidden; width: 48px; height: 48px; }
-.item-logo-img { width: 100%; height: 100%; object-fit: contain; background: white; }
+.background-watermark.is-logo {
+  right: -10px;
+  top: -10px;
+  width: 150px;
+  height: 150px;
+  transform: rotate(-10deg);
+  opacity: 0.06;
+}
+
+.watermark-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: grayscale(1); /* Logo v pozadí je černobílé pro čistší vzhled */
+}
+
+.card:hover .background-watermark {
+  opacity: 0.07;
+  transform: rotate(10deg) scale(1.1);
+}
+
+.card:hover .background-watermark.is-logo {
+  opacity: 0.1;
+  transform: rotate(-5deg) scale(1.05);
+}
+
+.card-body { padding: 1.25rem; flex-grow: 1; position: relative; z-index: 1; }
+.card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
 
@@ -230,7 +262,17 @@ const translateFermentation = (val) => {
 
 /* Tagy */
 .tags-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
-.tag-badge { background: var(--bg-app); border: 1px solid var(--border); padding: 3px 8px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: 700; color: var(--text-muted); transition: all 0.3s ease; }
+.tag-badge { 
+  background: rgba(var(--bg-app-rgb), 0.7); 
+  border: 1px solid var(--border); 
+  padding: 3px 8px; 
+  border-radius: var(--radius-sm); 
+  font-size: 0.7rem; 
+  font-weight: 700; 
+  color: var(--text-muted); 
+  transition: all 0.3s ease;
+  backdrop-filter: blur(2px);
+}
 
 /* Hodnocení */
 .card-rating { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; }
@@ -238,7 +280,7 @@ const translateFermentation = (val) => {
 .count { font-size: 0.75rem; color: var(--text-muted); margin-left: 4px; }
 
 /* Patička */
-.card-footer { padding: 0 1.25rem 1.25rem; }
+.card-footer { padding: 0 1.25rem 1.25rem; position: relative; z-index: 1; }
 .full-width-btn { width: 100%; justify-content: center; background-color: var(--bg-app); border: 1px solid var(--border); color: var(--text-main); }
 .full-width-btn:hover { background-color: var(--border); }
 </style>

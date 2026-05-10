@@ -1,12 +1,13 @@
 <template>
   <div class="history-grid" v-if="history && history.length > 0">
     <div v-for="record in history" :key="record.id" class="card history-card">
+      
+      <div class="background-watermark">
+        <BeerIcon :size="140" color="var(--primary)" />
+      </div>
+
       <div class="card-body">
         <div class="card-main-info">
-          
-          <div class="icon-wrapper beer-bg">
-            <BeerIcon :size="24" color="var(--primary)" />
-          </div>
           
           <div class="text-content">
             <div class="title-row">
@@ -186,6 +187,7 @@ const formatDate = (dateStr) => {
   height: 100%; 
   position: relative; 
   min-width: 0;
+  overflow: hidden;
 }
 .card:hover { 
   border-color: var(--primary); 
@@ -194,11 +196,28 @@ const formatDate = (dateStr) => {
   box-shadow: var(--shadow-sm);
 }
 
-.card-body { padding: 1.25rem; flex-grow: 1; min-width: 0; }
-.card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
+/* Vodoznak sjednocený s CatalogCard */
+.background-watermark {
+  position: absolute;
+  right: -15px;
+  top: 10px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  transition: all 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.icon-wrapper { padding: 0.75rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; flex-shrink: 0; }
-.beer-bg { background: #1e293b; }
+.card:hover .background-watermark {
+  opacity: 0.07;
+  transform: rotate(10deg) scale(1.1);
+}
+
+.card-body { padding: 1.25rem; flex-grow: 1; min-width: 0; position: relative; z-index: 1; }
+.card-main-info { display: flex; gap: 1rem; align-items: flex-start; }
 
 .text-content { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
 
@@ -211,7 +230,7 @@ const formatDate = (dateStr) => {
 
 .tags-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
 .tag-badge { 
-  background: var(--bg-app); 
+  background: rgba(var(--bg-app-rgb), 0.7); 
   border: 1px solid var(--border); 
   padding: 3px 8px; 
   border-radius: var(--radius-sm); 
@@ -219,9 +238,19 @@ const formatDate = (dateStr) => {
   font-weight: 700; 
   color: var(--text-muted); 
   text-transform: uppercase;
+  backdrop-filter: blur(2px);
 }
 
-.consumption-meta { display: flex; gap: 1.5rem; margin-top: 0.8rem; padding: 0.85rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.consumption-meta { 
+  display: flex; 
+  gap: 1.5rem; 
+  margin-top: 0.8rem; 
+  padding: 0.85rem; 
+  background: rgba(var(--bg-app-rgb), 0.8); 
+  border-radius: var(--radius-sm); 
+  border: 1px solid var(--border); 
+  backdrop-filter: blur(2px); 
+}
 .meta-item { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; }
 

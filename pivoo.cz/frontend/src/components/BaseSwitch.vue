@@ -40,8 +40,18 @@ defineEmits(['update:modelValue'])
   padding: 0.375rem;
   border-radius: var(--radius-md);
   gap: 0.25rem;
-  flex-wrap: wrap;
+  /* Vypnuto zalamování řádků a zapnuto scrollování do strany */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch; /* Plynulé scrollování na iOS */
+  scrollbar-width: none; /* Skrytí posuvníku pro Firefox */
   transition: background-color 0.3s ease;
+}
+
+/* Skrytí posuvníku pro Chrome, Safari a novější Edge */
+.base-switch::-webkit-scrollbar {
+  display: none;
 }
 
 .base-switch.is-full-width {
@@ -67,7 +77,9 @@ defineEmits(['update:modelValue'])
   font-size: 0.95rem;
   color: var(--text-muted);
   transition: all 0.2s ease;
+  /* Text se nezalamuje a tlačítka se nezmenšují = vznikne posuvník */
   white-space: nowrap;
+  flex-shrink: 0; 
 }
 
 .switch-btn:hover:not(.active) {
@@ -75,6 +87,7 @@ defineEmits(['update:modelValue'])
   background: rgba(128, 128, 128, 0.1);
 }
 
+/* Navrácena pivní barva pro aktivní položku */
 .switch-btn.active {
   background-color: var(--primary);
   color: #1e293b;
@@ -90,8 +103,8 @@ defineEmits(['update:modelValue'])
     display: flex;
   }
   .switch-btn {
-    flex: 1;
-    padding: 0.6rem 0.5rem;
+    /* Odstraněno flex: 1, aby se tlačítka nesmršťovala a šlo jimi posouvat */
+    padding: 0.6rem 0.75rem;
     font-size: 0.85rem;
   }
 }

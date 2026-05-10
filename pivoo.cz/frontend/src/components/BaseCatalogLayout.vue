@@ -212,12 +212,41 @@ onUnmounted(() => {
 .mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
 
 @media (max-width: 800px) {
-  .mobile-action-bar { display: block; margin-bottom: 1.5rem; width: 100%; }
+  .header-top-row { margin-bottom: 0.75rem; }
+  .filters-section { margin-bottom: 0.75rem; }
+  
+  .mobile-action-bar { display: block; margin-bottom: 0.5rem; width: 100%; }
   .mobile-action-bar :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
   .desktop-action-bar { display: none; }
-  .results-bar { flex-direction: column; align-items: stretch; gap: 1rem; border-bottom: none; }
-  .sort-control-wrapper { width: 100%; max-width: none; }
-  .results-count { text-align: center; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+  
+  .results-bar { 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: 0.75rem; 
+    border-bottom: none; 
+    margin-bottom: 1rem; 
+    padding-bottom: 0; 
+  }
+  
+  /* ZRUŠENÍ VÝŠKY Z FLEX-BASIS */
+  .sort-control-wrapper { 
+    width: 100%; 
+    max-width: none; 
+    flex: none; /* Toto vyřeší ten gigantický prázdný prostor (zruší výšku 200px) */
+    margin-bottom: 0; 
+  }
+
+  .sort-control-wrapper :deep(> *) {
+    margin-bottom: 0 !important;
+  }
+  
+  .results-count { 
+    flex: none; /* Zabrání zbytečnému natahování počtu položek */
+    text-align: center; 
+    padding-top: 0; 
+    border-top: none; 
+  }
+  
   .desktop-pagination { display: none; }
   .mobile-loader { display: block; }
 }
