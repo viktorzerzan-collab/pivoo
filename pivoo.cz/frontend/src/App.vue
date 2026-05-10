@@ -2,7 +2,6 @@
   <div class="layout-wrapper" :class="{ 'has-bottom-nav': !isAuthPage }">
     <AppNavigation v-if="!isAuthPage" @toggle-theme="toggleTheme" :is-dark="isDark" />
     
-    <!-- Plovoucí panel pro přepínače na přihlašovacích stránkách -->
     <div v-if="isAuthPage" class="auth-top-bar">
       <LangToggleButton />
       <ThemeToggleButton :is-dark="isDark" @toggle="toggleTheme" />
@@ -191,8 +190,6 @@ html {
   transition: background-color 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
-
-body.modal-open { overflow: hidden; }
 
 html, body, #app {
   height: 100%;

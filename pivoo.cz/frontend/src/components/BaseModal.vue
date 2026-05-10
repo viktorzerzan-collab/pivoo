@@ -1,20 +1,22 @@
 <template>
-  <transition name="modal-fade">
-    <div v-if="show" class="modal-overlay" @click.self="$emit('close')">
-      <div class="modal-container">
-        <header class="modal-header">
-          <slot name="header"></slot>
-          <button class="btn-close" @click="$emit('close')" aria-label="Zavřít">
-            <XIcon :size="24" />
-          </button>
-        </header>
-        
-        <div class="modal-body">
-          <slot name="body"></slot>
+  <Teleport to="body">
+    <transition name="modal-fade">
+      <div v-if="show" class="modal-overlay" @click.self="$emit('close')">
+        <div class="modal-container">
+          <header class="modal-header">
+            <slot name="header"></slot>
+            <button class="btn-close" @click="$emit('close')" aria-label="Zavřít">
+              <XIcon :size="24" />
+            </button>
+          </header>
+          
+          <div class="modal-body">
+            <slot name="body"></slot>
+          </div>
         </div>
       </div>
-    </div>
-  </transition>
+    </transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -26,23 +28,60 @@ const props = defineProps({
 })
 defineEmits(['close'])
 
+let scrollPosition = 0
+
 watch(() => props.show, (isShown) => {
   if (isShown) {
+    // Uložíme aktuální pozici scrollu a celkovou výšku dokumentu
+    scrollPosition = window.scrollY
+    const docHeight = document.documentElement.scrollHeight
+    
+    // Zafixujeme body
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollPosition}px`
+    document.body.style.width = '100%'
+    document.body.style.overflowY = 'scroll'
+    
+    // PŘIDÁNO: Zafixujeme i výšku, aby se obsah nesmrsknul a blur fungoval až dolů
+    document.body.style.height = `${docHeight}px`
+    
     document.body.classList.add('modal-open')
   } else {
+    // Vrátíme styly do původního stavu
+    document.body.style.position = ''
+    document.body.style.top = ''
+    document.body.style.width = ''
+    document.body.style.overflowY = ''
+    
+    // PŘIDÁNO: Odstraníme vynucenou výšku
+    document.body.style.height = ''
+    
     document.body.classList.remove('modal-open')
+    
+    // Vrátíme uživatele tam, kde byl
+    window.scrollTo(0, scrollPosition)
   }
 }, { immediate: true })
 
 onUnmounted(() => {
+  // Pojistka pro vyčištění
+  document.body.style.position = ''
+  document.body.style.top = ''
+  document.body.style.width = ''
+  document.body.style.overflowY = ''
+  document.body.style.height = ''
   document.body.classList.remove('modal-open')
+  window.scrollTo(0, scrollPosition)
 })
 </script>
 
 <style scoped>
 .modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
