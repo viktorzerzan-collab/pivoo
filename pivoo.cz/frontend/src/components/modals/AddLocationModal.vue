@@ -27,14 +27,17 @@
 
         <template v-if="form.type !== 'jine'">
           
-          <div class="map-container-wrapper">
-            <label class="form-label d-block mb-2">{{ $t('modals.add_location.map_label') }}</label>
-            <div ref="mapContainerRef" class="admin-map-element"></div>
-            <div class="coords-display">
-              GPS: {{ form.lat || '???' }}, {{ form.lng || '???' }}
+          <BaseMapPicker 
+            v-model:lat="form.lat" 
+            v-model:lng="form.lng" 
+            :label="$t('modals.add_location.map_label')" 
+            :show="show && form.type !== 'jine'"
+            @location-changed="handleLocationChange"
+          >
+            <template #append-coords>
               <span v-if="isGeocoding" style="color: var(--blue); margin-left: 10px;">{{ $t('modals.add_location.geocoding') }}</span>
-            </div>
-          </div>
+            </template>
+          </BaseMapPicker>
 
           <BaseInput v-model="form.address" :label="$t('modals.add_brewery.address')" />
 
@@ -68,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { MapPinIcon, AlertTriangleIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
@@ -76,11 +79,7 @@ import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
 import OpeningHoursInput from '../OpeningHoursInput.vue'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-
-import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
-import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import BaseMapPicker from '../BaseMapPicker.vue' // Import naší mapy
 
 import { useCatalogStore } from '../../stores/catalog'
 
@@ -94,10 +93,6 @@ const emit = defineEmits(['close', 'submit'])
 
 const catalogStore = useCatalogStore()
 const { t } = useI18n()
-
-const map = ref(null)
-const marker = ref(null)
-const mapContainerRef = ref(null)
 
 const duplicateWarning = ref('')
 const isGeocoding = ref(false)
@@ -154,93 +149,22 @@ const fetchAddressFromGPS = async (lat, lng) => {
   }
 }
 
-const destroyMap = () => {
-  if (map.value) {
-    map.value.remove()
-    map.value = null
-    marker.value = null
-  }
-}
-
-const initMap = () => {
-  if (props.form.type === 'jine') return;
-  if (!mapContainerRef.value) return;
-
-  destroyMap()
-
-  const lat = parseFloat(props.form.lat) || 49.8175
-  const lng = parseFloat(props.form.lng) || 15.4730
-  const zoom = props.form.lat ? 16 : 6
-
-  map.value = L.map(mapContainerRef.value).setView([lat, lng], zoom)
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map.value)
-
-  const customIcon = L.icon({
-    iconUrl: markerIconUrl,
-    shadowUrl: markerShadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34]
-  })
-
-  marker.value = L.marker([lat, lng], { icon: customIcon, draggable: true }).addTo(map.value)
-
-  marker.value.on('dragend', (e) => {
-    const newPos = e.target.getLatLng()
-    props.form.lat = newPos.lat.toFixed(8)
-    props.form.lng = newPos.lng.toFixed(8)
-    
-    checkDuplicates(props.form.lat, props.form.lng)
-    fetchAddressFromGPS(props.form.lat, props.form.lng)
-  })
-
-  map.value.on('click', (e) => {
-    const newPos = e.latlng
-    marker.value.setLatLng(newPos)
-    props.form.lat = newPos.lat.toFixed(8)
-    props.form.lng = newPos.lng.toFixed(8)
-    
-    checkDuplicates(props.form.lat, props.form.lng)
-    fetchAddressFromGPS(props.form.lat, props.form.lng)
-  })
-
-  setTimeout(() => {
-    if (map.value) map.value.invalidateSize()
-  }, 250)
+const handleLocationChange = ({ lat, lng }) => {
+  checkDuplicates(lat, lng)
+  fetchAddressFromGPS(lat, lng)
 }
 
 watch(() => props.show, (isVisible) => {
   if (isVisible) {
     duplicateWarning.value = ''
     nextTick(() => {
-      initMap()
-      
-      if (!props.isEditing && props.form.lat && props.form.lng) {
+      if (!props.isEditing && props.form.lat && props.form.lng && props.form.type !== 'jine') {
         checkDuplicates(props.form.lat, props.form.lng)
         fetchAddressFromGPS(props.form.lat, props.form.lng)
       }
     })
-  } else {
-    destroyMap()
   }
 })
-
-watch(() => props.form.id, () => {
-  if (props.show) {
-    nextTick(() => initMap())
-  }
-})
-
-watch(() => props.form.type, (newType) => {
-  if (props.show && newType !== 'jine') {
-    nextTick(() => initMap())
-  }
-})
-
-onBeforeUnmount(() => destroyMap())
 </script>
 
 <style scoped>
@@ -262,19 +186,6 @@ onBeforeUnmount(() => destroyMap())
 }
 .warning-icon { flex-shrink: 0; margin-top: 2px; }
 .warning-text { font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
-
-.map-container-wrapper { margin: 0.5rem 0; }
-.form-label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
-.mb-2 { margin-bottom: 0.5rem; }
-.d-block { display: block; }
-.admin-map-element {
-  height: 250px;
-  width: 100%;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  z-index: 1;
-}
-.coords-display { font-family: monospace; font-size: 0.8rem; margin-top: 5px; color: var(--text-muted); }
 
 @media (max-width: 600px) {
   .form-row { flex-direction: column; }

@@ -59,16 +59,8 @@
         <div class="form-section">
           <h3 class="section-label">{{ $t('modals.add_beer.properties') }}</h3>
           <div class="checkbox-row">
-            <label class="custom-checkbox">
-              <input type="checkbox" v-model="form.is_unfiltered" />
-              <span class="checkbox-box"></span>
-              {{ $t('modals.add_beer.unfiltered') }}
-            </label>
-            <label class="custom-checkbox">
-              <input type="checkbox" v-model="form.is_unpasteurized" />
-              <span class="checkbox-box"></span>
-              {{ $t('modals.add_beer.unpasteurized') }}
-            </label>
+            <BaseCheckbox v-model="form.is_unfiltered" :label="$t('modals.add_beer.unfiltered')" />
+            <BaseCheckbox v-model="form.is_unpasteurized" :label="$t('modals.add_beer.unpasteurized')" />
           </div>
         </div>
 
@@ -86,6 +78,7 @@ import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
+import BaseCheckbox from '../BaseCheckbox.vue'
 
 import { useCatalogStore } from '../../stores/catalog'
 const catalogStore = useCatalogStore()
@@ -108,12 +101,6 @@ defineEmits(['close', 'submit'])
 .half { flex: 1; }
 .quad > * { flex: 1; }
 .checkbox-row { display: flex; gap: 2rem; padding: 0.25rem 0; }
-.custom-checkbox { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-weight: 600; color: var(--text-main); font-size: 0.95rem; user-select: none; }
-.custom-checkbox input { display: none; }
-.checkbox-box { width: 22px; height: 22px; border: 2px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-panel); position: relative; transition: all 0.2s ease; }
-.custom-checkbox:hover .checkbox-box { border-color: var(--primary); }
-.custom-checkbox input:checked + .checkbox-box { background-color: var(--primary); border-color: var(--primary); }
-.custom-checkbox input:checked + .checkbox-box::after { content: ""; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px; border: solid #1e293b; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
 
 .magic-banner {
   display: flex;
