@@ -16,9 +16,10 @@
               class="admin-search"
             />
           </div>
-          <button v-if="activeTab !== 'users' && activeTab !== 'pending'" class="btn-add" @click="openAddModal(activeTab)">
-            <PlusIcon :size="20" /> {{ $t('admin.add_item', { item: currentLabelSingle }) }}
-          </button>
+          <BaseButton v-if="activeTab !== 'users' && activeTab !== 'pending'" variant="add" @click="openAddModal(activeTab)" class="mobile-full-width">
+            <template #icon><PlusIcon :size="20" /></template>
+            {{ $t('admin.add_item', { item: currentLabelSingle }) }}
+          </BaseButton>
         </div>
 
         <BaseTable>
@@ -76,18 +77,27 @@
                 <td :data-label="$t('admin.table.actions')">
                   <BaseActionGroup>
                     <BaseTooltip :text="$t('admin.tooltips.edit_user')" position="top-end">
-                      <button class="btn-edit" @click="openEditModal(u, 'users')"><PencilIcon :size="16" /></button>
+                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(u, 'users')">
+                        <template #icon><PencilIcon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                     <BaseTooltip v-if="u?.id !== user?.id" :text="$t('admin.tooltips.change_pwd')" position="top-end">
-                      <button class="btn-primary" style="background-color: #3b82f6;" @click="openPasswordModal(u)"><KeyIcon :size="16" /></button>
+                      <BaseButton variant="add" :isIconOnly="true" @click="openPasswordModal(u)">
+                        <template #icon><KeyIcon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                     <BaseTooltip v-if="u?.id !== user?.id" :text="u.is_banned ? $t('admin.tooltips.unblock') : $t('admin.tooltips.block')" position="top-end">
-                      <button :style="u.is_banned ? 'background-color: #10b981;' : 'background-color: #64748b;'" @click="openBanModal(u)">
-                        <UnlockIcon v-if="u.is_banned" :size="16" /><BanIcon v-else :size="16" />
-                      </button>
+                      <BaseButton :variant="u.is_banned ? 'primary' : 'edit'" :isIconOnly="true" :style="u.is_banned ? 'background-color: #10b981; color: white;' : ''" @click="openBanModal(u)">
+                        <template #icon>
+                          <UnlockIcon v-if="u.is_banned" :size="16" />
+                          <BanIcon v-else :size="16" />
+                        </template>
+                      </BaseButton>
                     </BaseTooltip>
                     <BaseTooltip v-if="u?.id !== user?.id" :text="$t('admin.tooltips.delete_user')" position="top-end">
-                      <button class="btn-danger" @click="confirmDelete(u.id, activeTab)"><Trash2Icon :size="16" /></button>
+                      <BaseButton variant="danger" :isIconOnly="true" @click="confirmDelete(u.id, activeTab)">
+                        <template #icon><Trash2Icon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                   </BaseActionGroup>
                 </td>
@@ -112,10 +122,14 @@
                 <td :data-label="$t('admin.table.actions')">
                   <BaseActionGroup>
                     <BaseTooltip :text="$t('admin.tooltips.approve')" position="top-end">
-                      <button style="background-color: #10b981;" @click="handleApprove(item, 'approve')"><CheckIcon :size="16" /></button>
+                      <BaseButton variant="primary" :isIconOnly="true" style="background-color: #10b981; color: white;" @click="handleApprove(item, 'approve')">
+                        <template #icon><CheckIcon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                     <BaseTooltip :text="$t('admin.tooltips.reject')" position="top-end">
-                      <button class="btn-danger" @click="handleApprove(item, 'reject')"><Trash2Icon :size="16" /></button>
+                      <BaseButton variant="danger" :isIconOnly="true" @click="handleApprove(item, 'reject')">
+                        <template #icon><Trash2Icon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                   </BaseActionGroup>
                 </td>
@@ -155,13 +169,19 @@
                 <td :data-label="$t('admin.table.actions')">
                   <BaseActionGroup>
                     <BaseTooltip v-if="activeTab === 'locations'" :text="$t('admin.tooltips.merge')" position="top-end">
-                      <button style="background-color: #8b5cf6;" @click="openMergeModal(item)"><GitMergeIcon :size="16" /></button>
+                      <BaseButton variant="primary" :isIconOnly="true" style="background-color: #8b5cf6; color: white;" @click="openMergeModal(item)">
+                        <template #icon><GitMergeIcon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                     <BaseTooltip :text="$t('admin.tooltips.edit')" position="top-end">
-                      <button class="btn-edit" @click="openEditModal(item, activeTab)"><PencilIcon :size="16" /></button>
+                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(item, activeTab)">
+                        <template #icon><PencilIcon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                     <BaseTooltip :text="$t('admin.tooltips.delete')" position="top-end">
-                      <button class="btn-danger" @click="confirmDelete(item.id, activeTab)"><Trash2Icon :size="16" /></button>
+                      <BaseButton variant="danger" :isIconOnly="true" @click="confirmDelete(item.id, activeTab)">
+                        <template #icon><Trash2Icon :size="16" /></template>
+                      </BaseButton>
                     </BaseTooltip>
                   </BaseActionGroup>
                 </td>
@@ -202,7 +222,10 @@
       <template #body>
         <form @submit.prevent="submitForm('style')" class="modal-form">
           <BaseInput v-model="formData.style.name" :label="$t('admin.style_name')" required />
-          <button type="submit" class="btn-add" style="padding: 1rem;"><SaveIcon :size="18" /> {{ $t('admin.save_style') }}</button>
+          <BaseButton type="submit" variant="add" style="padding: 1rem;">
+            <template #icon><SaveIcon :size="18" /></template>
+            {{ $t('admin.save_style') }}
+          </BaseButton>
         </form>
       </template>
     </BaseModal>
@@ -216,7 +239,9 @@
             <option disabled value="">{{ $t('admin.merge_target_placeholder') }}</option>
             <option v-for="loc in mergeTargetOptions" :key="loc.id" :value="loc.id">{{ loc.name }} ({{ loc.city || $t('admin.merge_no_city') }})</option>
           </BaseSelect>
-          <button type="submit" class="btn-merge-submit">{{ $t('admin.merge_submit') }}</button>
+          <BaseButton type="submit" variant="primary" style="width: 100%; padding: 1rem; font-weight: 700; background-color: #8b5cf6; color: white;">
+            {{ $t('admin.merge_submit') }}
+          </BaseButton>
         </form>
       </template>
     </BaseModal>
@@ -237,6 +262,7 @@ import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
 
+import BaseButton from '../components/BaseButton.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseModal from '../components/BaseModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
@@ -416,14 +442,13 @@ const handleApprove = async (item, action) => { try { const res = await apiFetch
 .modal-form { display: flex; flex-direction: column; gap: 1.5rem; }
 .merge-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; }
 .merge-desc { margin: 0; color: var(--text-muted); line-height: 1.4; }
-.btn-merge-submit { background-color: #8b5cf6; color: white; padding: 1rem; font-weight: 700; width: 100%; border: none; border-radius: var(--radius-sm); cursor: pointer; }
 .type-badge { background: var(--bg-app); border: 1px solid var(--border); color: var(--text-muted); }
 .load-more-trigger { height: 20px; width: 100%; }
 
 @media (max-width: 768px) {
   .section-header { flex-direction: column; align-items: stretch; gap: 1rem; }
   .admin-search { max-width: none; }
-  .btn-add { order: -1; padding: 1rem; width: 100%; }
+  .mobile-full-width { order: -1; padding: 1rem; width: 100%; justify-content: center; }
   .mobile-only { display: block; }
   .combined-meta { display: flex !important; }
   .desktop-only { display: none !important; }
