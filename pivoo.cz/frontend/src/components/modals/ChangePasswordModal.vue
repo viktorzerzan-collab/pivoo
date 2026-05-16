@@ -1,13 +1,17 @@
 <template>
-  <BaseModal :show="show" @close="handleClose">
+  <BaseModal :show="show" @close="handleClose" customStyle="overflow: hidden;">
     <template #header>
-      <h2 class="modal-title">
+      <div class="background-watermark">
+        <KeyIcon :size="180" color="var(--primary)" />
+      </div>
+
+      <h2 class="modal-title" style="position: relative; z-index: 1;">
         <KeyIcon class="title-icon" :size="26" />
         {{ $t('modals.change_password.title') }}
       </h2>
     </template>
     <template #body>
-      <form @submit.prevent="handleSubmit" class="add-form">
+      <form @submit.prevent="handleSubmit" class="add-form" style="position: relative; z-index: 1;">
         <p class="user-info-banner">
           {{ $t('modals.change_password.banner') }} <strong>{{ user?.username }}</strong>
         </p>
@@ -97,6 +101,20 @@ watch(() => form.value.password_confirm, () => error.value = '')
 </script>
 
 <style scoped>
+/* Vodoznak na pozadí */
+.background-watermark {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--orange); }
 .add-form { display: flex; flex-direction: column; gap: 1.25rem; }

@@ -1,13 +1,18 @@
 <template>
-  <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 600px;">
+  <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 600px; overflow: hidden;">
     <template #header>
-      <h2 class="modal-title">
+      <div class="background-watermark">
+        <PencilIcon v-if="isEditing" :size="180" color="var(--primary)" />
+        <PlusIcon v-else :size="180" color="var(--primary)" />
+      </div>
+
+      <h2 class="modal-title" style="position: relative; z-index: 1;">
         <MapPinIcon class="title-icon" :size="26" />
         {{ isEditing ? $t('modals.add_location.title_edit') : $t('modals.add_location.title_add') }}
       </h2>
     </template>
     <template #body>
-      <form @submit.prevent="$emit('submit')" class="add-form">
+      <form @submit.prevent="$emit('submit')" class="add-form" style="position: relative; z-index: 1;">
         
         <div v-if="duplicateWarning" class="duplicate-warning">
           <AlertTriangleIcon :size="20" class="warning-icon" />
@@ -72,7 +77,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from 'vue'
-import { MapPinIcon, AlertTriangleIcon } from 'lucide-vue-next'
+import { MapPinIcon, AlertTriangleIcon, PlusIcon, PencilIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -168,6 +173,20 @@ watch(() => props.show, (isVisible) => {
 </script>
 
 <style scoped>
+/* Vodoznak na pozadí */
+.background-watermark {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--blue); }
 .add-form { display: flex; flex-direction: column; gap: 1rem; }

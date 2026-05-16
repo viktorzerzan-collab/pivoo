@@ -1,23 +1,29 @@
 <template>
-  <BaseModal :show="show" @close="$emit('close')">
+  <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <h2 class="modal-title danger-text">
+      <div class="background-watermark">
+        <UserMinusIcon :size="180" color="var(--danger)" />
+      </div>
+
+      <h2 class="modal-title danger-text" style="position: relative; z-index: 1;">
         <UserMinusIcon :size="26" />
         {{ isCurrentUser ? $t('modals.remove_avatar.title_self') : $t('modals.remove_avatar.title_other') }}
       </h2>
     </template>
     <template #body>
-      <p class="modal-desc" v-if="isCurrentUser">
-        {{ $t('modals.remove_avatar.desc_self') }}
-      </p>
-      <p class="modal-desc" v-else>
-        {{ $t('modals.remove_avatar.desc_other', { user: user?.username }) }}
-      </p>
-      <div class="button-group">
-         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
-         <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm', user?.id)">
-            {{ $t('modals.remove_avatar.confirm') }}
-         </BaseButton>
+      <div style="position: relative; z-index: 1;">
+        <p class="modal-desc" v-if="isCurrentUser">
+          {{ $t('modals.remove_avatar.desc_self') }}
+        </p>
+        <p class="modal-desc" v-else>
+          {{ $t('modals.remove_avatar.desc_other', { user: user?.username }) }}
+        </p>
+        <div class="button-group">
+           <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
+           <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm', user?.id)">
+              {{ $t('modals.remove_avatar.confirm') }}
+           </BaseButton>
+        </div>
       </div>
     </template>
   </BaseModal>
@@ -40,6 +46,20 @@ const { t } = useI18n()
 </script>
 
 <style scoped>
+/* Vodoznak na pozadí */
+.background-watermark {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .modal-title { 
   display: flex; 
   align-items: center; 

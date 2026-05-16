@@ -1,7 +1,12 @@
 <template>
-  <BaseModal :show="show" @close="$emit('close')">
+  <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <h2 class="modal-title">
+      <div class="background-watermark">
+        <PencilIcon v-if="isEditing" :size="180" color="var(--primary)" />
+        <PlusIcon v-else :size="180" color="var(--primary)" />
+      </div>
+
+      <h2 class="modal-title" style="position: relative; z-index: 1;">
         <PencilIcon v-if="isEditing" class="title-icon" :size="24" />
         <BeerIcon v-else class="title-icon" :size="28" />
         {{ isEditing ? $t('modals.checkin.title_edit') : $t('modals.checkin.title_add') }}
@@ -147,7 +152,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { BeerIcon, PencilIcon } from 'lucide-vue-next'
+import { BeerIcon, PencilIcon, PlusIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -400,10 +405,24 @@ watch(() => props.form.location_id, () => {
 </script>
 
 <style scoped>
+/* Vodoznak na pozadí */
+.background-watermark {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--primary); }
 
-.checkin-form { display: flex; flex-direction: column; gap: 1.25rem; }
+.checkin-form { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 1.25rem; }
 .form-row { display: flex; gap: 1rem; }
 .half { flex: 1; }
 

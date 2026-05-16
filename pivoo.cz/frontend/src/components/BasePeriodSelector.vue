@@ -186,6 +186,8 @@ onMounted(() => emitUpdate())
   min-width: 120px;
   text-align: center;
   font-size: 0.95rem;
+  /* Přidáno flex: 1 pro vycentrování textu a vytlačení šipek do stran */
+  flex: 1; 
 }
 
 .custom-wrapper {
@@ -229,6 +231,12 @@ onMounted(() => emitUpdate())
   }
   .mode-wrapper {
     width: 100%;
+  }
+  .nav-wrapper {
+    width: 100%; /* Zajišťuje roztáhnutí navigace let/měsíců na celou šířku */
+  }
+  .custom-wrapper {
+    width: 100%; /* Zajišťuje roztáhnutí vlastní volby kalendáře na celou šířku */
   }
   .date-input-container {
     flex-direction: column;

@@ -60,7 +60,7 @@ defineEmits(['update:modelValue'])
 }
 
 .base-switch.is-full-width .switch-btn {
-  flex: 1;
+  flex: 1 0 auto;
 }
 
 .switch-btn {
@@ -103,7 +103,8 @@ defineEmits(['update:modelValue'])
     display: flex;
   }
   .switch-btn {
-    /* Odstraněno flex: 1, aby se tlačítka nesmršťovala a šlo jimi posouvat */
+    /* Přidáno flex: 1 0 auto, aby se tlačítka roztáhla na max šířku obrazovky, ale nezmenšovala se do sebe */
+    flex: 1 0 auto;
     padding: 0.6rem 0.75rem;
     font-size: 0.85rem;
   }

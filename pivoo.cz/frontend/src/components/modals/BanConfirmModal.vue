@@ -1,23 +1,30 @@
 <template>
-  <BaseModal :show="show" @close="$emit('close')">
+  <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <h2 class="modal-title" :class="isBanning ? 'danger-text' : 'success-text'">
+      <div class="background-watermark">
+        <BanIcon v-if="isBanning" :size="180" color="var(--danger)" />
+        <UnlockIcon v-else :size="180" color="#10b981" />
+      </div>
+
+      <h2 class="modal-title" :class="isBanning ? 'danger-text' : 'success-text'" style="position: relative; z-index: 1;">
         <BanIcon v-if="isBanning" :size="26" />
         <UnlockIcon v-else :size="26" />
         {{ isBanning ? $t('modals.ban_confirm.title_ban') : $t('modals.ban_confirm.title_unban') }}
       </h2>
     </template>
     <template #body>
-      <p class="modal-desc">
-        {{ isBanning ? $t('modals.ban_confirm.desc_ban_1') : $t('modals.ban_confirm.desc_unban_1') }} <strong>{{ user?.username }}</strong>.<br><br>
-        <span v-if="isBanning">{{ $t('modals.ban_confirm.desc_ban_2') }}</span>
-        <span v-else>{{ $t('modals.ban_confirm.desc_unban_2') }}</span>
-      </p>
-      <div class="button-group">
-         <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
-         <BaseButton :variant="isBanning ? 'danger' : 'primary'" style="flex: 1" @click="$emit('confirm', user)">
-            {{ isBanning ? $t('modals.ban_confirm.btn_ban') : $t('modals.ban_confirm.btn_unban') }}
-         </BaseButton>
+      <div style="position: relative; z-index: 1;">
+        <p class="modal-desc">
+          {{ isBanning ? $t('modals.ban_confirm.desc_ban_1') : $t('modals.ban_confirm.desc_unban_1') }} <strong>{{ user?.username }}</strong>.<br><br>
+          <span v-if="isBanning">{{ $t('modals.ban_confirm.desc_ban_2') }}</span>
+          <span v-else>{{ $t('modals.ban_confirm.desc_unban_2') }}</span>
+        </p>
+        <div class="button-group">
+           <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
+           <BaseButton :variant="isBanning ? 'danger' : 'primary'" style="flex: 1" @click="$emit('confirm', user)">
+              {{ isBanning ? $t('modals.ban_confirm.btn_ban') : $t('modals.ban_confirm.btn_unban') }}
+           </BaseButton>
+        </div>
       </div>
     </template>
   </BaseModal>
@@ -40,6 +47,20 @@ const isBanning = computed(() => !props.user?.is_banned)
 </script>
 
 <style scoped>
+/* Vodoznak na pozadí */
+.background-watermark {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .modal-title { 
   display: flex; 
   align-items: center; 
