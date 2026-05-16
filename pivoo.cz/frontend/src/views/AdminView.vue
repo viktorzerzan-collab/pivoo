@@ -17,7 +17,7 @@
             />
           </div>
           <BaseButton v-if="activeTab !== 'users' && activeTab !== 'pending'" variant="add" @click="openAddModal(activeTab)" class="mobile-full-width">
-            <template #icon><PlusIcon :size="20" /></template>
+            <template #icon><PlusCircleIcon :size="20" /></template>
             {{ $t('admin.add_item', { item: currentLabelSingle }) }}
           </BaseButton>
         </div>
@@ -217,10 +217,20 @@
     <BanConfirmModal :show="modals.ban" :user="selectedUserForBan" @close="modals.ban = false" @confirm="handleBanConfirm" />
     <RemoveAvatarConfirmModal :show="modals.removeAvatar" :user="selectedUserForAvatarRemove" :is-current-user="selectedUserForAvatarRemove?.id === user?.id" @close="modals.removeAvatar = false" @confirm="executeRemoveAvatar" />
     
-    <BaseModal :show="modals.style" @close="modals.style = false">
-      <template #header><h2>{{ isEditing ? $t('admin.edit_style') : $t('admin.add_style') }}</h2></template>
+    <BaseModal :show="modals.style" @close="modals.style = false" customStyle="max-width: 650px; overflow: hidden;">
+      <template #header>
+        <BackgroundWatermark 
+          :icon="HopIcon" 
+          :size="180" 
+          :is-modal="true" 
+        />
+        <h2 class="modal-title" style="position: relative; z-index: 1;">
+          <HopIcon class="title-icon" :size="26" />
+          {{ isEditing ? $t('admin.edit_style') : $t('admin.add_style') }}
+        </h2>
+      </template>
       <template #body>
-        <form @submit.prevent="submitForm('style')" class="modal-form">
+        <form @submit.prevent="submitForm('style')" class="modal-form" style="position: relative; z-index: 1;">
           <BaseInput v-model="formData.style.name" :label="$t('admin.style_name')" required />
           <BaseButton type="submit" variant="add" style="padding: 1rem;">
             <template #icon><SaveIcon :size="18" /></template>
@@ -252,7 +262,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { 
-  PlusIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
+  PlusCircleIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
   UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
   GitMergeIcon, ListChecksIcon, CheckIcon
 } from 'lucide-vue-next'
@@ -276,6 +286,7 @@ import FilterInput from '../components/FilterInput.vue'
 import BaseSelect from '../components/BaseSelect.vue' 
 import BaseTooltip from '../components/BaseTooltip.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
+import BackgroundWatermark from '../components/BackgroundWatermark.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -447,6 +458,8 @@ const handleApprove = async (item, action) => { try { const res = await apiFetch
 .merge-desc { margin: 0; color: var(--text-muted); line-height: 1.4; }
 .type-badge { background: var(--bg-app); border: 1px solid var(--border); color: var(--text-muted); }
 .load-more-trigger { height: 20px; width: 100%; }
+.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
+.title-icon { color: var(--blue); }
 
 @media (max-width: 768px) {
   .section-header { flex-direction: column; align-items: stretch; gap: 1rem; }

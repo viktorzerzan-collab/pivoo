@@ -3,11 +3,35 @@
     <BaseLoader :show="isLoading" />
 
     <div class="catalog-header-layout">
-      <div class="header-top-row" v-if="$slots['header-top'] || showAddButton">
-        <slot name="header-top"></slot>
+      <div class="header-top-row" v-if="$slots['header-top'] || showAddButton || showResultsBar">
+        <div class="header-controls-left">
+          <slot name="header-top"></slot>
+        </div>
+        
+        <div class="header-controls-right">
+          <span class="results-count" v-if="showResultsBar">{{ foundLabel }} <strong>{{ totalItems }}</strong></span>
+
+          <div class="sort-control-wrapper" v-if="showResultsBar && showSort">
+            <BaseSelect 
+              v-model="internalSortBy" 
+              :placeholder="$t('catalog.sort_by')" 
+              :searchable="false"
+            >
+              <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </BaseSelect>
+          </div>
+
+          <div class="desktop-action-bar" v-if="showAddButton">
+            <BaseButton variant="add" @click="$emit('add')">
+              <template #icon><PlusCircleIcon :size="20" /></template>
+              {{ addLabel }}
+            </BaseButton>
+          </div>
+        </div>
+
         <div class="mobile-action-bar" v-if="showAddButton">
           <BaseButton variant="add" @click="$emit('add')">
-            <template #icon><PlusIcon :size="20" /></template>
+            <template #icon><PlusCircleIcon :size="20" /></template>
             {{ addLabel }}
           </BaseButton>
         </div>
@@ -43,28 +67,6 @@
         :filters="activeFilters" 
         @remove="$emit('remove-filter', $event)" 
       />
-
-      <div class="results-bar" v-if="showResultsBar">
-        <div class="sort-control-wrapper">
-          <BaseSelect 
-            v-if="showSort"
-            v-model="internalSortBy" 
-            :placeholder="$t('catalog.sort_by')" 
-            :searchable="false"
-          >
-            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </BaseSelect>
-        </div>
-
-        <span class="results-count">{{ foundLabel }} <strong>{{ totalItems }}</strong></span>
-        
-        <div class="desktop-action-bar">
-          <BaseButton v-if="showAddButton" variant="add" @click="$emit('add')">
-            <template #icon><PlusIcon :size="20" /></template>
-            {{ addLabel }}
-          </BaseButton>
-        </div>
-      </div>
     </div>
 
     <div class="catalog-container">
@@ -102,7 +104,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
-import { PlusIcon, FilterIcon, ChevronDownIcon } from 'lucide-vue-next'
+import { PlusCircleIcon, FilterIcon, ChevronDownIcon } from 'lucide-vue-next'
 import BaseLoader from './BaseLoader.vue'
 import BasePanel from './BasePanel.vue'
 import BaseButton from './BaseButton.vue'
@@ -178,7 +180,9 @@ onUnmounted(() => {
 
 <style scoped>
 .catalog-header-layout { display: flex; flex-direction: column; gap: 0; }
-.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap; }
+.header-controls-left { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.header-controls-right { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 
 .filters-section { margin-bottom: 1.5rem; position: relative; z-index: 20; }
 .filters-section :deep(.panel-header) { border-bottom: none; margin-bottom: 0; padding-bottom: 1rem; }
@@ -190,20 +194,9 @@ onUnmounted(() => {
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
-.results-bar { 
-  display: flex; 
-  flex-wrap: wrap;
-  justify-content: space-between; 
-  align-items: center; 
-  gap: 1rem; 
-  margin-bottom: 2rem; 
-  padding: 0 0 1rem 0;
-  border-bottom: 1px solid var(--border); 
-}
-
-.sort-control-wrapper { flex: 1 1 200px; max-width: 300px; }
-.results-count { color: var(--text-muted); font-size: 0.95rem; flex: 1 1 auto; text-align: center; white-space: nowrap; }
-.desktop-action-bar { flex: 1 1 200px; display: flex; justify-content: flex-end; }
+.sort-control-wrapper { width: 220px; }
+.results-count { color: var(--text-muted); font-size: 0.95rem; white-space: nowrap; }
+.desktop-action-bar { display: flex; align-items: center; }
 .mobile-action-bar { display: none; }
 
 .catalog-container { position: relative; min-height: 400px; display: flex; flex-direction: column; width: 100%; }
@@ -212,43 +205,22 @@ onUnmounted(() => {
 .mobile-loader { display: none; text-align: center; padding: 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
 
 @media (max-width: 800px) {
-  .header-top-row { margin-bottom: 0.75rem; }
+  .header-top-row { margin-bottom: 1rem; flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .header-controls-left { width: 100%; justify-content: space-between; gap: 0.75rem; }
+  .header-controls-right { width: 100%; flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .sort-control-wrapper { width: 100%; max-width: none; }
+  
   .filters-section { margin-bottom: 0.75rem; }
   
   .mobile-action-bar { display: block; margin-bottom: 0.5rem; width: 100%; }
   .mobile-action-bar :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
   .desktop-action-bar { display: none; }
   
-  .results-bar { 
-    flex-direction: column; 
-    align-items: stretch; 
-    gap: 0.75rem; 
-    border-bottom: none; 
-    margin-bottom: 1rem; 
-    padding-bottom: 0; 
-  }
-  
-  /* ZRUŠENÍ VÝŠKY Z FLEX-BASIS */
-  .sort-control-wrapper { 
-    width: 100%; 
-    max-width: none; 
-    flex: none; /* Toto vyřeší ten gigantický prázdný prostor (zruší výšku 200px) */
-    margin-bottom: 0; 
-  }
-
-  .sort-control-wrapper :deep(> *) {
-    margin-bottom: 0 !important;
-  }
-  
-  .results-count { 
-    flex: none; /* Zabrání zbytečnému natahování počtu položek */
-    text-align: center; 
-    padding-top: 0; 
-    border-top: none; 
-  }
-  
   .desktop-pagination { display: none; }
   .mobile-loader { display: block; }
+  
+  /* Zarovnáme na mobilu počet výsledků na střed, když je to vše pod sebou */
+  .results-count { text-align: center; }
 }
 
 .slide-fade-enter-active { transition: all 0.3s ease-out; }
