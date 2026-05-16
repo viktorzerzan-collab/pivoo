@@ -3,7 +3,7 @@
     <div class="view-header">
       <div class="header-actions">
         <BaseSwitch v-model="scope" :options="scopeOptions" />
-        <BasePeriodSelector v-model="periodSelection" />
+        <BasePeriodSelector v-model="periodSelection" class="period-picker-right" />
       </div>
     </div>
 
@@ -315,7 +315,38 @@ onMounted(() => {
   z-index: 10; 
 }
 
-.header-actions { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap;}
+.header-actions { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  gap: 1.5rem; 
+  flex-wrap: wrap;
+}
+
+.period-picker-right {
+  display: flex !important;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Pomocí deep selektoru vynutíme změnu pořadí prvků uvnitř zapouzdřené komponenty */
+.period-picker-right :deep(> *) {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Hlavní selectbox (.mode-wrapper / první potomek) dostane vyšší order a skočí doprava */
+.period-picker-right :deep(> *:first-child),
+.period-picker-right :deep(.mode-wrapper) {
+  order: 2 !important;
+}
+
+/* Jakékoliv další elementy (výběr měsíce, roku atd.) dostanou nižší order a skočí doleva před něj */
+.period-picker-right :deep(> *:nth-child(2)),
+.period-picker-right :deep(> *:not(.mode-wrapper)) {
+  order: 1 !important;
+}
 
 .panel-card { background: var(--bg-panel); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 1.5rem; transition: background-color 0.3s ease, border-color 0.3s ease; }
 .panel-card:hover { border-color: var(--primary); }
@@ -335,6 +366,8 @@ onMounted(() => {
 
 @media (max-width: 800px) {
   .header-actions { flex-direction: column; align-items: stretch; }
+  .period-picker-right { flex-direction: column !important; align-items: stretch; }
+  .period-picker-right :deep(> *) { order: initial !important; }
   .stats-grid-detailed { grid-template-columns: 1fr; }
   .panel-card { padding: 1rem; }
 }
