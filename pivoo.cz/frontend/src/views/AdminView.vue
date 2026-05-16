@@ -216,45 +216,8 @@
     <ChangePasswordModal :show="modals.password" :user="selectedUserForPassword" @close="modals.password = false" @submit="handlePasswordChange" />
     <BanConfirmModal :show="modals.ban" :user="selectedUserForBan" @close="modals.ban = false" @confirm="handleBanConfirm" />
     <RemoveAvatarConfirmModal :show="modals.removeAvatar" :user="selectedUserForAvatarRemove" :is-current-user="selectedUserForAvatarRemove?.id === user?.id" @close="modals.removeAvatar = false" @confirm="executeRemoveAvatar" />
-    
-    <BaseModal :show="modals.style" @close="modals.style = false" customStyle="max-width: 650px; overflow: hidden;">
-      <template #header>
-        <BackgroundWatermark 
-          :icon="HopIcon" 
-          :size="180" 
-          :is-modal="true" 
-        />
-        <h2 class="modal-title" style="position: relative; z-index: 1;">
-          <HopIcon class="title-icon" :size="26" />
-          {{ isEditing ? $t('admin.edit_style') : $t('admin.add_style') }}
-        </h2>
-      </template>
-      <template #body>
-        <form @submit.prevent="submitForm('style')" class="modal-form" style="position: relative; z-index: 1;">
-          <BaseInput v-model="formData.style.name" :label="$t('admin.style_name')" required />
-          <BaseButton type="submit" variant="add" style="padding: 1rem;">
-            <template #icon><SaveIcon :size="18" /></template>
-            {{ $t('admin.save_style') }}
-          </BaseButton>
-        </form>
-      </template>
-    </BaseModal>
-
-    <BaseModal :show="modals.merge" @close="modals.merge = false">
-      <template #header><h2 class="merge-title"><GitMergeIcon color="#8b5cf6" /> {{ $t('admin.merge_title') }}</h2></template>
-      <template #body>
-        <form @submit.prevent="submitMerge" class="modal-form">
-          <p class="merge-desc">{{ $t('admin.merge_desc', { source: mergeForm.source?.name }) }}</p>
-          <BaseSelect v-model="mergeForm.target_id" :label="$t('admin.merge_target')" :placeholder="$t('admin.merge_target_placeholder')" searchable required>
-            <option disabled value="">{{ $t('admin.merge_target_placeholder') }}</option>
-            <option v-for="loc in mergeTargetOptions" :key="loc.id" :value="loc.id">{{ loc.name }} ({{ loc.city || $t('admin.merge_no_city') }})</option>
-          </BaseSelect>
-          <BaseButton type="submit" variant="primary" style="width: 100%; padding: 1rem; font-weight: 700; background-color: #8b5cf6; color: white;">
-            {{ $t('admin.merge_submit') }}
-          </BaseButton>
-        </form>
-      </template>
-    </BaseModal>
+    <AddStyleModal :show="modals.style" :isEditing="isEditing" :form="formData.style" @close="modals.style = false" @submit="submitForm('style')" />
+    <MergeLocationsModal :show="modals.merge" :form="mergeForm" :targetOptions="mergeTargetOptions" @close="modals.merge = false" @submit="submitMerge" />
   </div>
 </template>
 
@@ -262,7 +225,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { 
-  PlusCircleIcon, PencilIcon, Trash2Icon, SaveIcon, KeyIcon, BanIcon, 
+  PlusCircleIcon, PencilIcon, Trash2Icon, KeyIcon, BanIcon, 
   UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
   GitMergeIcon, ListChecksIcon, CheckIcon
 } from 'lucide-vue-next'
@@ -274,7 +237,6 @@ import { useToastStore } from '../stores/toast'
 
 import BaseButton from '../components/BaseButton.vue'
 import BaseInput from '../components/BaseInput.vue'
-import BaseModal from '../components/BaseModal.vue'
 import BaseLoader from '../components/BaseLoader.vue'
 import BasePanel from '../components/BasePanel.vue'
 import BaseTable from '../components/BaseTable.vue'
@@ -283,10 +245,8 @@ import BaseActionGroup from '../components/BaseActionGroup.vue'
 import BaseEmptyState from '../components/BaseEmptyState.vue'
 import BasePagination from '../components/BasePagination.vue'
 import FilterInput from '../components/FilterInput.vue'
-import BaseSelect from '../components/BaseSelect.vue' 
 import BaseTooltip from '../components/BaseTooltip.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
-import BackgroundWatermark from '../components/BackgroundWatermark.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
@@ -295,6 +255,8 @@ import EditUserModal from '../components/modals/EditUserModal.vue'
 import ChangePasswordModal from '../components/modals/ChangePasswordModal.vue'
 import BanConfirmModal from '../components/modals/BanConfirmModal.vue'
 import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
+import AddStyleModal from '../components/modals/AddStyleModal.vue'
+import MergeLocationsModal from '../components/modals/MergeLocationsModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -406,7 +368,7 @@ const submitMerge = async () => { if (!mergeForm.value.source || !mergeForm.valu
 const openPasswordModal = (u) => { selectedUserForPassword.value = u; modals.value.password = true }
 const handlePasswordChange = async (payload) => { try { const res = await apiFetch('/admin_change_password.php', { method: 'POST', body: JSON.stringify(payload) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.password = false } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
 const handleRemoveAvatar = (userId) => { selectedUserForAvatarRemove.value = allUsers.value.find(u => u.id === userId); modals.value.removeAvatar = true }
-const executeRemoveAvatar = async (userId) => { try { const res = await apiFetch('/admin_remove_avatar.php', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.removeAvatar = false; modals.value.user = false; fetchUsers() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
+const executeRemoveAvatar = async (userId) => { try { const res = await apiFetch('/admin_remove_avatar.php', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.removeAvatar = false; modals.value.user = false; fetchUsers() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(res.message || 'Error', 'toast-error') } }
 const openBanModal = (u) => { selectedUserForBan.value = u; modals.value.ban = true }
 const handleBanConfirm = async (u) => { try { const res = await apiFetch('/admin_toggle_ban.php', { method: 'POST', body: JSON.stringify({ user_id: u.id, is_banned: u.is_banned ? 0 : 1 }) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.ban = false; fetchUsers() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
 
