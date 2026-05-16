@@ -1,12 +1,15 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <div class="background-watermark">
-        <TrashIcon :size="180" color="var(--danger)" />
-      </div>
+      <BackgroundWatermark 
+        :icon="TrashIcon" 
+        color="var(--danger)" 
+        :size="180" 
+        :is-modal="true" 
+      />
 
       <h2 class="modal-title danger-text" style="position: relative; z-index: 1;">
-        <AlertTriangleIcon :size="26" />
+        <TrashIcon :size="26" />
         {{ $t('modals.delete_confirm.title') }}
       </h2>
     </template>
@@ -15,7 +18,10 @@
         <p class="modal-desc">{{ $t('modals.delete_confirm.desc') }}</p>
         <div class="button-group">
            <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('modals.delete_confirm.cancel') }}</BaseButton>
-           <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm')">{{ $t('modals.delete_confirm.confirm') }}</BaseButton>
+           <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm')">
+              <template #icon><TrashIcon :size="18" /></template>
+              {{ $t('modals.delete_confirm.confirm') }}
+           </BaseButton>
         </div>
       </div>
     </template>
@@ -23,29 +29,16 @@
 </template>
 
 <script setup>
-import { AlertTriangleIcon, TrashIcon } from 'lucide-vue-next'
+import { TrashIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseButton from '../BaseButton.vue'
+import BackgroundWatermark from '../BackgroundWatermark.vue'
 
 defineProps({ show: Boolean })
 defineEmits(['close', 'confirm'])
 </script>
 
 <style scoped>
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.5rem; }
 .danger-text { color: var(--danger); }
 .modal-desc { margin-bottom: 2rem; color: var(--text-muted); font-size: 1.1rem; text-align: center; transition: color 0.3s ease; }

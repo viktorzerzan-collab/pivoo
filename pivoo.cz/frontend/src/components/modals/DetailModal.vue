@@ -1,12 +1,8 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 600px; overflow: hidden;">
     <template #header>
-      <div class="background-watermark" :class="{ 'is-logo': type === 'brewery' && item?.logo }">
-        <img v-if="type === 'brewery' && item?.logo" :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" class="watermark-logo-img" />
-        <BeerIcon v-else-if="type === 'beer'" :size="180" color="var(--primary)" />
-        <FactoryIcon v-else-if="type === 'brewery'" :size="180" color="var(--primary)" />
-        <MapPinIcon v-else :size="180" color="var(--primary)" />
-      </div>
+      
+      <BackgroundWatermark :type="type" :logo="item?.logo" :size="180" :is-modal="true" />
 
       <div class="detail-header">
         <div class="header-text">
@@ -214,13 +210,14 @@
 
 <script setup>
 import { 
-  BeerIcon, FactoryIcon, MapPinIcon, StarIcon, ActivityIcon, 
-  PercentIcon, MessageSquareIcon, PhoneIcon, MailIcon, GlobeIcon, 
-  ClockIcon, ThermometerIcon, PipetteIcon, SproutIcon, WheatIcon, 
-  FlaskConicalIcon, TagIcon, MapIcon, ExternalLinkIcon 
+  StarIcon, ActivityIcon, PercentIcon, MessageSquareIcon, 
+  PhoneIcon, MailIcon, GlobeIcon, ClockIcon, ThermometerIcon, 
+  PipetteIcon, SproutIcon, WheatIcon, FlaskConicalIcon, TagIcon, 
+  MapIcon, ExternalLinkIcon, MapPinIcon 
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
+import BackgroundWatermark from '../BackgroundWatermark.vue' // Nový import
 import OpeningHoursDisplay from '../OpeningHoursDisplay.vue'
 import CountryFlag from '../CountryFlag.vue'
 
@@ -273,37 +270,7 @@ const getCountryName = (code, fallback) => {
   z-index: 1; 
 }
 
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.background-watermark.is-logo {
-  right: -10px;
-  top: -10px;
-  width: 220px;
-  height: 220px;
-  transform: rotate(-10deg);
-  opacity: 0.06;
-}
-
-.watermark-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: grayscale(1);
-}
-
-/* Hlavička detailu (upravená) */
+/* Hlavička detailu */
 .detail-header { display: flex; align-items: center; }
 .header-text { flex: 1; }
 .title-with-badges { display: flex; flex-direction: column; gap: 0.4rem; }

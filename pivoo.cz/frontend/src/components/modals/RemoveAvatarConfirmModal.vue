@@ -1,9 +1,12 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <div class="background-watermark">
-        <UserMinusIcon :size="180" color="var(--danger)" />
-      </div>
+      <BackgroundWatermark 
+        :icon="UserMinusIcon" 
+        color="var(--danger)" 
+        :size="180" 
+        :is-modal="true" 
+      />
 
       <h2 class="modal-title danger-text" style="position: relative; z-index: 1;">
         <UserMinusIcon :size="26" />
@@ -21,6 +24,7 @@
         <div class="button-group">
            <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
            <BaseButton variant="danger" style="flex: 1" @click="$emit('confirm', user?.id)">
+              <template #icon><UserMinusIcon :size="18" /></template>
               {{ $t('modals.remove_avatar.confirm') }}
            </BaseButton>
         </div>
@@ -34,6 +38,7 @@ import { UserMinusIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseButton from '../BaseButton.vue'
+import BackgroundWatermark from '../BackgroundWatermark.vue'
 
 defineProps({
   show: Boolean,
@@ -46,20 +51,6 @@ const { t } = useI18n()
 </script>
 
 <style scoped>
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .modal-title { 
   display: flex; 
   align-items: center; 

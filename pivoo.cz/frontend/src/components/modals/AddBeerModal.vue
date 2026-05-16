@@ -1,13 +1,14 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="max-width: 650px; overflow: hidden;">
     <template #header>
-      <div class="background-watermark">
-        <PencilIcon v-if="isEditing" :size="180" color="var(--primary)" />
-        <PlusIcon v-else :size="180" color="var(--primary)" />
-      </div>
+      <BackgroundWatermark 
+        :icon="isEditing ? PencilIcon : PlusCircleIcon" 
+        :size="180" 
+        :is-modal="true" 
+      />
 
       <h2 class="modal-title" style="position: relative; z-index: 1;">
-        <BeerIcon class="title-icon" :size="26" /> 
+        <component :is="isEditing ? PencilIcon : PlusCircleIcon" class="title-icon" :size="26" />
         {{ isEditing ? $t('modals.add_beer.title_edit') : $t('modals.add_beer.title_add') }}
       </h2>
     </template>
@@ -70,6 +71,9 @@
         </div>
 
         <BaseButton type="submit" variant="add" style="margin-top: 1.5rem; width: 100%;">
+          <template #icon>
+            <component :is="isEditing ? PencilIcon : PlusCircleIcon" :size="18" />
+          </template>
           {{ isEditing ? $t('modals.add_beer.save_edit') : $t('modals.add_beer.save_add') }}
         </BaseButton>
       </form>
@@ -78,8 +82,9 @@
 </template>
 
 <script setup>
-import { BeerIcon, SparklesIcon, PlusIcon, PencilIcon } from 'lucide-vue-next'
+import { SparklesIcon, PlusCircleIcon, PencilIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
+import BackgroundWatermark from '../BackgroundWatermark.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
@@ -97,20 +102,6 @@ defineEmits(['close', 'submit'])
 </script>
 
 <style scoped>
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--blue); }
 .add-form { display: flex; flex-direction: column; gap: 1.5rem; }

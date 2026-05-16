@@ -1,14 +1,14 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <div class="background-watermark">
-        <PencilIcon v-if="isEditing" :size="180" color="var(--primary)" />
-        <PlusIcon v-else :size="180" color="var(--primary)" />
-      </div>
+      <BackgroundWatermark 
+        :icon="isEditing ? PencilIcon : PlusCircleIcon" 
+        :size="180" 
+        :is-modal="true" 
+      />
 
       <h2 class="modal-title" style="position: relative; z-index: 1;">
-        <PencilIcon v-if="isEditing" class="title-icon" :size="24" />
-        <BeerIcon v-else class="title-icon" :size="28" />
+        <component :is="isEditing ? PencilIcon : PlusCircleIcon" class="title-icon" :size="26" />
         {{ isEditing ? $t('modals.checkin.title_edit') : $t('modals.checkin.title_add') }}
       </h2>
     </template>
@@ -142,6 +142,9 @@
         <BaseInput v-model="form.note" :label="$t('modals.checkin.note_label')" :placeholder="$t('modals.checkin.note_placeholder')" />
 
         <BaseButton type="submit" :variant="isEditing ? 'edit' : 'primary'" style="margin-top: 1rem; width: 100%;">
+          <template #icon>
+            <component :is="isEditing ? PencilIcon : PlusCircleIcon" :size="18" />
+          </template>
           {{ isEditing ? $t('modals.checkin.save_edit') : $t('modals.checkin.save_add') }}
         </BaseButton>
 
@@ -152,7 +155,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { BeerIcon, PencilIcon, PlusIcon } from 'lucide-vue-next'
+import { PencilIcon, PlusCircleIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -163,6 +166,7 @@ import StarRating from '../StarRating.vue'
 import BaseCheckbox from '../BaseCheckbox.vue'
 import GeoLocateButton from '../GeoLocateButton.vue'
 import MagicScanner from '../MagicScanner.vue'
+import BackgroundWatermark from '../BackgroundWatermark.vue'
 
 import { useCatalogStore } from '../../stores/catalog'
 import { useAuthStore } from '../../stores/auth'
@@ -173,14 +177,12 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t, te } = useI18n()
 
-// PŘIDÁNO: isEditing prop
 const props = defineProps({ 
   show: Boolean, 
   form: Object,
   isEditing: { type: Boolean, default: false }
 })
 
-// OPRAVENO: Přidány eventy magicAddBrewery a magicAddBeer, aby nepropadávaly do BaseModal
 const emit = defineEmits(['close', 'submit', 'open-add-location', 'magicAddBrewery', 'magicAddBeer'])
 
 const volumeMode = ref(props.form.volume || '')
@@ -193,7 +195,6 @@ const tempCoords = ref(null)
 
 const isAiUpdating = ref(false)
 
-// PŘIDÁNO: Univerzální správa ceny (při editaci se používá original_price, při přidání price)
 const priceValue = computed({
   get: () => props.isEditing ? props.form.original_price : props.form.price,
   set: (val) => {
@@ -405,20 +406,6 @@ watch(() => props.form.location_id, () => {
 </script>
 
 <style scoped>
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--primary); }
 

@@ -2,7 +2,7 @@
   <div class="dashboard-page">
     <div class="section-actions">
       <BaseButton variant="add" @click="openCheckInModal">
-        <template #icon><PlusIcon :size="20" /></template>
+        <template #icon><PlusCircleIcon :size="20" /></template>
         {{ $t('views.dashboard.record_beers') }}
       </BaseButton>
     </div>
@@ -81,7 +81,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { PlusIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
+import { PlusCircleIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'

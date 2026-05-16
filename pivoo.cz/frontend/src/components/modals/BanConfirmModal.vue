@@ -1,10 +1,12 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <div class="background-watermark">
-        <BanIcon v-if="isBanning" :size="180" color="var(--danger)" />
-        <UnlockIcon v-else :size="180" color="#10b981" />
-      </div>
+      <BackgroundWatermark 
+        :icon="isBanning ? BanIcon : UnlockIcon" 
+        :color="isBanning ? 'var(--danger)' : '#10b981'" 
+        :size="180" 
+        :is-modal="true" 
+      />
 
       <h2 class="modal-title" :class="isBanning ? 'danger-text' : 'success-text'" style="position: relative; z-index: 1;">
         <BanIcon v-if="isBanning" :size="26" />
@@ -22,6 +24,7 @@
         <div class="button-group">
            <BaseButton variant="secondary" style="flex: 1" @click="$emit('close')">{{ $t('buttons.cancel') }}</BaseButton>
            <BaseButton :variant="isBanning ? 'danger' : 'primary'" style="flex: 1" @click="$emit('confirm', user)">
+              <template #icon><component :is="isBanning ? BanIcon : UnlockIcon" :size="18" /></template>
               {{ isBanning ? $t('modals.ban_confirm.btn_ban') : $t('modals.ban_confirm.btn_unban') }}
            </BaseButton>
         </div>
@@ -35,6 +38,7 @@ import { computed } from 'vue'
 import { BanIcon, UnlockIcon } from 'lucide-vue-next'
 import BaseModal from '../BaseModal.vue'
 import BaseButton from '../BaseButton.vue'
+import BackgroundWatermark from '../BackgroundWatermark.vue'
 
 const props = defineProps({
   show: Boolean,
@@ -47,20 +51,6 @@ const isBanning = computed(() => !props.user?.is_banned)
 </script>
 
 <style scoped>
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .modal-title { 
   display: flex; 
   align-items: center; 

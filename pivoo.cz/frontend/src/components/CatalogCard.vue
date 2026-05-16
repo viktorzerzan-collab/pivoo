@@ -1,14 +1,7 @@
 <template>
   <div class="card catalog-card" :class="cardClasses">
     
-    <div class="background-watermark" :class="{ 'is-logo': type === 'brewery' && item.logo }">
-      <template v-if="type === 'brewery' && item.logo">
-        <img :src="'https://www.pivoo.cz/backend/uploads/logos/' + item.logo" alt="Logo background" class="watermark-logo-img" />
-      </template>
-      <template v-else>
-        <component :is="itemIcon" :size="140" :color="iconColor" />
-      </template>
-    </div>
+    <BackgroundWatermark :type="type" :logo="item.logo" :size="140" />
 
     <div class="card-body">
       <div class="card-main-info">
@@ -92,10 +85,10 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCatalogStore } from '../stores/catalog'
 import { 
-  BeerIcon, FactoryIcon, MapPinIcon, StarIcon, InfoIcon, 
-  ThermometerIcon, PercentIcon, ActivityIcon, PipetteIcon 
+  MapPinIcon, StarIcon, InfoIcon, ThermometerIcon, PercentIcon, ActivityIcon, PipetteIcon 
 } from 'lucide-vue-next'
 
+import BackgroundWatermark from './BackgroundWatermark.vue' // Nový import
 import BaseButton from './BaseButton.vue'
 import FavoriteButton from './FavoriteButton.vue'
 import WishlistButton from './WishlistButton.vue'
@@ -126,13 +119,6 @@ const cardClasses = computed(() => {
   }
 })
 
-const itemIcon = computed(() => {
-  if (props.type === 'beer') return BeerIcon
-  if (props.type === 'brewery') return FactoryIcon
-  return MapPinIcon
-})
-
-const iconColor = computed(() => 'var(--primary)')
 const starColor = computed(() => props.type === 'location' ? '#0ea5e9' : '#f59e0b')
 
 const detailButtonLabel = computed(() => {
@@ -199,45 +185,26 @@ const translateFermentation = (val) => {
 .card.is-fav { border-color: var(--primary); outline: 1px solid var(--primary); }
 .card:hover { border-color: var(--primary); background-color: var(--card-hover-bg); z-index: 10; }
 
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -15px;
-  top: 10px;
-  opacity: 0.04; /* Velmi jemná průhlednost (4%) */
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  transition: all 0.4s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.background-watermark.is-logo {
-  right: -10px;
-  top: -10px;
-  width: 150px;
-  height: 150px;
-  transform: rotate(-10deg);
-  opacity: 0.06;
-}
-
-.watermark-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: grayscale(1); /* Logo v pozadí je černobílé pro čistší vzhled */
-}
-
-.card:hover .background-watermark {
-  opacity: 0.07;
+/* Animace a průhlednost při hover na kartu (používáme :deep, protože vodoznak je nyní uvnitř dětské komponenty) */
+.card:hover :deep(.background-watermark) {
+  opacity: 0.15; /* Výraznější opacity při hoveru (světlý režim) */
   transform: rotate(10deg) scale(1.1);
 }
 
-.card:hover .background-watermark.is-logo {
-  opacity: 0.1;
+.card:hover :deep(.background-watermark.is-logo) {
+  opacity: 0.18;
   transform: rotate(-5deg) scale(1.05);
+}
+
+/* Hover stavy pro tmavý režim */
+:global(.dark) .card:hover :deep(.background-watermark),
+:global([data-theme="dark"]) .card:hover :deep(.background-watermark) {
+  opacity: 0.08;
+}
+
+:global(.dark) .card:hover :deep(.background-watermark.is-logo),
+:global([data-theme="dark"]) .card:hover :deep(.background-watermark.is-logo) {
+  opacity: 0.1;
 }
 
 .card-body { padding: 1.25rem; flex-grow: 1; position: relative; z-index: 1; }

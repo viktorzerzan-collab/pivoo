@@ -1,9 +1,11 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" customStyle="overflow: hidden;">
     <template #header>
-      <div class="background-watermark">
-        <UserCogIcon :size="180" color="var(--primary)" />
-      </div>
+      <BackgroundWatermark 
+        :icon="UserCogIcon" 
+        :size="180" 
+        :is-modal="true" 
+      />
 
       <h2 class="modal-title" style="position: relative; z-index: 1;">
         <UserCogIcon class="title-icon" :size="26" />
@@ -55,6 +57,7 @@
           </div>
 
           <BaseButton type="submit" variant="edit" style="margin-top: 1rem; width: 100%;">
+            <template #icon><UserCogIcon :size="18" /></template>
             {{ $t('modals.edit_user.save') }}
           </BaseButton>
         </form>
@@ -70,6 +73,7 @@ import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseSelect from '../BaseSelect.vue'
+import BackgroundWatermark from '../BackgroundWatermark.vue'
 
 defineProps({
   show: Boolean,
@@ -82,20 +86,6 @@ const { t } = useI18n()
 </script>
 
 <style scoped>
-/* Vodoznak na pozadí */
-.background-watermark {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  transform: rotate(15deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--orange); }
 
