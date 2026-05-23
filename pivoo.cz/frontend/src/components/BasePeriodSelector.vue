@@ -186,7 +186,6 @@ onMounted(() => emitUpdate())
   min-width: 120px;
   text-align: center;
   font-size: 0.95rem;
-  /* Přidáno flex: 1 pro vycentrování textu a vytlačení šipek do stran */
   flex: 1; 
 }
 
@@ -223,21 +222,32 @@ onMounted(() => emitUpdate())
   font-weight: bold;
 }
 
+/* MOBILNÍ ZOBRAZENÍ */
 @media (max-width: 900px) {
   .selector-controls {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
   }
+  
+  /* Vynucené pořadí 1: Výběr typu (Roletka) */
   .mode-wrapper {
+    order: 1;
     width: 100%;
   }
+  
+  /* Vynucené pořadí 2: Přepínače (Šipky měsíců/let) */
   .nav-wrapper {
-    width: 100%; /* Zajišťuje roztáhnutí navigace let/měsíců na celou šířku */
+    order: 2;
+    width: 100%;
   }
+  
+  /* Vynucené pořadí 2: Volba Od-Do (Zobrazuje se namísto šipek, pokud je vybráno 'custom') */
   .custom-wrapper {
-    width: 100%; /* Zajišťuje roztáhnutí vlastní volby kalendáře na celou šířku */
+    order: 2;
+    width: 100%;
   }
+
   .date-input-container {
     flex-direction: column;
     align-items: stretch;

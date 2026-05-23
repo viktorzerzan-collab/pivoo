@@ -202,13 +202,33 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <style scoped>
-.base-date-picker { position: relative; display: flex; flex-direction: column; gap: 0.5rem; width: 100%; text-align: left; }
+/* Zmenšená mezera z 0.5rem na 0.35rem */
+.base-date-picker { position: relative; display: flex; flex-direction: column; gap: 0.35rem; width: 100%; text-align: left; }
 .base-label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); transition: color 0.3s ease; }
 
 .input-wrapper { position: relative; cursor: pointer; }
 .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; transition: color 0.3s ease; }
-.base-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background-color: var(--bg-panel); font-size: 0.95rem; font-family: inherit; color: var(--text-main); cursor: pointer; outline: none; transition: all 0.3s ease; box-shadow: none; }
-.input-wrapper:hover .base-input { border-color: var(--primary); }
+
+/* OPRAVA: Průhledné pozadí, rozostření a zmenšený padding s line-height */
+.base-input { 
+  width: 100%; 
+  padding: 0.6rem 1rem 0.6rem 2.5rem; 
+  line-height: 1.2;
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-sm); 
+  background-color: transparent; 
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  font-size: 0.95rem; 
+  font-family: inherit; 
+  color: var(--text-main); 
+  cursor: pointer; 
+  outline: none; 
+  transition: all 0.3s ease; 
+  box-shadow: none; 
+}
+
+.input-wrapper:hover .base-input { border-color: var(--primary); background-color: rgba(255, 255, 255, 0.05); }
 
 .calendar-popover { position: absolute; top: calc(100% + 0.5rem); left: 0; width: 310px; background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-floating); padding: 1rem; z-index: 100; transition: all 0.3s ease; }
 .calendar-popover.align-right { left: auto; right: 0; }

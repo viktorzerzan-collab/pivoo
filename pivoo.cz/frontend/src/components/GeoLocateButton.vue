@@ -30,13 +30,17 @@ const { t } = useI18n()
 
 <style scoped>
 .btn-locate { 
-  height: 44px !important; 
-  width: 44px !important; 
+  height: 38px !important; 
+  width: 38px !important; 
   flex-shrink: 0; 
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  background-color: var(--bg-panel); 
+  /* OPRAVA: Průhledné pozadí s rozostřením (glassmorphism) */
+  background-color: transparent;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  
   color: var(--text-muted); 
   border: 1px solid var(--border); 
   border-radius: var(--radius-sm); 
@@ -46,7 +50,7 @@ const { t } = useI18n()
 }
 
 .btn-locate:hover:not(:disabled) { 
-  background-color: rgba(250, 204, 21, 0.1); 
+  background-color: rgba(250, 204, 21, 0.1); /* Nažloutlý tint při hoveru sedí skvěle */
   border-color: var(--primary); 
   color: var(--primary); 
 }

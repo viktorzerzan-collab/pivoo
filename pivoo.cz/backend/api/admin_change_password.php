@@ -1,58 +1,34 @@
 <?php
-// ZMĚNA: Omezení CORS
-header("Access-Control-Allow-Origin: https://www.pivoo.cz");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+// backend/api/admin_change_password.php
+require_once '../core/ApiHandler.php';
 
-// Ošetření preflight dotazu (CORS)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+$api = new ApiHandler();
+$api->requireAdmin();
+
+$user_id = $api->request->getIntParam('user_id');
+$new_password = $api->request->getParam('new_password');
+
+if (!$user_id || !$new_password) {
+    $api->response->sendError("Chybí ID uživatele nebo nové heslo.", 400);
 }
 
-require_once '../Database.php';
-require_once '../JwtHandler.php';
+if (strlen($new_password) < 8 || !preg_match('/[0-9]/', $new_password) || !preg_match('/[^a-zA-Z0-9]/', $new_password)) {
+    $api->response->sendError("Nové heslo musí mít alespoň 8 znaků, obsahovat číslo a speciální znak.", 400);
+}
 
-// ZABEZPEČENÍ: Tento endpoint může zavolat pouze administrátor
-JwtHandler::checkAdmin();
+try {
+    $new_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
-$database = new Database();
-$db = $database->getConnection();
-$data = json_decode(file_get_contents("php://input"));
-
-// Kontrola, zda máme všechna potřebná data
-if (!empty($data->user_id) && !empty($data->new_password)) {
+    $query = "UPDATE users SET password_hash = ? WHERE id = ?";
+    $stmt = $api->db->prepare($query);
     
-    // Dodatečná kontrola síly hesla i na straně serveru
-    if (strlen($data->new_password) < 8 || !preg_match('/[0-9]/', $data->new_password) || !preg_match('/[^a-zA-Z0-9]/', $data->new_password)) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Nové heslo musí mít alespoň 8 znaků, obsahovat číslo a speciální znak."]);
-        exit();
+    if ($stmt->execute([$new_hash, $user_id])) {
+        $api->response->sendSuccess("Heslo bylo úspěšně změněno.");
+    } else {
+        $api->response->sendError("Nepodařilo se změnit heslo v databázi.", 500);
     }
-
-    try {
-        // Zašifrování nového hesla
-        $new_hash = password_hash($data->new_password, PASSWORD_DEFAULT);
-
-        // Uložení do databáze
-        $query = "UPDATE users SET password_hash = ? WHERE id = ?";
-        $stmt = $db->prepare($query);
-        
-        if ($stmt->execute([$new_hash, $data->user_id])) {
-            echo json_encode(["status" => "success", "message" => "Heslo bylo úspěšně změněno."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Nepodařilo se změnit heslo v databázi."]);
-        }
-    } catch (PDOException $e) {
-        // ZMĚNA: Skrytí chybové hlášky
-        error_log("DB Error (admin_change_password): " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze při změně hesla."]);
-    }
-} else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Chybí ID uživatele nebo nové heslo."]);
+} catch (PDOException $e) {
+    error_log("DB Error (admin_change_password): " . $e->getMessage());
+    $api->response->sendError("Vnitřní chyba databáze při změně hesla.", 500);
 }
 ?>

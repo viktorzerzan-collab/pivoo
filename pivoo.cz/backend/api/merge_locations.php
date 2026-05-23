@@ -1,71 +1,45 @@
 <?php
 // backend/api/merge_locations.php
-header("Access-Control-Allow-Origin: https://www.pivoo.cz");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+require_once '../core/ApiHandler.php';
 
-// Ošetření preflight dotazu (CORS)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { 
-    http_response_code(200); 
-    exit(); 
+$api = new ApiHandler();
+$api->requireAdmin();
+
+$source_id = $api->request->getIntParam('source_id');
+$target_id = $api->request->getIntParam('target_id');
+
+if (!$source_id || !$target_id) {
+    $api->response->sendError("Chybí ID zdrojového nebo cílového podniku.", 400);
 }
 
-require_once '../Database.php';
-require_once '../JwtHandler.php';
+if ($source_id == $target_id) {
+    $api->response->sendError("Nelze sloučit podnik sám se sebou.", 400);
+}
 
-// ZABEZPEČENÍ: Pouze pro administrátory
-JwtHandler::checkAdmin();
+try {
+    $api->db->beginTransaction();
 
-$database = new Database();
-$db = $database->getConnection();
-$data = json_decode(file_get_contents("php://input"));
+    $queryUpdate = "UPDATE consumptions SET location_id = ? WHERE location_id = ?";
+    $stmtUpdate = $api->db->prepare($queryUpdate);
+    $stmtUpdate->execute([$target_id, $source_id]);
 
-if (!empty($data->source_id) && !empty($data->target_id)) {
-    
-    // Ochrana před sloučením podniku se sebou samým
-    if ($data->source_id == $data->target_id) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Nelze sloučit podnik sám se sebou."]);
-        exit();
-    }
+    $queryDelete = "DELETE FROM locations WHERE id = ?";
+    $stmtDelete = $api->db->prepare($queryDelete);
+    $stmtDelete->execute([$source_id]);
+
+    $api->db->commit();
 
     try {
-        // Zahájení transakce (buď se provede vše, nebo nic)
-        $db->beginTransaction();
-
-        // 1. Krok: Přesun všech záznamů (konzumací) ze zdrojového podniku na cílový
-        $queryUpdate = "UPDATE consumptions SET location_id = ? WHERE location_id = ?";
-        $stmtUpdate = $db->prepare($queryUpdate);
-        $stmtUpdate->execute([$data->target_id, $data->source_id]);
-
-        // 2. Krok: Smazání původního (duplicitního) podniku
-        $queryDelete = "DELETE FROM locations WHERE id = ?";
-        $stmtDelete = $db->prepare($queryDelete);
-        $stmtDelete->execute([$data->source_id]);
-
-        // Potvrzení transakce
-        $db->commit();
-
-        // PŘIDÁNO: Přepočet statistik pro cílovou lokaci po přesunu záznamů
-        try {
-            $db->prepare("UPDATE locations SET total_visits = (SELECT COUNT(id) FROM consumptions WHERE location_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE location_id = ?) WHERE id = ?")->execute([$data->target_id, $data->target_id, $data->target_id]);
-        } catch (PDOException $e) {
-            error_log("Chyba při přepočtu (merge_locations): " . $e->getMessage());
-        }
-
-        echo json_encode(["status" => "success", "message" => "Podniky byly úspěšně sloučeny. Záznamy byly přesunuty a duplicita byla smazána."]);
-
-    } catch (Exception $e) {
-        // V případě chyby vrátíme databázi do původního stavu
-        $db->rollBack();
-        
-        error_log("DB Error (merge_locations): " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při slučování podniků."]);
+        $api->db->prepare("UPDATE locations SET total_visits = (SELECT COUNT(id) FROM consumptions WHERE location_id = ?), avg_rating = (SELECT ROUND(AVG(NULLIF(rating_beer, 0)), 1) FROM consumptions WHERE location_id = ?) WHERE id = ?")->execute([$target_id, $target_id, $target_id]);
+    } catch (PDOException $e) {
+        error_log("Chyba při přepočtu (merge_locations): " . $e->getMessage());
     }
-} else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Chybí ID zdrojového nebo cílového podniku."]);
+
+    $api->response->sendSuccess("Podniky byly úspěšně sloučeny. Záznamy byly přesunuty a duplicita byla smazána.");
+
+} catch (Exception $e) {
+    $api->db->rollBack();
+    error_log("DB Error (merge_locations): " . $e->getMessage());
+    $api->response->sendError("Vnitřní chyba serveru při slučování podniků.", 500);
 }
 ?>

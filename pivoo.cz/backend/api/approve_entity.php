@@ -1,70 +1,50 @@
 <?php
 // backend/api/approve_entity.php
-header("Access-Control-Allow-Origin: https://www.pivoo.cz");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+require_once '../core/ApiHandler.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { 
-    http_response_code(200); 
-    exit(); 
+$api = new ApiHandler();
+$api->requireAdmin();
+
+$entity_type = $api->request->getParam('entity_type');
+$entity_id = $api->request->getIntParam('entity_id');
+$action = $api->request->getParam('action');
+
+if (!$entity_type || !$entity_id || !$action) {
+    $api->response->sendError("Chybí povinná data (typ, id, akce).", 400);
 }
 
-require_once '../Database.php';
-require_once '../JwtHandler.php';
+$allowed_types = [
+    'beer' => 'beers', 
+    'brewery' => 'breweries', 
+    'location' => 'locations'
+];
 
-// Zabezpečení: pouze administrátor
-JwtHandler::checkAdmin();
+if (!array_key_exists($entity_type, $allowed_types)) {
+    $api->response->sendError("Neplatný typ entity.", 400);
+}
 
-$db = (new Database())->getConnection();
-$data = json_decode(file_get_contents("php://input"));
+$table = $allowed_types[$entity_type];
 
-if (!empty($data->entity_type) && !empty($data->entity_id) && !empty($data->action)) {
-    // Mapa povolených typů entit na skutečné názvy tabulek
-    $allowed_types = [
-        'beer' => 'beers', 
-        'brewery' => 'breweries', 
-        'location' => 'locations'
-    ];
-    
-    if (!array_key_exists($data->entity_type, $allowed_types)) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "message" => "Neplatný typ entity."]);
-        exit();
-    }
-    
-    $table = $allowed_types[$data->entity_type];
-    
-    try {
-        if ($data->action === 'approve') {
-            // Schválení entity
-            $stmt = $db->prepare("UPDATE {$table} SET is_approved = 1 WHERE id = ?");
-            if ($stmt->execute([$data->entity_id])) {
-                echo json_encode(["status" => "success", "message" => "Záznam byl úspěšně schválen a je viditelný pro všechny."]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["status" => "error", "message" => "Nepodařilo se uložit schválení do databáze."]);
-            }
-        } elseif ($data->action === 'reject') {
-            // Zamítnutí (smazání) entity. U AI záznamů předpokládáme, že nemají žádné složité vazby.
-            $stmt = $db->prepare("DELETE FROM {$table} WHERE id = ?");
-            if ($stmt->execute([$data->entity_id])) {
-                echo json_encode(["status" => "success", "message" => "Záznam byl zamítnut a trvale smazán."]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["status" => "error", "message" => "Záznam se nepodařilo smazat. Může být navázán na existující konzumace."]);
-            }
+try {
+    if ($action === 'approve') {
+        $stmt = $api->db->prepare("UPDATE {$table} SET is_approved = 1 WHERE id = ?");
+        if ($stmt->execute([$entity_id])) {
+            $api->response->sendSuccess("Záznam byl úspěšně schválen a je viditelný pro všechny.");
         } else {
-            http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "Neznámá akce."]);
+            $api->response->sendError("Nepodařilo se uložit schválení do databáze.", 500);
         }
-    } catch (Exception $e) {
-        error_log("DB Error (approve_entity): " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Vnitřní chyba serveru při zpracování požadavku."]);
+    } elseif ($action === 'reject') {
+        $stmt = $api->db->prepare("DELETE FROM {$table} WHERE id = ?");
+        if ($stmt->execute([$entity_id])) {
+            $api->response->sendSuccess("Záznam byl zamítnut a trvale smazán.");
+        } else {
+            $api->response->sendError("Záznam se nepodařilo smazat. Může být navázán na existující konzumace.", 500);
+        }
+    } else {
+        $api->response->sendError("Neznámá akce.", 400);
     }
-} else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Chybí povinná data (typ, id, akce)."]);
+} catch (Exception $e) {
+    error_log("DB Error (approve_entity): " . $e->getMessage());
+    $api->response->sendError("Vnitřní chyba serveru při zpracování požadavku.", 500);
 }
 ?>

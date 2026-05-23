@@ -64,7 +64,7 @@ const toggleVisibility = () => {
 .base-input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem; 
   width: 100%;
   text-align: left;
 }
@@ -83,10 +83,14 @@ const toggleVisibility = () => {
 
 .base-input {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 1rem;
+  line-height: 1.2;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg-panel);
+  /* OPRAVA: Změněno z pevné barvy na průhlednou s efektem rozostření podkladu */
+  background-color: transparent;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   color: var(--text-main);
   font-size: 0.95rem;
   font-family: inherit;
@@ -117,6 +121,8 @@ const toggleVisibility = () => {
 .base-input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
+  /* Jemný bílý podkres při psaní pro lepší orientaci uživatele */
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .toggle-password {

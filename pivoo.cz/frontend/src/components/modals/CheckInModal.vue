@@ -287,6 +287,12 @@ watch(() => props.form.is_free, (isFree) => {
 watch(() => props.show, (newVal) => {
   if (newVal) {
     locationMessage.value = ''
+    
+    // OPRAVA: Přetypování ID na číselné hodnoty kvůli BaseSelect porovnávání
+    if (props.form.location_id) props.form.location_id = Number(props.form.location_id)
+    if (props.form.brewery_id) props.form.brewery_id = Number(props.form.brewery_id)
+    if (props.form.beer_id) props.form.beer_id = Number(props.form.beer_id)
+
     const currentVol = String(props.form.volume)
     const standardVolumes = ['0.20', '0.30', '0.33', '0.40', '0.50', '1.00']
     
@@ -363,13 +369,14 @@ const autodetectLocation = () => {
         }
       })
 
-      if (nearestLoc && minDistance <= 0.03) {
+      // OPRAVA: Vzdálenost omezena na 50 m (0.05 km)
+      if (nearestLoc && minDistance <= 0.05) {
         props.form.location_id = nearestLoc.id
         locationMessage.value = `📍 Nalezeno: ${translateLocation(nearestLoc.name)} (${(minDistance * 1000).toFixed(0)} m)`
         locationMessageType.value = 'success'
       } else {
         props.form.location_id = ''
-        locationMessage.value = 'Žádný známý podnik v okolí 30m.'
+        locationMessage.value = 'Žádný známý podnik v okolí 50m.'
         locationMessageType.value = 'warning'
       }
     },

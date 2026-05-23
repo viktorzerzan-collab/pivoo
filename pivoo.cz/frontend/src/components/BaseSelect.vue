@@ -161,7 +161,7 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 .base-select-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
   width: 100%;
   text-align: left;
   position: relative;
@@ -181,10 +181,16 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 
 .select-trigger {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 1rem;
+  line-height: 1.2;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background-color: var(--bg-panel);
+  
+  /* OPRAVA: Průhledné pozadí s rozostřením (glassmorphism) */
+  background-color: transparent;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  
   color: var(--text-main);
   font-size: 0.95rem;
   display: flex;
@@ -198,15 +204,17 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 
 .select-trigger:hover:not(.is-disabled) {
   border-color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .select-trigger.is-open {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
+  background-color: rgba(255, 255, 255, 0.05); /* Jemný bílý podkres při rozbalení */
 }
 
 .select-trigger.is-disabled {
-  background-color: var(--bg-app);
+  background-color: rgba(0, 0, 0, 0.02); /* Decentnější pro průhledný design */
   color: var(--text-muted);
   cursor: not-allowed;
   opacity: 0.7;
@@ -266,7 +274,7 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 
 .search-input {
   width: 100%;
-  padding: 0.6rem 0.6rem 0.6rem 2.2rem;
+  padding: 0.5rem 0.6rem 0.5rem 2.2rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background-color: var(--bg-app);
@@ -282,7 +290,7 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 
 .options-list {
   list-style: none;
-  padding: 0.5rem;
+  padding: 0.25rem;
   margin: 0;
   max-height: 250px;
   overflow-y: auto;
@@ -290,7 +298,8 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
 }
 
 .option-item {
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.15rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
@@ -300,6 +309,10 @@ watch(() => slots.default?.(), updateOptionsFromSlots, { deep: true })
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.2s ease;
+}
+
+.option-item:last-child {
+  margin-bottom: 0;
 }
 
 .option-item:hover {

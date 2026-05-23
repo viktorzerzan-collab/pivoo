@@ -184,13 +184,34 @@ onUnmounted(() => {
 .header-controls-left { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 .header-controls-right { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 
-.filters-section { margin-bottom: 1.5rem; position: relative; z-index: 20; }
-.filters-section :deep(.panel-header) { border-bottom: none; margin-bottom: 0; padding-bottom: 1rem; }
-.filters-section :deep(.panel-header h3) { font-size: 1.1rem; }
+/* OPRAVA: Výrazné zmenšení celého pruhu filtrů */
+.filters-section { 
+  margin-bottom: 1.5rem; 
+  position: relative; 
+  z-index: 20; 
+  /* Přepisujeme obří výchozí odsazení z BasePanel */
+  padding: 0.75rem 1.25rem !important; 
+}
+.filters-section :deep(.panel-header) { 
+  border-bottom: none; 
+  margin-bottom: 0; 
+  /* Odstraněna spodní mezera v zavřeném stavu */
+  padding-bottom: 0; 
+}
+.filters-section :deep(.panel-header h3) { 
+  font-size: 1.05rem; /* Zmenšený text */
+}
 
 .toggle-icon { color: var(--text-muted); transition: transform 0.3s ease; }
 .toggle-icon.rotated { transform: rotate(180deg); }
-.filters-body { padding-top: 1.5rem; border-top: 1px solid var(--border); }
+
+/* Přidáno horní odsazení k tělu filtru, protože jsme ho vzali hlavičce */
+.filters-body { 
+  margin-top: 0.75rem;
+  padding-top: 1.25rem; 
+  border-top: 1px solid var(--border); 
+}
+
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
 .filters-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
 
@@ -210,7 +231,11 @@ onUnmounted(() => {
   .header-controls-right { width: 100%; flex-direction: column; align-items: stretch; gap: 0.75rem; }
   .sort-control-wrapper { width: 100%; max-width: none; }
   
-  .filters-section { margin-bottom: 0.75rem; }
+  /* Ještě kompaktnější na telefonech */
+  .filters-section { 
+    margin-bottom: 0.75rem; 
+    padding: 0.6rem 1rem !important; 
+  }
   
   .mobile-action-bar { display: block; margin-bottom: 0.5rem; width: 100%; }
   .mobile-action-bar :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
@@ -219,7 +244,6 @@ onUnmounted(() => {
   .desktop-pagination { display: none; }
   .mobile-loader { display: block; }
   
-  /* Zarovnáme na mobilu počet výsledků na střed, když je to vše pod sebou */
   .results-count { text-align: center; }
 }
 

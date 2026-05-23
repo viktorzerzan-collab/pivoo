@@ -31,7 +31,8 @@ defineProps({
   background: var(--bg-panel); 
   border-radius: var(--radius-md); 
   border: 1px solid var(--border); 
-  padding: 1.5rem; 
+  /* Zmenšený základní okraj z 1.5rem na 1.25rem */
+  padding: 1.25rem; 
   transition: background-color 0.3s ease, border-color 0.3s ease; 
   height: 100%;
   display: flex;
@@ -39,8 +40,9 @@ defineProps({
 }
 .panel-header { 
   border-bottom: 1px solid var(--border); 
-  padding-bottom: 1rem; 
-  margin-bottom: 1.5rem; 
+  /* Zmenšené mezery pod hlavičkou z 1rem a 1.5rem */
+  padding-bottom: 0.75rem; 
+  margin-bottom: 1rem; 
   transition: border-color 0.3s ease; 
   display: flex;
   justify-content: space-between;
@@ -51,7 +53,8 @@ defineProps({
   display: flex; 
   align-items: center; 
   gap: 0.5rem; 
-  font-size: 1.25rem; 
+  /* Mírně kompaktnější velikost nadpisu */
+  font-size: 1.15rem; 
   color: var(--text-main); 
   transition: color 0.3s ease; 
 }
@@ -59,6 +62,11 @@ defineProps({
 .panel-body { flex-grow: 1; display: flex; flex-direction: column; }
 
 @media (max-width: 600px) {
+  /* Na telefonech jdeme na naprosté minimum */
   .panel-card { padding: 1rem; }
+  .panel-header { 
+    margin-bottom: 0.75rem; 
+    padding-bottom: 0.5rem; 
+  }
 }
 </style>

@@ -1,65 +1,50 @@
 <?php
-// ZMĚNA: Omezení CORS
-header("Access-Control-Allow-Origin: https://www.pivoo.cz");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+// backend/api/update_beer.php
+require_once '../core/ApiHandler.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+$api = new ApiHandler();
+$api->requireAdmin();
+
+$id = $api->request->getIntParam('id');
+$name = $api->request->getParam('name');
+
+if (!$id || !$name) {
+    $api->response->sendError("Chybí povinná data (ID nebo název).", 400);
 }
 
-require_once '../Database.php';
-require_once '../JwtHandler.php';
+try {
+    $query = "UPDATE beers 
+              SET name = ?, brewery_id = ?, style_id = ?, epm = ?, abv = ?,
+                  ibu = ?, ebc = ?, hops = ?, malts = ?, fermentation = ?, tags = ?,
+                  is_unfiltered = ?, is_unpasteurized = ?
+              WHERE id = ?";
+              
+    $stmt = $api->db->prepare($query);
+    
+    $brewery_id = $api->request->getParam('brewery_id');
+    $style_id = $api->request->getParam('style_id');
+    $epm = $api->request->getParam('epm');
+    $abv = $api->request->getParam('abv');
+    $ibu = $api->request->getParam('ibu');
+    $ebc = $api->request->getParam('ebc');
+    $hops = $api->request->getParam('hops');
+    $malts = $api->request->getParam('malts');
+    $fermentation = $api->request->getParam('fermentation');
+    $tags = $api->request->getParam('tags');
+    $is_unfiltered = $api->request->getBoolParam('is_unfiltered');
+    $is_unpasteurized = $api->request->getBoolParam('is_unpasteurized');
 
-// ZABEZPEČENÍ!
-JwtHandler::checkAdmin();
-
-$database = new Database();
-$db = $database->getConnection();
-
-$data = json_decode(file_get_contents("php://input"));
-
-if (!empty($data->id) && !empty($data->name)) {
-    try {
-        $query = "UPDATE beers 
-                  SET name = ?, brewery_id = ?, style_id = ?, epm = ?, abv = ?,
-                      ibu = ?, ebc = ?, hops = ?, malts = ?, fermentation = ?, tags = ?,
-                      is_unfiltered = ?, is_unpasteurized = ?
-                  WHERE id = ?";
-                  
-        $stmt = $db->prepare($query);
-        
-        $epm = (isset($data->epm) && $data->epm !== '') ? $data->epm : null;
-        $abv = (isset($data->abv) && $data->abv !== '') ? $data->abv : null;
-        $ibu = (isset($data->ibu) && $data->ibu !== '') ? $data->ibu : null;
-        $ebc = (isset($data->ebc) && $data->ebc !== '') ? $data->ebc : null;
-        $hops = (isset($data->hops) && $data->hops !== '') ? $data->hops : null;
-        $malts = (isset($data->malts) && $data->malts !== '') ? $data->malts : null;
-        $fermentation = (isset($data->fermentation) && $data->fermentation !== '') ? $data->fermentation : null;
-        $tags = (isset($data->tags) && $data->tags !== '') ? $data->tags : null;
-        $is_unfiltered = (isset($data->is_unfiltered) && $data->is_unfiltered) ? 1 : 0;
-        $is_unpasteurized = (isset($data->is_unpasteurized) && $data->is_unpasteurized) ? 1 : 0;
-
-        if ($stmt->execute([
-            $data->name, $data->brewery_id, $data->style_id, $epm, $abv,
-            $ibu, $ebc, $hops, $malts, $fermentation, $tags, $is_unfiltered, $is_unpasteurized,
-            $data->id
-        ])) {
-            echo json_encode(["status" => "success", "message" => "Pivo v katalogu bylo úspěšně upraveno."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Nepodařilo se upravit pivo."]);
-        }
-    } catch (Exception $e) {
-        // ZMĚNA: Skrytí chybové hlášky
-        error_log("DB Error (update_beer): " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Vnitřní chyba databáze při úpravě piva."]);
+    if ($stmt->execute([
+        $name, $brewery_id, $style_id, $epm, $abv,
+        $ibu, $ebc, $hops, $malts, $fermentation, $tags, $is_unfiltered, $is_unpasteurized,
+        $id
+    ])) {
+        $api->response->sendSuccess("Pivo v katalogu bylo úspěšně upraveno.");
+    } else {
+        $api->response->sendError("Nepodařilo se upravit pivo.", 500);
     }
-} else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Chybí povinná data (ID nebo název)."]);
+} catch (Exception $e) {
+    error_log("DB Error (update_beer): " . $e->getMessage());
+    $api->response->sendError("Vnitřní chyba databáze při úpravě piva.", 500);
 }
 ?>

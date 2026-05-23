@@ -1,26 +1,15 @@
 <?php
-// ZMĚNA: Omezení CORS
-header("Access-Control-Allow-Origin: https://www.pivoo.cz");
-header("Content-Type: application/json; charset=UTF-8");
+// backend/api/styles.php
+require_once '../core/ApiHandler.php';
 
-require_once '../Database.php';
+$api = new ApiHandler();
 
-$database = new Database();
-$db = $database->getConnection();
-
-if ($db) {
-    // ZMĚNA: Přidán try-catch blok pro bezpečné odchycení chyb
-    try {
-        $stmt = $db->query("SELECT id, name FROM beer_styles ORDER BY name ASC");
-        $styles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(["status" => "success", "data" => $styles]);
-    } catch (PDOException $e) {
-        error_log("DB Error (styles): " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Vnitřní chyba při načítání stylů."]);
-    }
-} else {
-    http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "Chyba DB."]);
+try {
+    $stmt = $api->db->query("SELECT id, name FROM beer_styles ORDER BY name ASC");
+    $styles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $api->response->sendSuccess("", ["data" => $styles]);
+} catch (PDOException $e) {
+    error_log("DB Error (styles): " . $e->getMessage());
+    $api->response->sendError("Vnitřní chyba při načítání stylů.", 500);
 }
 ?>

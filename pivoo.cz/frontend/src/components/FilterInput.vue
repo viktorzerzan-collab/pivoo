@@ -40,7 +40,7 @@ const handleInput = (event) => {
 .filter-input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem; /* Zmenšená mezera mezi labelem a inputem */
   width: 100%;
   text-align: left;
 }
@@ -70,7 +70,8 @@ const handleInput = (event) => {
 
 .filter-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  /* Zmenšený horní a spodní padding z 0.75rem na 0.5rem pro kompaktnější vzhled */
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background-color: var(--bg-app);

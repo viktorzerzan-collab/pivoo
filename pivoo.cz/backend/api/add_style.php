@@ -1,38 +1,25 @@
 <?php
-// ZMĚNA: Omezení CORS
-header("Access-Control-Allow-Origin: https://www.pivoo.cz");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+// backend/api/add_style.php
+require_once '../core/ApiHandler.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+// Inicializace jádra a ověření administrátora (hlavičky a spojení s DB se vyřeší automaticky)
+$api = new ApiHandler();
+$api->requireAdmin();
+
+// Načtení povinného parametru přes bezpečný Request Wrapper
+$name = $api->request->getParam('name');
+
+if (!$name) {
+    $api->response->sendError("Název stylu je povinný.", 400);
 }
 
-require_once '../Database.php';
-require_once '../JwtHandler.php';
-
-// ZABEZPEČENÍ!
-JwtHandler::checkAdmin();
-
-$database = new Database();
-$db = $database->getConnection();
-$data = json_decode(file_get_contents("php://input"));
-
-if (!empty($data->name)) {
-    try {
-        $stmt = $db->prepare("INSERT INTO beer_styles (name) VALUES (?)");
-        $stmt->execute([$data->name]);
-        echo json_encode(["status" => "success", "message" => "Pivní styl byl úspěšně přidán."]);
-    } catch (PDOException $e) {
-        // ZMĚNA: Logujeme skutečnou chybu, uživateli necháváme původní slušnou zprávu
-        error_log("DB Error (add_style): " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Tento styl již v databázi pravděpodobně existuje."]);
-    }
-} else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Název stylu je povinný."]);
+try {
+    $stmt = $api->db->prepare("INSERT INTO beer_styles (name) VALUES (?)");
+    $stmt->execute([$name]);
+    $api->response->sendSuccess("Pivní styl byl úspěšně přidán.");
+} catch (PDOException $e) {
+    // Logujeme skutečnou chybu, uživateli necháváme původní zprávu
+    error_log("DB Error (add_style): " . $e->getMessage());
+    $api->response->sendError("Tento styl již v databázi pravděpodobně existuje.", 500);
 }
 ?>

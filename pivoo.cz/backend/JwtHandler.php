@@ -124,17 +124,17 @@ class JwtHandler {
                 self::sendError(401, "Tento uživatelský účet již neexistuje.");
             }
         } catch (Exception $e) {
-            // Při jakékoliv chybě DB (např. spadení spojení během dotazu) zamítneme přístup
+            // Při jakékoliv chybě DB zamítneme přístup
             self::sendError(500, "Kritická chyba při ověřování zabezpečení.");
         }
     }
 
     // Sjednocená metoda pro odesílání chyb s hlavičkami
     private static function sendError($code, $message) {
-        header("Content-Type: application/json; charset=UTF-8");
-        http_response_code($code);
-        echo json_encode(["status" => "error", "message" => $message]);
-        exit();
+        // ZMĚNA: Napojeno na naše centrální jádro pro konzistentní JSON i hlavičky napříč všemi situacemi
+        require_once __DIR__ . '/core/ApiResponse.php';
+        $response = new ApiResponse();
+        $response->sendError($message, $code);
     }
 }
 ?>

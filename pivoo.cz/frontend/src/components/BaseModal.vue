@@ -74,14 +74,15 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  box-sizing: border-box; /* Pojistka pro správné započítání paddingu */
+  box-sizing: border-box;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  padding: 1.25rem; /* Zaručená mezera od kraje (cca 20px) pro mobily i desktop */
+  /* Zmenšeno z 1.25rem pro okraje okolo modalu na mobilu */
+  padding: 1rem; 
 }
 
 .modal-container {
@@ -89,7 +90,7 @@ onUnmounted(() => {
   color: var(--text-main);
   width: 100%;
   max-width: 500px;
-  max-height: 100%; /* OPRAVA: Kontejner už nikdy nepřeteče rodiče s paddingem */
+  max-height: 100%;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-floating);
   display: flex;
@@ -100,19 +101,21 @@ onUnmounted(() => {
 }
 
 .modal-header {
-  padding: 1.5rem;
+  /* Zmenšeno z 1.5rem na 1.25rem */
+  padding: 1.25rem; 
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border);
   position: relative;
-  flex-shrink: 0; /* OPRAVA: Hlavička se nesmí nikdy scvrknout */
+  flex-shrink: 0;
   transition: border-color 0.3s ease;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  /* Zmenšeno z 1.5rem pro kompaktnost */
+  font-size: 1.35rem; 
   color: var(--text-main);
   transition: color 0.3s ease;
 }
@@ -130,10 +133,24 @@ onUnmounted(() => {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  /* Zmenšeno z 1.5rem na 1.25rem */
+  padding: 1.25rem; 
   overflow-y: auto;
-  flex: 1; /* OPRAVA: Tělo zabere zbývající místo po hlavičce */
-  min-height: 0; /* OPRAVA: Extrémně důležité pro flexbox, aby povolil scrollování a neroztahoval kontejner */
+  flex: 1; 
+  min-height: 0; 
+}
+
+/* ODDĚLENÁ LOGIKA PRO MOBILNÍ TELEFONY */
+@media (max-width: 600px) {
+  .modal-header {
+    padding: 1rem;
+  }
+  .modal-body {
+    padding: 1rem;
+  }
+  .modal-header h2 {
+    font-size: 1.25rem;
+  }
 }
 
 .modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.3s ease; }

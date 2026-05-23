@@ -45,9 +45,13 @@ $database = new Database();
 $db = $database->getConnection();
 
 try {
-    // 1. Získání databáze pivovarů a stylů pro přesnější párování
+    // 1. Získání databáze pivovarů, piv a stylů pro přesnější párování
     $breweries_stmt = $db->query("SELECT id, name FROM breweries");
     $breweries_list = $breweries_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // PŘIDÁNO: Získání seznamu existujících piv pro AI
+    $beers_stmt = $db->query("SELECT id, name, brewery_id FROM beers");
+    $beers_list = $beers_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $styles_stmt = $db->query("SELECT id, name FROM beer_styles");
     $styles_list = $styles_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -87,26 +91,30 @@ try {
         exit();
     }
 
-    // 3. Prompt pro Gemini
+    // 3. Prompt pro Gemini (PŘIDÁNA logika pro párování ID existujících piv a fuzzy matching)
     $promptText = "Jsi pivní expert. Zanalyzuj tyto přiložené fotografie piva (mohou obsahovat přední/zadní etiketu, plechovku, láhev, točené pivo ve sklenici nebo i nápojový lístek).
 Tvé úkoly:
 1. Identifikuj přesný název piva a jméno pivovaru ze všech dostupných indicií.
 2. Identifikuj pivní styl.
 3. Najdi technické parametry: EPM (Stupňovitost v °), ABV (Alkohol v %), IBU (Hořkost), EBC (Barva).
 4. Zjisti, zda je pivo nefiltrované nebo nepasterizované.
-5. Porovnej nalezený pivovar a styl se seznamy, které ti dodám. Pokud najdeš shodu, vrať jeho ID.
+5. Porovnej nalezený pivovar, pivo a styl se seznamy, které ti dodám. Využij fuzzy matching (ignoruj drobné překlepy, velikost písmen a odlišné slovosledy). Pokud najdeš shodu, vrať jejich příslušná ID (brewery_id, beer_id, style_id). U piva zkontroluj, že patří ke správnému brewery_id!
 6. Odhadni z fotek, o jaký typ obalu se jedná (povolené hodnoty: 'točené', 'lahev', 'plechovka', 'pet', 'sud'). Pokud si nejsi jistý, vrať 'točené'.
 7. Odhadni objem piva (např. 0.50, 0.33, 0.30), pokud to lze z obalu, sklenice nebo nápojového lístku vyčíst/odhadnout.
 
 Zde je seznam existujících pivovarů: " . json_encode($breweries_list) . "
+Zde je seznam existujících piv: " . json_encode($beers_list) . "
 Zde je seznam existujících pivních stylů: " . json_encode($styles_list) . "
 Zde je seznam zemí a jejich ID: " . json_encode($countries_list) . "
 
-DŮLEŽITÉ: Pokud pivovar v seznamu pivovarů NENÍ, nastav 'brewery_id' na null, 'is_new_brewery' na true a do 'brewery_metadata' doplň maximum informací o pivovaru z tvých znalostí. Vyhledej přesné město, PSČ, ulici, a přiřaď správné 'country_id'.
+DŮLEŽITÉ: 
+- Pokud pivo nebo pivovar v seznamu NENÍ (ani po volnějším párování textu), nastav příslušné ID na null. 
+- Pokud pivovar neexistuje, nastav 'is_new_brewery' na true a do 'brewery_metadata' doplň maximum informací o pivovaru (město, PSČ, adresu, 'country_id').
 
 Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo markdownu. Struktura musí být:
 {
     \"beer_name\": \"...\",
+    \"beer_id\": null,
     \"brewery_name\": \"...\",
     \"brewery_id\": null,
     \"is_new_brewery\": false,
@@ -185,7 +193,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
             $db->beginTransaction();
             try {
                 $brewery_id = $ai_json['brewery_id'] ?? null;
-                $beer_id = null;
+                $beer_id = $ai_json['beer_id'] ?? null; // PŘIDÁNO načtení beer_id z odpovědi
 
                 // A) Pokud pivovar neexistuje, založíme ho jako KONCEPT (2)
                 if (!$brewery_id || !empty($ai_json['is_new_brewery'])) {
@@ -206,9 +214,21 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
 
                 // B) Zkontrolujeme, zda existuje pivo
                 if ($brewery_id && !empty($ai_json['beer_name'])) {
-                    $find_beer = $db->prepare("SELECT id FROM beers WHERE brewery_id = ? AND name LIKE ? LIMIT 1");
-                    $find_beer->execute([$brewery_id, '%' . trim($ai_json['beer_name']) . '%']);
-                    $existing_beer = $find_beer->fetch();
+                    $existing_beer = false;
+                    
+                    // ZMĚNA: Preferujeme beer_id vrácené z AI fuzzy matchingu
+                    if ($beer_id) {
+                        $find_beer = $db->prepare("SELECT id FROM beers WHERE id = ?");
+                        $find_beer->execute([$beer_id]);
+                        $existing_beer = $find_beer->fetch();
+                    } 
+                    
+                    // Fallback na starší vyhledávání pomocí textu, pokud se AI nevrátilo přesné ID, ale název se shoduje
+                    if (!$existing_beer) {
+                        $find_beer = $db->prepare("SELECT id FROM beers WHERE brewery_id = ? AND name LIKE ? LIMIT 1");
+                        $find_beer->execute([$brewery_id, '%' . trim($ai_json['beer_name']) . '%']);
+                        $existing_beer = $find_beer->fetch();
+                    }
 
                     if ($existing_beer) {
                         $beer_id = $existing_beer['id'];

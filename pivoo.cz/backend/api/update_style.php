@@ -1,42 +1,26 @@
 <?php
-// ZMĚNA: Omezení CORS
-header("Access-Control-Allow-Origin: https://www.pivoo.cz");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+// backend/api/update_style.php
+require_once '../core/ApiHandler.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+$api = new ApiHandler();
+$api->requireAdmin();
+
+$id = $api->request->getIntParam('id');
+$name = $api->request->getParam('name');
+
+if (!$id || !$name) {
+    $api->response->sendError("ID a Název jsou povinné.", 400);
 }
 
-require_once '../Database.php';
-require_once '../JwtHandler.php';
-
-// ZABEZPEČENÍ!
-JwtHandler::checkAdmin();
-
-$database = new Database();
-$db = $database->getConnection();
-$data = json_decode(file_get_contents("php://input"));
-
-if (!empty($data->id) && !empty($data->name)) {
-    try {
-        $stmt = $db->prepare("UPDATE beer_styles SET name = ? WHERE id = ?");
-        if ($stmt->execute([$data->name, $data->id])) {
-            echo json_encode(["status" => "success", "message" => "Pivní styl byl upraven."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["status" => "error", "message" => "Chyba při ukládání úpravy."]);
-        }
-    } catch (PDOException $e) {
-        // ZMĚNA: Skrytí chyby
-        error_log("DB Error (update_style): " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Název už existuje nebo nastala interní chyba serveru."]);
+try {
+    $stmt = $api->db->prepare("UPDATE beer_styles SET name = ? WHERE id = ?");
+    if ($stmt->execute([$name, $id])) {
+        $api->response->sendSuccess("Pivní styl byl upraven.");
+    } else {
+        $api->response->sendError("Chyba při ukládání úpravy.", 500);
     }
-} else {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "ID a Název jsou povinné."]);
+} catch (PDOException $e) {
+    error_log("DB Error (update_style): " . $e->getMessage());
+    $api->response->sendError("Název už existuje nebo nastala interní chyba serveru.", 500);
 }
 ?>
