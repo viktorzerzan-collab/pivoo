@@ -177,7 +177,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { 
   UserIcon, CameraIcon, KeyIcon, SunMoonIcon, 
@@ -205,6 +205,7 @@ import { useCatalogStore } from '../stores/catalog'
 import { apiFetch } from '../api'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const catalogStore = useCatalogStore()
@@ -256,6 +257,10 @@ onMounted(() => {
   
   if (allBeers.value.length === 0) {
     catalogStore.fetchAllData()
+  }
+
+  if (route.query.tab === 'history') {
+    activeTab.value = 'history'
   }
 })
 

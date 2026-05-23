@@ -417,6 +417,7 @@
       "record_beers": "Zaznamenat vypitá piva",
       "me_and_beer_in": "Já a pivo v",
       "recent_records": "Poslední záznamy",
+      "show_full_history": "Zobrazit celou historii",
       "no_records": "Zatím žádné záznamy.",
       "months": ["lednu", "únoru", "březnu", "dubnu", "květnu", "červnu", "červenci", "srpnu", "září", "říjnu", "listopadu", "prosinci"]
     },

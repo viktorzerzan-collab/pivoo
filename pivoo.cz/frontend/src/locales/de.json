@@ -417,6 +417,7 @@
       "record_beers": "Getrunkene Biere eintragen",
       "me_and_beer_in": "Ich und Bier im",
       "recent_records": "Letzte Einträge",
+      "show_full_history": "Gesamte Historie anzeigen",
       "no_records": "Bisher keine Einträge.",
       "months": ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
     },

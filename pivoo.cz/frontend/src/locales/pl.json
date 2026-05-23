@@ -417,6 +417,7 @@
       "record_beers": "Zanotuj vypite piwa",
       "me_and_beer_in": "Ja i piwo w",
       "recent_records": "Ostatnie wpisy",
+      "show_full_history": "Pokaż całą historię",
       "no_records": "Brak wpisów.",
       "months": ["styczniu", "lutym", "marcu", "kwietniu", "maju", "czerwcu", "lipcu", "sierpniu", "wrześniu", "październiku", "listopadzie", "grudniu"]
     },

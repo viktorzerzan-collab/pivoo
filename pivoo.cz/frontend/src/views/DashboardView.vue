@@ -18,10 +18,16 @@
         <BasePanel :title="$t('views.dashboard.recent_records')" :icon="HistoryIcon">
           <HistoryList 
             v-if="history && history.length > 0"
-            :history="history" 
+            :history="history.slice(0, 6)" 
             @edit="openEditModal" 
             @delete="confirmDelete" 
           />
+          
+          <div class="history-actions" v-if="history && history.length > 0">
+            <BaseButton variant="secondary" @click="goToHistory" class="full-history-btn">
+              {{ $t('views.dashboard.show_full_history') }}
+            </BaseButton>
+          </div>
           
           <BaseEmptyState 
             v-if="!isLoading" 
@@ -80,6 +86,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { PlusCircleIcon, HistoryIcon, BeerIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
@@ -100,6 +107,7 @@ import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
@@ -137,6 +145,10 @@ watch(() => authStore.user, (newUser) => { if (newUser) catalogStore.fetchAllDat
 const openCheckInModal = () => {
   catalogStore.fetchAllData(true)
   isModalOpen.value = true
+}
+
+const goToHistory = () => {
+  router.push({ path: '/profile', query: { tab: 'history' } })
 }
 
 const handleMagicAddBrewery = (aiData) => {
@@ -374,7 +386,11 @@ const executeDelete = async () => {
 .section-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
 .dashboard-content { display: flex; flex-direction: column; gap: 2rem; }
 
+.history-actions { display: flex; justify-content: center; margin-top: 1.5rem; }
+.full-history-btn { justify-content: center; }
+
 @media (max-width: 600px) {
   .section-actions :deep(.base-button) { width: 100%; padding: 1rem; justify-content: center; font-size: 1.1rem; }
+  .full-history-btn { width: 100%; }
 }
 </style>

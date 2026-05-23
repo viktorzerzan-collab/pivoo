@@ -417,6 +417,7 @@
       "record_beers": "Log consumed beers",
       "me_and_beer_in": "Me and beer in",
       "recent_records": "Recent entries",
+      "show_full_history": "Show full history",
       "no_records": "No entries yet.",
       "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     },
