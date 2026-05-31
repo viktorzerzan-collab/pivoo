@@ -319,8 +319,10 @@ const submitCheckIn = async () => {
       const newCheckin = {
          id: res.id,
          beer_id: form.value.beer_id,
+         brewery_id: form.value.brewery_id,
          beer_name: beer ? beer.name : 'Neznámé pivo',
          brewery_name: brewery ? brewery.name : 'Neznámý pivovar',
+         location_id: form.value.location_id,
          location_name: loc ? loc.name : 'Neznámý podnik',
          consumed_at: form.value.consumed_at || new Date().toISOString().slice(0, 19).replace('T', ' '),
          packaging: form.value.packaging,
