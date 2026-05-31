@@ -43,6 +43,24 @@ try {
     $stmt->execute();
     $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Připojení fotek ke každému záznamu jedním efektivním dotazem
+    if (!empty($history)) {
+        $ids = array_column($history, 'id');
+        $in = str_repeat('?,', count($ids) - 1) . '?';
+        $photoStmt = $api->db->prepare("SELECT consumption_id, id, filename FROM consumption_photos WHERE consumption_id IN ($in)");
+        $photoStmt->execute($ids);
+        $photos = $photoStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $photosGrouped = [];
+        foreach ($photos as $p) {
+            $photosGrouped[$p['consumption_id']][] = ['id' => $p['id'], 'filename' => $p['filename']];
+        }
+        
+        foreach ($history as &$h) {
+            $h['photos'] = isset($photosGrouped[$h['id']]) ? $photosGrouped[$h['id']] : [];
+        }
+    }
+
     $api->response->sendSuccess("", [
         "data" => $history,
         "pagination" => [

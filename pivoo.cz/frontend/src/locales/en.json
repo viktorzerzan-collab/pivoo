@@ -311,6 +311,9 @@
       "is_free_label": "I didn't pay",
       "rating_beer_label": "Beer rating",
       "rating_care_label": "Service & Care",
+      "gallery_label": "Photos",
+      "max_photos_reached": "You can upload a maximum of 3 photos.",
+      "photo_error": "Failed to process the photo.",
       "note_label": "Note",
       "note_placeholder": "How was it?",
       "save_add": "Write to diary",
@@ -356,7 +359,9 @@
       "phone": "Phone:",
       "email": "E-mail:",
       "website": "Website:",
-      "unknown_city": "Unknown city"
+      "unknown_city": "Unknown city",
+      "gallery_users": "User Gallery",
+      "no_photos": "No photos yet, be the first!"
     },
     "edit_user": {
       "title": "Edit user",

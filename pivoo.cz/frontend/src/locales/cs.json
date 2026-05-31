@@ -311,6 +311,9 @@
       "is_free_label": "Neplatil jsem",
       "rating_beer_label": "Hodnocení piva",
       "rating_care_label": "Obsluha a péče",
+      "gallery_label": "Fotky k záznamu",
+      "max_photos_reached": "Můžete nahrát maximálně 3 fotky.",
+      "photo_error": "Nepodařilo se zpracovat fotku.",
       "note_label": "Poznámka",
       "note_placeholder": "Jaké bylo?",
       "save_add": "Zapsat do deníčku",
@@ -356,7 +359,9 @@
       "phone": "Telefon:",
       "email": "E-mail:",
       "website": "Web:",
-      "unknown_city": "Neznámé město"
+      "unknown_city": "Neznámé město",
+      "gallery_users": "Galerie uživatelů",
+      "no_photos": "Zatím tu nejsou žádné fotky, buď první!"
     },
     "edit_user": {
       "title": "Upravit uživatele",

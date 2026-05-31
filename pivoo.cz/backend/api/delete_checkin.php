@@ -12,21 +12,31 @@ if (!$id) {
 }
 
 try {
-    // Získat údaje před smazáním pro přepočet
     $stmtOld = $api->db->prepare("SELECT beer_id, location_id FROM consumptions WHERE id = :id AND user_id = :uid");
     $stmtOld->execute([':id' => $id, ':uid' => $user['user_id']]);
     $oldCons = $stmtOld->fetch();
 
-    // Aplikujeme ochranu z tokenu -> Můžu smazat jen co je moje
-    $query = "DELETE FROM consumptions WHERE id = :id AND user_id = :uid";
-    $stmt = $api->db->prepare($query);
-    $stmt->bindParam(':id', $id);
-    $stmt->bindParam(':uid', $user['user_id']); 
-    
-    if ($stmt->execute()) {
+    if ($oldCons) {
+        // Fyzické smazání fotek z FTP před smazáním záznamu
+        $p_stmt = $api->db->prepare("SELECT filename FROM consumption_photos WHERE consumption_id = ?");
+        $p_stmt->execute([$id]);
+        $photos = $p_stmt->fetchAll();
+        $upload_dir = '../uploads/checkins/';
         
-        // Přepočet po smazání záznamu
-        if ($oldCons) {
+        foreach ($photos as $photo) {
+            if (file_exists($upload_dir . $photo['filename'])) {
+                unlink($upload_dir . $photo['filename']);
+            }
+        }
+        // Databázové záznamy fotek se smažou automaticky díky ON DELETE CASCADE pravidlu
+
+        $query = "DELETE FROM consumptions WHERE id = :id AND user_id = :uid";
+        $stmt = $api->db->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':uid', $user['user_id']); 
+        
+        if ($stmt->execute()) {
+            // Přepočet
             $bid = $oldCons['beer_id'];
             $lid = $oldCons['location_id'];
             try {
@@ -43,11 +53,13 @@ try {
             } catch (PDOException $e) {
                 error_log("Chyba při přepočtu statistik po smazání (delete_checkin): " . $e->getMessage());
             }
-        }
 
-        $api->response->sendSuccess("Záznam byl úspěšně smazán.");
+            $api->response->sendSuccess("Záznam byl úspěšně smazán.");
+        } else {
+            $api->response->sendError("Chyba při mazání z databáze.", 500);
+        }
     } else {
-        $api->response->sendError("Chyba při mazání z databáze.", 500);
+        $api->response->sendError("Záznam nenalezen nebo nemáte oprávnění.", 403);
     }
 } catch (PDOException $e) {
     error_log("DB Error (delete_checkin): " . $e->getMessage());

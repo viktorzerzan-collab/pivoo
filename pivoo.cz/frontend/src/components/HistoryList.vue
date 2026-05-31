@@ -84,6 +84,13 @@
                 <span class="text-truncate italic" :title="record.note">{{ record.note }}</span>
               </div>
             </div>
+            
+            <div v-if="record.photos && record.photos.length > 0" class="photo-gallery">
+              <img v-for="p in record.photos" :key="p.id" 
+                   :src="`/backend/uploads/checkins/${p.filename}`" 
+                   alt="Foto k záznamu" class="gallery-img" 
+                   @click="openImage(p.filename)" />
+            </div>
 
           </div>
         </div>
@@ -166,6 +173,11 @@ const formatDate = (dateStr) => {
     year: 'numeric'
   })
 }
+
+// Otevření fotky v novém okně (zatím plně dostačující)
+const openImage = (filename) => {
+  window.open(`/backend/uploads/checkins/${filename}`, '_blank')
+}
 </script>
 
 <style scoped>
@@ -196,7 +208,6 @@ const formatDate = (dateStr) => {
   box-shadow: var(--shadow-sm);
 }
 
-/* Vodoznak sjednocený s CatalogCard */
 .background-watermark {
   position: absolute;
   right: -15px;
@@ -268,6 +279,32 @@ const formatDate = (dateStr) => {
 .italic { font-style: italic; }
 .text-muted { color: var(--text-muted); }
 .icon-shrink { flex-shrink: 0; }
+
+/* Styly pro minigalerii uvnitř deníčku */
+.photo-gallery {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+.photo-gallery::-webkit-scrollbar { height: 4px; }
+.photo-gallery::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 4px; }
+
+.gallery-img {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+.gallery-img:hover {
+  filter: brightness(1.1);
+  transform: scale(1.05);
+}
 
 @media (max-width: 600px) {
   .history-grid {

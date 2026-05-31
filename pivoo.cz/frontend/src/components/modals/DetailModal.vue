@@ -139,6 +139,13 @@
                   </div>
                 </div>
                 <p v-if="rev.note" class="rev-note">"{{ rev.note }}"</p>
+                
+                <div v-if="rev.photos && rev.photos.length > 0" class="rev-photos">
+                  <img v-for="p in rev.photos" :key="p.id" 
+                       :src="`/backend/uploads/checkins/${p.filename}`" 
+                       class="rev-img" @click="openImage(p.filename)" />
+                </div>
+                
                 <small class="rev-date">{{ translateDynamic(rev.location_name) }} • {{ new Date(rev.consumed_at).toLocaleDateString() }}</small>
               </div>
             </div>
@@ -217,7 +224,7 @@ import {
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
-import BackgroundWatermark from '../BackgroundWatermark.vue' // Nový import
+import BackgroundWatermark from '../BackgroundWatermark.vue'
 import OpeningHoursDisplay from '../OpeningHoursDisplay.vue'
 import CountryFlag from '../CountryFlag.vue'
 
@@ -261,16 +268,18 @@ const getCountryName = (code, fallback) => {
   try { return new Intl.DisplayNames([locale.value], { type: 'region' }).of(code.toUpperCase()); }
   catch (e) { return fallback; }
 }
+
+const openImage = (filename) => {
+  window.open(`/backend/uploads/checkins/${filename}`, '_blank')
+}
 </script>
 
 <style scoped>
-/* Zajištění, aby texty v modálu byly vždy nad vodoznakem */
 .detail-header, .detail-content { 
   position: relative; 
   z-index: 1; 
 }
 
-/* Hlavička detailu */
 .detail-header { display: flex; align-items: center; }
 .header-text { flex: 1; }
 .title-with-badges { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -311,7 +320,15 @@ const getCountryName = (code, fallback) => {
 .review-bubble { background: var(--bg-app); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius-md); }
 .rev-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; }
 .rev-note { margin: 0.5rem 0; font-style: italic; color: var(--text-main); font-size: 0.95rem; line-height: 1.4; }
-.rev-date { font-size: 0.75rem; color: var(--text-muted); }
+
+/* Styly pro minigalerii v recenzích */
+.rev-photos { display: flex; gap: 0.4rem; margin: 0.75rem 0; overflow-x: auto; padding-bottom: 0.25rem; }
+.rev-photos::-webkit-scrollbar { height: 4px; }
+.rev-photos::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 4px; }
+.rev-img { width: 45px; height: 45px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; transition: transform 0.2s; }
+.rev-img:hover { transform: scale(1.05); }
+
+.rev-date { font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem; }
 .empty-reviews { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 2rem; border: 1px dashed var(--border); border-radius: var(--radius-md); }
 
 .contact-list { display: flex; flex-direction: column; gap: 1.25rem; }

@@ -44,7 +44,7 @@
       :form="isEditModalOpen ? editForm : form" 
       :isEditing="isEditModalOpen"
       @close="isEditModalOpen ? (isEditModalOpen = false) : (isModalOpen = false)" 
-      @submit="isEditModalOpen ? submitEdit() : submitCheckIn()"
+      @submit="isEditModalOpen ? submitEdit($event) : submitCheckIn($event)"
       @open-add-location="openAddLocationFromCheckin" 
       @magic-add-brewery="handleMagicAddBrewery"
       @magic-add-beer="handleMagicAddBeer"
@@ -131,7 +131,7 @@ const recordIdToDelete = ref(null)
 const selectedEditRecordId = ref(null)
 
 const form = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
-const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', original_price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '' })
+const editForm = ref({ brewery_id: '', beer_id: '', location_id: '', consumed_at: '', packaging: 'točené', volume: '0.50', quantity: 1, price: '', currency: 'CZK', original_price: '', is_free: false, rating_beer: 0, rating_care: 0, note: '', photos: [] })
 
 const locationForm = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
 const breweryForm = ref({ name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null, is_magic: false })
@@ -302,13 +302,36 @@ const openEditModal = async (record) => {
   selectedEditRecordId.value = record.id
   const currentBeer = allBeers.value.find(b => b.id == record.beer_id)
   const prefillBreweryId = currentBeer ? currentBeer.brewery_id : ''
-  editForm.value = { ...record, consumed_at: record.consumed_at || '', brewery_id: Number(prefillBreweryId), beer_id: Number(record.beer_id), location_id: Number(record.location_id), quantity: Number(record.quantity), is_free: !!Number(record.is_free), currency: record.currency || 'CZK', original_price: record.original_price || record.price }
+  
+  editForm.value = { 
+    ...record, 
+    photos: record.photos ? [...record.photos] : [], 
+    consumed_at: record.consumed_at || '', 
+    brewery_id: Number(prefillBreweryId), 
+    beer_id: Number(record.beer_id), 
+    location_id: Number(record.location_id), 
+    quantity: Number(record.quantity), 
+    is_free: !!Number(record.is_free), 
+    currency: record.currency || 'CZK', 
+    original_price: record.original_price || record.price 
+  }
   isEditModalOpen.value = true
 }
 
-const submitCheckIn = async () => {
+const submitCheckIn = async (photoData) => {
   try {
-    const res = await apiFetch('/checkin.php', { method: 'POST', body: JSON.stringify(form.value) })
+    const formData = new FormData()
+    Object.keys(form.value).forEach(key => {
+      if (form.value[key] !== null && form.value[key] !== '') {
+        formData.append(key, form.value[key])
+      }
+    })
+    
+    if (photoData && photoData.newPhotos) {
+      photoData.newPhotos.forEach(file => formData.append('photos[]', file))
+    }
+
+    const res = await apiFetch('/checkin.php', { method: 'POST', body: formData })
     if (res.status === 'success') { 
       isModalOpen.value = false
       
@@ -334,7 +357,8 @@ const submitCheckIn = async () => {
          is_free: form.value.is_free,
          rating_beer: form.value.rating_beer,
          rating_care: form.value.rating_care,
-         note: form.value.note
+         note: form.value.note,
+         photos: res.photos || []
       }
       catalogStore.addCheckinLocally(newCheckin)
       toastStore.showToast(t('toast.record_added'))
@@ -344,9 +368,26 @@ const submitCheckIn = async () => {
   } catch (e) { toastStore.showToast(e.message || t('toast.communication_error'), 'toast-error') }
 }
 
-const submitEdit = async () => {
+const submitEdit = async (photoData) => {
   try {
-    const res = await apiFetch('/update_checkin.php', { method: 'POST', body: JSON.stringify({ id: selectedEditRecordId.value, ...editForm.value }) })
+    const formData = new FormData()
+    formData.append('id', selectedEditRecordId.value)
+    
+    Object.keys(editForm.value).forEach(key => {
+      // Ignorujeme vnořené pole objektů, abychom neposílali poškozená data
+      if (key !== 'photos' && editForm.value[key] !== null && editForm.value[key] !== '') {
+        formData.append(key, editForm.value[key])
+      }
+    })
+    
+    if (photoData && photoData.newPhotos) {
+      photoData.newPhotos.forEach(file => formData.append('photos[]', file))
+    }
+    if (photoData && photoData.removedPhotoIds) {
+      photoData.removedPhotoIds.forEach(id => formData.append('remove_photos[]', id))
+    }
+
+    const res = await apiFetch('/update_checkin.php', { method: 'POST', body: formData })
     if (res.status === 'success') { 
        isEditModalOpen.value = false
        
@@ -362,7 +403,8 @@ const submitEdit = async () => {
            original_price: res.original_price, 
            beer_name: beer ? beer.name : 'Neznámé pivo',
            brewery_name: brewery ? brewery.name : 'Neznámý pivovar',
-           location_name: loc ? loc.name : 'Neznámý podnik'
+           location_name: loc ? loc.name : 'Neznámý podnik',
+           photos: res.photos || []
        })
        toastStore.showToast(t('toast.record_edited')) 
     }

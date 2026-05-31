@@ -13,7 +13,7 @@
       </h2>
     </template>
     <template #body>
-      <form @submit.prevent="$emit('submit')" class="checkin-form">
+      <form @submit.prevent="emitSubmit" class="checkin-form">
         
         <MagicScanner @result="handleAiResponse" />
 
@@ -139,9 +139,37 @@
           <div v-else class="half"></div>
         </div>
 
+        <div class="gallery-box">
+          <div class="gallery-header">
+            <label class="input-label">{{ $t('modals.checkin.gallery_label') }} ({{ totalPhotos }}/3)</label>
+            <span v-if="isCompressing" class="compress-loader">...</span>
+          </div>
+          <div class="gallery-preview">
+            
+            <div v-for="photo in existingPhotos" :key="photo.id" class="preview-item">
+              <img :src="`/backend/uploads/checkins/${photo.filename}`" />
+              <button type="button" class="remove-btn" @click="removeExistingPhoto(photo.id)">
+                <XIcon :size="14" />
+              </button>
+            </div>
+            
+            <div v-for="(preview, idx) in newPhotoPreviews" :key="'new'+idx" class="preview-item">
+              <img :src="preview" />
+              <button type="button" class="remove-btn" @click="removeNewPhoto(idx)">
+                <XIcon :size="14" />
+              </button>
+            </div>
+            
+            <button v-if="totalPhotos < 3" type="button" class="add-photo-btn" @click="triggerPhotoInput">
+              <CameraIcon :size="24" class="icon-muted" />
+            </button>
+          </div>
+          <input type="file" ref="photoInput" multiple accept="image/*" class="hidden-input" @change="handlePhotoSelect" />
+        </div>
+
         <BaseInput v-model="form.note" :label="$t('modals.checkin.note_label')" :placeholder="$t('modals.checkin.note_placeholder')" />
 
-        <BaseButton type="submit" :variant="isEditing ? 'edit' : 'primary'" style="margin-top: 1rem; width: 100%;">
+        <BaseButton type="submit" :variant="isEditing ? 'edit' : 'primary'" :disabled="isCompressing" style="margin-top: 1rem; width: 100%;">
           <template #icon>
             <component :is="isEditing ? PencilIcon : PlusCircleIcon" :size="18" />
           </template>
@@ -155,7 +183,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { PencilIcon, PlusCircleIcon } from 'lucide-vue-next'
+import { PencilIcon, PlusCircleIcon, CameraIcon, XIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -194,6 +222,16 @@ const locationMessageType = ref('')
 const tempCoords = ref(null)
 
 const isAiUpdating = ref(false)
+const isCompressing = ref(false)
+
+// Lokální stavy pro galerijní fotky
+const existingPhotos = ref([])
+const removedPhotoIds = ref([])
+const newPhotos = ref([])
+const newPhotoPreviews = ref([])
+const photoInput = ref(null)
+
+const totalPhotos = computed(() => existingPhotos.value.length + newPhotos.value.length)
 
 const priceValue = computed({
   get: () => props.isEditing ? props.form.original_price : props.form.price,
@@ -288,7 +326,13 @@ watch(() => props.show, (newVal) => {
   if (newVal) {
     locationMessage.value = ''
     
-    // OPRAVA: Přetypování ID na číselné hodnoty kvůli BaseSelect porovnávání
+    // Obnovení stavu galerie při otevření modalu
+    existingPhotos.value = props.isEditing && props.form.photos ? [...props.form.photos] : []
+    removedPhotoIds.value = []
+    newPhotos.value = []
+    newPhotoPreviews.value.forEach(url => URL.revokeObjectURL(url))
+    newPhotoPreviews.value = []
+    
     if (props.form.location_id) props.form.location_id = Number(props.form.location_id)
     if (props.form.brewery_id) props.form.brewery_id = Number(props.form.brewery_id)
     if (props.form.beer_id) props.form.beer_id = Number(props.form.beer_id)
@@ -303,7 +347,7 @@ watch(() => props.show, (newVal) => {
       volumeMode.value = 'custom'
       customVolume.value = currentVol
     } else {
-      volumeMode.value = '0.50' // default fallback
+      volumeMode.value = '0.50'
     }
 
     if (!props.form.consumed_at && !props.isEditing) {
@@ -327,6 +371,103 @@ watch(() => props.show, (newVal) => {
     }
   }
 })
+
+// === LOGIKA PRO GALERII A KOMPRESI ===
+
+const triggerPhotoInput = () => {
+  if (photoInput.value) photoInput.value.click()
+}
+
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (event) => {
+      const img = new Image()
+      img.src = event.target.result
+      img.onload = () => {
+        let width = img.width
+        let height = img.height
+        const maxDim = 1920
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width)
+            width = maxDim
+          } else {
+            width = Math.round((width * maxDim) / height)
+            height = maxDim
+          }
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+              type: 'image/webp',
+              lastModified: Date.now()
+            }))
+          } else {
+            reject(new Error("Compression failed"))
+          }
+        }, 'image/webp', 0.85)
+      }
+      img.onerror = (e) => reject(e)
+    }
+    reader.onerror = (e) => reject(e)
+  })
+}
+
+const handlePhotoSelect = async (e) => {
+  const files = Array.from(e.target.files)
+  if (!files.length) return
+  
+  isCompressing.value = true
+  
+  for (const file of files) {
+    if (totalPhotos.value >= 3) {
+      toastStore.showToast(t('modals.checkin.max_photos_reached') || 'Můžete nahrát maximálně 3 fotky.', 'warning')
+      break;
+    }
+    try {
+      const compressedFile = await compressImage(file)
+      newPhotos.value.push(compressedFile)
+      newPhotoPreviews.value.push(URL.createObjectURL(compressedFile))
+    } catch(err) {
+      console.error("Chyba při zmenšování obrázku", err)
+      toastStore.showToast(t('modals.checkin.photo_error') || 'Nepodařilo se zpracovat fotku.', 'error')
+    }
+  }
+  
+  isCompressing.value = false
+  if (photoInput.value) photoInput.value.value = ''
+}
+
+const removeExistingPhoto = (id) => {
+  existingPhotos.value = existingPhotos.value.filter(p => p.id !== id)
+  removedPhotoIds.value.push(id)
+}
+
+const removeNewPhoto = (idx) => {
+  URL.revokeObjectURL(newPhotoPreviews.value[idx])
+  newPhotoPreviews.value.splice(idx, 1)
+  newPhotos.value.splice(idx, 1)
+}
+
+// Odeslání dat včetně nahraných fotek
+const emitSubmit = () => {
+  emit('submit', { 
+    newPhotos: newPhotos.value, 
+    removedPhotoIds: removedPhotoIds.value 
+  })
+}
+
+// === GEOLOKACE A POMOCNÉ FUNKCE ===
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371
@@ -369,7 +510,6 @@ const autodetectLocation = () => {
         }
       })
 
-      // OPRAVA: Vzdálenost omezena na 50 m (0.05 km)
       if (nearestLoc && minDistance <= 0.05) {
         props.form.location_id = nearestLoc.id
         locationMessage.value = `📍 Nalezeno: ${translateLocation(nearestLoc.name)} (${(minDistance * 1000).toFixed(0)} m)`
@@ -438,6 +578,23 @@ watch(() => props.form.location_id, () => {
 .align-end { align-items: flex-end; }
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
 .input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.3s ease; }
+
+/* Stylování galerie fotek */
+.gallery-box { background: var(--bg-app); border: 1px solid var(--border); padding: 0.75rem; border-radius: var(--radius-md); }
+.gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.compress-loader { font-size: 0.8rem; font-weight: 600; color: var(--primary); animation: pulse 1s infinite; }
+.gallery-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.preview-item { position: relative; width: 60px; height: 60px; border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden; }
+.preview-item img { width: 100%; height: 100%; object-fit: cover; }
+.remove-btn { position: absolute; top: 2px; right: 2px; background: rgba(239,68,68,0.9); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.remove-btn:hover { background: #ef4444; }
+.remove-btn :deep(svg) { width: 12px; height: 12px; margin: 0; }
+.add-photo-btn { width: 60px; height: 60px; border: 1px dashed var(--border); border-radius: var(--radius-sm); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease; }
+.add-photo-btn:hover { background: var(--bg-panel); }
+.icon-muted { color: var(--text-muted); }
+.hidden-input { display: none; }
+
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
 @media (max-width: 600px) { 
   .form-row { flex-direction: column; gap: 1.25rem; } 
