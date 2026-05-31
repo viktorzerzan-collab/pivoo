@@ -586,9 +586,35 @@ watch(() => props.form.location_id, () => {
 .gallery-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .preview-item { position: relative; width: 60px; height: 60px; border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden; }
 .preview-item img { width: 100%; height: 100%; object-fit: cover; }
-.remove-btn { position: absolute; top: 2px; right: 2px; background: rgba(239,68,68,0.9); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+/* Vycentrované tlačítko odstranění s použitím flexboxu */
+.remove-btn { 
+  position: absolute; 
+  top: 4px; 
+  right: 4px; 
+  background: rgba(239, 68, 68, 0.9); 
+  color: white; 
+  border: none; 
+  border-radius: 50%; 
+  width: 22px; 
+  height: 22px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  cursor: pointer; 
+  padding: 0; 
+  margin: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+}
 .remove-btn:hover { background: #ef4444; }
-.remove-btn :deep(svg) { width: 12px; height: 12px; margin: 0; }
+
+/* OCHRANA PŘED GLOBÁLNÍM STYLEM Z APP.VUE */
+.remove-btn :deep(svg) { 
+  margin: 0 !important; 
+  width: 14px !important; 
+  height: 14px !important; 
+}
+
 .add-photo-btn { width: 60px; height: 60px; border: 1px dashed var(--border); border-radius: var(--radius-sm); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease; }
 .add-photo-btn:hover { background: var(--bg-panel); }
 .icon-muted { color: var(--text-muted); }
