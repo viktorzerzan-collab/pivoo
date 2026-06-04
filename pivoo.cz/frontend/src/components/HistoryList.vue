@@ -37,6 +37,22 @@
               <span class="tag-badge">{{ translatePackaging(record.packaging) }}</span>
             </div>
 
+            <div class="ratings-row" v-if="Number(record.rating_beer) > 0 || Number(record.rating_care) > 0">
+              <BaseTooltip v-if="Number(record.rating_beer) > 0" text="Hodnocení piva" position="top">
+                <div class="rating-badge">
+                  <BeerIcon :size="14" class="icon-shrink text-muted" />
+                  <StarRating :modelValue="Number(record.rating_beer)" :readonly="true" />
+                </div>
+              </BaseTooltip>
+
+              <BaseTooltip v-if="Number(record.rating_care) > 0" text="Hodnocení podniku" position="top">
+                <div class="rating-badge">
+                  <MapPinIcon :size="14" class="icon-shrink text-muted" />
+                  <StarRating :modelValue="Number(record.rating_care)" :readonly="true" />
+                </div>
+              </BaseTooltip>
+            </div>
+
             <div class="consumption-meta">
               <div class="meta-item quantity-item">
                 <span class="label">{{ $t('history.volume') }}</span>
@@ -107,6 +123,7 @@ import {
 } from 'lucide-vue-next'
 import BaseTooltip from './BaseTooltip.vue'
 import BaseActionGroup from './BaseActionGroup.vue'
+import StarRating from './StarRating.vue' // <-- Import komponenty
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 
@@ -250,6 +267,30 @@ const openImage = (filename) => {
   color: var(--text-muted); 
   text-transform: uppercase;
   backdrop-filter: blur(2px);
+}
+
+/* Nové styly pro odznáčky hodnocení */
+.ratings-row { 
+  display: flex; 
+  gap: 0.75rem; 
+  margin-top: 0.5rem; 
+  flex-wrap: wrap; 
+}
+.rating-badge { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.35rem; 
+  background: rgba(var(--bg-app-rgb), 0.6); 
+  padding: 4px 8px; 
+  border-radius: var(--radius-sm); 
+  border: 1px solid var(--border); 
+  backdrop-filter: blur(2px);
+}
+.rating-badge :deep(.star-rating) { 
+  font-size: 1.1rem; 
+  gap: 0.15rem; 
+  width: auto; 
+  justify-content: flex-start; 
 }
 
 .consumption-meta { 

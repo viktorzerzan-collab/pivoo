@@ -1,5 +1,5 @@
 <template>
-  <div class="star-rating">
+  <div class="star-rating" :class="{ 'is-readonly': readonly }">
     <span 
       v-for="star in 5" 
       :key="star" 
@@ -12,11 +12,14 @@
 
 <script setup>
 const props = defineProps({
-  modelValue: { type: Number, default: 0 }
+  modelValue: { type: Number, default: 0 },
+  readonly: { type: Boolean, default: false }
 })
 const emit = defineEmits(['update:modelValue'])
 
 const toggleRating = (star) => {
+  if (props.readonly) return; // Pokud je pouze pro čtení, ignorujeme kliknutí
+  
   if (props.modelValue === star) {
     emit('update:modelValue', 0)
   } else {
@@ -35,11 +38,14 @@ const toggleRating = (star) => {
   user-select: none; 
   transition: color 0.3s ease;
 }
+.star-rating.is-readonly {
+  cursor: default;
+}
 .star { 
   transition: color 0.2s, transform 0.1s; 
   text-shadow: none; 
 }
-.star:hover { 
+.star-rating:not(.is-readonly) .star:hover { 
   transform: scale(1.15); 
 }
 .star.is-active { 
@@ -47,7 +53,7 @@ const toggleRating = (star) => {
 }
 
 @media (max-width: 600px) {
-  .star-rating { 
+  .star-rating:not(.is-readonly) { 
     font-size: 2.5rem; 
     justify-content: space-between; 
     width: 100%; 
