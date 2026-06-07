@@ -22,7 +22,8 @@
         
         <BasePanel class="avatar-card">
           <div class="avatar-wrapper">
-            <img v-if="user?.avatar" :src="'https://www.pivoo.cz/backend/uploads/avatars/' + user.avatar" alt="Avatar" class="avatar-image" />
+            <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" alt="Avatar Preview" class="avatar-image" />
+            <img v-else-if="user?.avatar" :src="'/backend/uploads/avatars/' + user.avatar" alt="Avatar" class="avatar-image" />
             <div v-else class="avatar-placeholder"><UserIcon :size="64" color="var(--text-muted)" /></div>
             
             <label class="avatar-upload-overlay" :title="$t('views.profile.change_avatar')">
@@ -219,6 +220,7 @@ const activeTab = ref('settings')
 
 // Uživatelské nastavení - Stav
 const newAvatarFile = ref(null)
+const avatarPreviewUrl = ref(null) // Nová proměnná pro uchování náhledu
 const showRemoveAvatarModal = ref(false)
 
 const pwdForm = ref({
@@ -375,6 +377,13 @@ const handleAvatarChange = (event) => {
   const file = event.target.files[0]
   if (file) {
     newAvatarFile.value = file
+    
+    // Vyčistíme starý náhled pro zabránění memory leaku
+    if (avatarPreviewUrl.value) {
+      URL.revokeObjectURL(avatarPreviewUrl.value)
+    }
+    // Vytvoříme novou dočasnou URL
+    avatarPreviewUrl.value = URL.createObjectURL(file)
   }
 }
 
@@ -441,7 +450,13 @@ const uploadAvatar = async () => {
     if (res.status === 'success') {
       authStore.updateUser({ avatar: res.avatar })
       toastStore.showToast('Profilová fotka uložena.', 'toast-success')
+      
+      // Vyčistíme stavy po úspěšném nahrání
       newAvatarFile.value = null
+      if (avatarPreviewUrl.value) {
+        URL.revokeObjectURL(avatarPreviewUrl.value)
+        avatarPreviewUrl.value = null
+      }
     } else {
       toastStore.showToast(res.message || 'Chyba při nahrávání fotky.', 'toast-error')
     }
@@ -468,6 +483,13 @@ const removeAvatar = async () => {
     if (res.status === 'success') {
       authStore.updateUser({ avatar: null })
       toastStore.showToast('Profilová fotka odstraněna.', 'toast-success')
+      
+      // Vyčistíme i lokální náhled, pokud byl nějaký rozpracovaný
+      newAvatarFile.value = null
+      if (avatarPreviewUrl.value) {
+        URL.revokeObjectURL(avatarPreviewUrl.value)
+        avatarPreviewUrl.value = null
+      }
     } else {
       toastStore.showToast(res.message || 'Chyba při mazání fotky.', 'toast-error')
     }

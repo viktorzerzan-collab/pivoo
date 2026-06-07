@@ -28,7 +28,7 @@
 
         <div class="user-panel-wrapper" @click="toggleDropdown" ref="dropdownContainer">
           <div class="user-trigger">
-            <img v-if="user?.avatar" :src="'https://www.pivoo.cz/backend/uploads/avatars/' + user.avatar" class="avatar-small" alt="Avatar" />
+            <img v-if="user?.avatar" :src="'/backend/uploads/avatars/' + user.avatar" class="avatar-small" alt="Avatar" />
             <div v-else class="avatar-small-placeholder"><UserIcon :size="18" color="#fff" /></div>
             
             <span class="greeting desktop-only">{{ user?.username }}</span>
