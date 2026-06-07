@@ -17,7 +17,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/backend/api': {
+      // Změněno z '/backend/api' na '/backend', aby proxy zachytila i /backend/uploads
+      '/backend': {
         target: 'https://www.pivoo.cz',
         changeOrigin: true,
         secure: false

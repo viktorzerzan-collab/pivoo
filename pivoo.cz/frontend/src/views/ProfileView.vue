@@ -21,16 +21,15 @@
       <div v-show="activeTab === 'settings'" class="profile-grid">
         
         <BasePanel class="avatar-card">
-          <div class="avatar-wrapper">
-            <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" alt="Avatar Preview" class="avatar-image" />
-            <img v-else-if="user?.avatar" :src="'/backend/uploads/avatars/' + user.avatar" alt="Avatar" class="avatar-image" />
-            <div v-else class="avatar-placeholder"><UserIcon :size="64" color="var(--text-muted)" /></div>
-            
-            <label class="avatar-upload-overlay" :title="$t('views.profile.change_avatar')">
-              <CameraIcon :size="24" />
-              <input type="file" class="hidden-input" accept="image/*" @change="handleAvatarChange" :disabled="isUploading" />
-            </label>
-          </div>
+          
+          <BaseImageUpload
+            ref="imageUploadRef"
+            :currentImageUrl="user?.avatar ? '/backend/uploads/avatars/' + user.avatar : null"
+            :disabled="isUploading"
+            :uploadTitle="$t('views.profile.change_avatar')"
+            @file-selected="onAvatarSelected"
+            @error="onAvatarError"
+          />
 
           <div class="user-info-text">
             <h2>{{ user?.first_name }} {{ user?.last_name }}</h2>
@@ -181,8 +180,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { 
-  UserIcon, CameraIcon, KeyIcon, SunMoonIcon, 
-  ClockIcon, AlertTriangleIcon, BanknoteIcon, SettingsIcon, HistoryIcon 
+  KeyIcon, SunMoonIcon, ClockIcon, AlertTriangleIcon, BanknoteIcon, SettingsIcon, HistoryIcon 
 } from 'lucide-vue-next'
 
 import BaseLoader from '../components/BaseLoader.vue'
@@ -199,6 +197,7 @@ import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmMo
 import CheckInModal from '../components/modals/CheckInModal.vue'
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
 import HistoryList from '../components/HistoryList.vue'
+import BaseImageUpload from '../components/BaseImageUpload.vue'
 
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
@@ -220,7 +219,7 @@ const activeTab = ref('settings')
 
 // Uživatelské nastavení - Stav
 const newAvatarFile = ref(null)
-const avatarPreviewUrl = ref(null) // Nová proměnná pro uchování náhledu
+const imageUploadRef = ref(null)
 const showRemoveAvatarModal = ref(false)
 
 const pwdForm = ref({
@@ -371,65 +370,16 @@ const deleteHistoryRecord = async () => {
   }
 }
 
-
 // === UŽIVATELSKÉ NASTAVENÍ LOGIKA ===
-const handleAvatarChange = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    newAvatarFile.value = file
-    
-    // Vyčistíme starý náhled pro zabránění memory leaku
-    if (avatarPreviewUrl.value) {
-      URL.revokeObjectURL(avatarPreviewUrl.value)
-    }
-    // Vytvoříme novou dočasnou URL
-    avatarPreviewUrl.value = URL.createObjectURL(file)
-  }
+
+// Ošetření výběru fotky z BaseImageUpload
+const onAvatarSelected = (file) => {
+  newAvatarFile.value = file
 }
 
-const compressImage = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = event => {
-      const img = new Image()
-      img.src = event.target.result
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        let width = img.width
-        let height = img.height
-        const max_size = 800
-
-        if (width > height) {
-          if (width > max_size) {
-            height *= max_size / width
-            width = max_size
-          }
-        } else {
-          if (height > max_size) {
-            width *= max_size / height
-            height = max_size
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, width, height)
-
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error('Chyba při kompresi'))
-            return
-          }
-          const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' })
-          resolve(newFile)
-        }, 'image/webp', 0.8)
-      }
-      img.onerror = (e) => reject(e)
-    }
-    reader.onerror = (e) => reject(e)
-  })
+// Ošetření chyby při kompresi z BaseImageUpload
+const onAvatarError = (msg) => {
+  toastStore.showToast(msg, 'toast-error')
 }
 
 const uploadAvatar = async () => {
@@ -437,10 +387,10 @@ const uploadAvatar = async () => {
   isUploading.value = true
   
   try {
-    const compressedFile = await compressImage(newAvatarFile.value)
     const formData = new FormData()
     formData.append('action', 'upload')
-    formData.append('avatar', compressedFile)
+    // Soubor už je zkomprimovaný z komponenty BaseImageUpload
+    formData.append('avatar', newAvatarFile.value)
 
     const res = await apiFetch('/update_avatar.php', {
       method: 'POST',
@@ -451,11 +401,9 @@ const uploadAvatar = async () => {
       authStore.updateUser({ avatar: res.avatar })
       toastStore.showToast('Profilová fotka uložena.', 'toast-success')
       
-      // Vyčistíme stavy po úspěšném nahrání
       newAvatarFile.value = null
-      if (avatarPreviewUrl.value) {
-        URL.revokeObjectURL(avatarPreviewUrl.value)
-        avatarPreviewUrl.value = null
+      if (imageUploadRef.value) {
+        imageUploadRef.value.resetPreview()
       }
     } else {
       toastStore.showToast(res.message || 'Chyba při nahrávání fotky.', 'toast-error')
@@ -484,11 +432,9 @@ const removeAvatar = async () => {
       authStore.updateUser({ avatar: null })
       toastStore.showToast('Profilová fotka odstraněna.', 'toast-success')
       
-      // Vyčistíme i lokální náhled, pokud byl nějaký rozpracovaný
       newAvatarFile.value = null
-      if (avatarPreviewUrl.value) {
-        URL.revokeObjectURL(avatarPreviewUrl.value)
-        avatarPreviewUrl.value = null
+      if (imageUploadRef.value) {
+        imageUploadRef.value.resetPreview()
       }
     } else {
       toastStore.showToast(res.message || 'Chyba při mazání fotky.', 'toast-error')
@@ -605,11 +551,6 @@ const deleteAccount = async () => {
 .profile-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; align-items: start; }
 
 .avatar-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.5rem; }
-.avatar-wrapper { position: relative; width: 140px; height: 140px; border-radius: 50%; border: 4px solid var(--bg-app); box-shadow: var(--shadow-floating); overflow: hidden; background: var(--bg-app); transition: all 0.3s ease; }
-.avatar-image { width: 100%; height: 100%; object-fit: cover; }
-.avatar-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-.avatar-upload-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; color: white; opacity: 0; cursor: pointer; transition: opacity 0.2s; }
-.avatar-wrapper:hover .avatar-upload-overlay { opacity: 1; }
 
 .user-info-text { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .user-info-text h2 { margin: 0; font-size: 1.5rem; color: var(--text-main); transition: color 0.3s ease; }
