@@ -213,9 +213,16 @@
       </div>
     </template>
   </BaseModal>
+
+  <BaseLightbox 
+    :show="!!selectedImage" 
+    :src="selectedImage ? `/backend/uploads/checkins/${selectedImage}` : ''" 
+    @close="closeImage" 
+  />
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { 
   StarIcon, ActivityIcon, PercentIcon, MessageSquareIcon, 
   PhoneIcon, MailIcon, GlobeIcon, ClockIcon, ThermometerIcon, 
@@ -227,6 +234,7 @@ import BaseModal from '../BaseModal.vue'
 import BackgroundWatermark from '../BackgroundWatermark.vue'
 import OpeningHoursDisplay from '../OpeningHoursDisplay.vue'
 import CountryFlag from '../CountryFlag.vue'
+import BaseLightbox from '../BaseLightbox.vue' // <-- Import nové komponenty lightboxu
 
 defineProps({
   show: Boolean,
@@ -238,6 +246,9 @@ defineProps({
 defineEmits(['close'])
 
 const { t, te, locale } = useI18n()
+
+// Reaktivní stav pro lightbox
+const selectedImage = ref(null)
 
 const translateDynamic = (val) => {
   if (!val) return val
@@ -269,8 +280,14 @@ const getCountryName = (code, fallback) => {
   catch (e) { return fallback; }
 }
 
+// Úprava funkce pro otevření obrázku v lightboxu
 const openImage = (filename) => {
-  window.open(`/backend/uploads/checkins/${filename}`, '_blank')
+  selectedImage.value = filename
+}
+
+// Funkce pro zavření lightboxu
+const closeImage = () => {
+  selectedImage.value = null
 }
 </script>
 

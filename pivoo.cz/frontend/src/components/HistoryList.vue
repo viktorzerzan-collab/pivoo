@@ -113,6 +113,12 @@
       </div>
     </div>
   </div>
+
+  <BaseLightbox 
+    :show="!!selectedImage" 
+    :src="selectedImage ? `/backend/uploads/checkins/${selectedImage}` : ''" 
+    @close="closeImage" 
+  />
 </template>
 
 <script setup>
@@ -124,6 +130,7 @@ import {
 import BaseTooltip from './BaseTooltip.vue'
 import BaseActionGroup from './BaseActionGroup.vue'
 import StarRating from './StarRating.vue' // <-- Import komponenty
+import BaseLightbox from './BaseLightbox.vue' // <-- Import nové lightbox komponenty
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 
@@ -136,6 +143,9 @@ const authStore = useAuthStore()
 const userCurrency = computed(() => authStore.defaultCurrency || 'CZK')
 const exchangeRate = ref(1.0)
 const isLoadingRate = ref(false)
+
+// Reaktivní stav držící název vybraného obrázku
+const selectedImage = ref(null)
 
 const fetchRate = async () => {
   if (userCurrency.value === 'CZK') {
@@ -191,9 +201,14 @@ const formatDate = (dateStr) => {
   })
 }
 
-// Otevření fotky v novém okně (zatím plně dostačující)
+// Nastavení názvu souboru pro zobrazení v lightboxu
 const openImage = (filename) => {
-  window.open(`/backend/uploads/checkins/${filename}`, '_blank')
+  selectedImage.value = filename
+}
+
+// Resetování stavu a skrytí lightboxu
+const closeImage = () => {
+  selectedImage.value = null
 }
 </script>
 
