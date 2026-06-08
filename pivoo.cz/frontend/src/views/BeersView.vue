@@ -18,7 +18,7 @@
     @reset-filters="resetFilters"
     @remove-filter="removeFilter"
     @add="openAddModal"
-    @load-more="loadNextPage"
+    @load-more="() => loadNextPage()"
   >
     <template #filters>
       <FilterInput v-model="filters.search" :label="$t('catalog.filter_name_beer')" :placeholder="$t('catalog.placeholder_beer')" />
@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
@@ -82,6 +82,7 @@ import FilterRange from '../components/FilterRange.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
+import { useCatalogFilters } from '../composables/useCatalogFilters'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
@@ -90,35 +91,38 @@ const { t } = useI18n()
 
 const { beers, beersPagination, styles, isLoading } = storeToRefs(catalogStore)
 
-const currentPage = ref(1)
-const itemsPerPage = 30
-const sortBy = ref('name_asc')
-const filtersOpen = ref(false)
-const isAppending = ref(false)
-
 const initialFilters = {
   search: '', brewery: '', style: '', country: '',
   epm: { min: '', max: '' }, abv: { min: '', max: '' }, ibu: { min: '', max: '' }
 }
-const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 
-const totalPages = computed(() => beersPagination.value?.total_pages || 1)
-const totalItems = computed(() => beersPagination.value?.total || 0)
+const fetchAction = async (filterVals, baseParams, append) => {
+  const params = {
+    ...baseParams,
+    search: filterVals.search,
+    brewery: filterVals.brewery,
+    style: filterVals.style,
+    country: filterVals.country,
+    epm_min: filterVals.epm.min,
+    epm_max: filterVals.epm.max,
+    abv_min: filterVals.abv.min,
+    abv_max: filterVals.abv.max,
+    ibu_min: filterVals.ibu.min,
+    ibu_max: filterVals.ibu.max
+  }
+  await catalogStore.fetchBeers(params, append)
+}
+
+const {
+  currentPage, sortBy, filtersOpen, isAppending, filters,
+  totalPages, totalItems, removeFilter, resetFilters, loadNextPage, addMultiChips, loadData
+} = useCatalogFilters(initialFilters, beersPagination, isLoading, fetchAction)
 
 const activeFilters = computed(() => {
   const active = []
-  const addMultiChips = (value, key, labelPrefix) => {
-    if (value) {
-       const parts = String(value).split(',').map(s => s.trim()).filter(s => s)
-       parts.forEach(part => {
-         active.push({ id: `${key}|${part}`, realKey: key, partValue: part, label: `${labelPrefix}: ${part}` })
-       })
-    }
-  }
-
-  addMultiChips(filters.value.search, 'search', t('catalog.search_prefix'))
-  addMultiChips(filters.value.brewery, 'brewery', t('catalog.filter_brewery'))
-  addMultiChips(filters.value.country, 'country', t('catalog.filter_country_short'))
+  addMultiChips(active, filters.value.search, 'search', t('catalog.search_prefix'))
+  addMultiChips(active, filters.value.brewery, 'brewery', t('catalog.filter_brewery'))
+  addMultiChips(active, filters.value.country, 'country', t('catalog.filter_country_short'))
   
   if (filters.value.style) {
     const s = styles.value.find(x => x.id == filters.value.style)
@@ -138,66 +142,6 @@ const activeFilters = computed(() => {
     }
   })
   return active
-})
-
-const removeFilter = (chip) => {
-  if (chip.realKey === 'range') {
-    filters.value[chip.rangeKey] = { min: '', max: '' }
-  } else if (chip.partValue) {
-    let parts = String(filters.value[chip.realKey]).split(',').map(s => s.trim()).filter(s => s)
-    filters.value[chip.realKey] = parts.filter(p => p !== chip.partValue).join(', ')
-  } else {
-    filters.value[chip.realKey] = ''
-  }
-}
-
-const loadBeers = async (append = false) => {
-  const params = {
-    page: currentPage.value,
-    limit: itemsPerPage,
-    search: filters.value.search,
-    brewery: filters.value.brewery,
-    style: filters.value.style,
-    country: filters.value.country,
-    epm_min: filters.value.epm.min,
-    epm_max: filters.value.epm.max,
-    abv_min: filters.value.abv.min,
-    abv_max: filters.value.abv.max,
-    ibu_min: filters.value.ibu.min,
-    ibu_max: filters.value.ibu.max,
-    sort: sortBy.value
-  }
-  await catalogStore.fetchBeers(params, append)
-}
-
-const loadNextPage = async () => {
-  if (currentPage.value < totalPages.value && !isLoading.value && !isAppending.value) {
-    isAppending.value = true
-    currentPage.value++
-    await loadBeers(true)
-    isAppending.value = false
-  }
-}
-
-const resetFilters = () => {
-  filters.value = JSON.parse(JSON.stringify(initialFilters))
-  sortBy.value = 'name_asc'
-  currentPage.value = 1
-  loadBeers(false)
-}
-
-watch([filters, sortBy], () => {
-  currentPage.value = 1
-  loadBeers(false)
-}, { deep: true })
-
-watch(currentPage, (val) => {
-  if (!isAppending.value) loadBeers(false)
-})
-
-onMounted(async () => {
-  await catalogStore.fetchAllData()
-  loadBeers(false)
 })
 
 const sortOptions = computed(() => [
@@ -258,6 +202,11 @@ const openDetail = async (beer) => {
     if (res.status === 'success') beerReviews.value = res.data
   } catch (error) { console.error("Chyba při načítání recenzí", error) }
 }
+
+onMounted(async () => {
+  await catalogStore.fetchAllData()
+  loadData(false)
+})
 </script>
 
 <style scoped>

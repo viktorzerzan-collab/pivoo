@@ -19,7 +19,7 @@
     @reset-filters="resetFilters"
     @remove-filter="removeFilter"
     @add="openAddModal"
-    @load-more="loadNextPage"
+    @load-more="() => loadNextPage(viewMode === 'list')"
   >
     <template #header-top>
       <BaseSwitch v-model="viewMode" :options="viewModeOptions" />
@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
@@ -72,6 +72,7 @@ import MapView from '../components/MapView.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
+import { useCatalogFilters } from '../composables/useCatalogFilters'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -84,10 +85,8 @@ const { locations, locationsPagination, countries, isLoading } = storeToRefs(cat
 const isAdmin = computed(() => user.value?.role === 'admin')
 const viewMode = ref('list')
 const isAddModalOpen = ref(false)
-const filtersOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedItem = ref(null)
-const isAppending = ref(false)
 
 const viewModeOptions = computed(() => [
   { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
@@ -95,27 +94,29 @@ const viewModeOptions = computed(() => [
 ])
 
 const form = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
-const currentPage = ref(1)
-const itemsPerPage = 30
-const sortBy = ref('name_asc')
 
 const initialFilters = { search: '', city: '', country: '' }
-const filters = ref(JSON.parse(JSON.stringify(initialFilters)))
 
-const totalPages = computed(() => locationsPagination.value?.total_pages || 1)
-const totalItems = computed(() => locationsPagination.value?.total || 0)
+const fetchAction = async (filterVals, baseParams, append) => {
+  const params = {
+    ...baseParams,
+    search: filterVals.search,
+    city: filterVals.city,
+    country: filterVals.country
+  }
+  await catalogStore.fetchLocations(params, append)
+}
+
+const {
+  currentPage, sortBy, filtersOpen, isAppending, filters,
+  totalPages, totalItems, removeFilter, resetFilters, loadNextPage, addMultiChips, loadData
+} = useCatalogFilters(initialFilters, locationsPagination, isLoading, fetchAction)
 
 const activeFilters = computed(() => {
   const active = []
-  const addMultiChips = (value, key, labelPrefix) => {
-    if (value) {
-       const parts = String(value).split(',').map(s => s.trim()).filter(s => s)
-       parts.forEach(part => active.push({ id: `${key}|${part}`, realKey: key, partValue: part, label: `${labelPrefix}: ${part}` }))
-    }
-  }
-  addMultiChips(filters.value.search, 'search', t('catalog.search_prefix'))
-  addMultiChips(filters.value.city, 'city', t('catalog.filter_city'))
-  addMultiChips(filters.value.country, 'country', t('catalog.filter_country_short'))
+  addMultiChips(active, filters.value.search, 'search', t('catalog.search_prefix'))
+  addMultiChips(active, filters.value.city, 'city', t('catalog.filter_city'))
+  addMultiChips(active, filters.value.country, 'country', t('catalog.filter_country_short'))
   return active
 })
 
@@ -129,34 +130,6 @@ const sortOptions = computed(() => [
   { value: 'newest', label: t('catalog.sort.newest') },
   { value: 'oldest', label: t('catalog.sort.oldest') }
 ])
-
-const removeFilter = (chip) => {
-  if (chip.partValue) {
-    let parts = String(filters.value[chip.realKey]).split(',').map(s => s.trim()).filter(s => s)
-    filters.value[chip.realKey] = parts.filter(p => p !== chip.partValue).join(', ')
-  } else { filters.value[chip.realKey] = '' }
-}
-
-const loadLocations = async (append = false) => {
-  const params = { page: currentPage.value, limit: itemsPerPage, search: filters.value.search, city: filters.value.city, country: filters.value.country, sort: sortBy.value }
-  await catalogStore.fetchLocations(params, append)
-}
-
-const loadNextPage = async () => {
-  if (currentPage.value < totalPages.value && !isLoading.value && !isAppending.value && viewMode.value === 'list') {
-    isAppending.value = true
-    currentPage.value++
-    await loadLocations(true)
-    isAppending.value = false
-  }
-}
-
-const resetFilters = () => {
-  filters.value = JSON.parse(JSON.stringify(initialFilters))
-  sortBy.value = 'name_asc'
-  currentPage.value = 1
-  loadLocations(false)
-}
 
 const openAddModal = () => {
   form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null }
@@ -199,12 +172,9 @@ const submitLocation = async () => {
   } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-watch([filters, sortBy], () => { currentPage.value = 1; loadLocations(false) }, { deep: true })
-watch(currentPage, () => { if (!isAppending.value) loadLocations(false) })
-
 onMounted(async () => { 
   await catalogStore.fetchAllData()
-  loadLocations(false) 
+  loadData(false) 
 })
 </script>
 
