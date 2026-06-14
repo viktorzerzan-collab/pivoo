@@ -35,7 +35,7 @@
       <FilterRange v-model="filters.ibu" :label="$t('modals.add_beer.ibu')" :step="1" unit="IBU" />
     </template>
 
-    <div class="beers-grid">
+    <CatalogGrid>
       <CatalogCard 
         v-for="beer in beers" 
         :key="beer.id" 
@@ -43,7 +43,7 @@
         type="beer"
         @showDetail="openDetail"
       />
-    </div>
+    </CatalogGrid>
 
     <template #modals>
       <AddBeerModal 
@@ -77,6 +77,7 @@ import { BeerIcon } from 'lucide-vue-next'
 
 import BaseCatalogLayout from '../components/BaseCatalogLayout.vue'
 import CatalogCard from '../components/CatalogCard.vue'
+import CatalogGrid from '../components/CatalogGrid.vue'
 import FilterInput from '../components/FilterInput.vue'
 import FilterRange from '../components/FilterRange.vue'
 import BaseSelect from '../components/BaseSelect.vue'
@@ -210,11 +211,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.beers-grid { 
-  display: grid; 
-  /* Zastropováno na max 2 sloupce, plynule přejde na 1 při nedostatku místa */
-  grid-template-columns: repeat(auto-fit, minmax(max(300px, calc((100% - 1.5rem) / 2)), 1fr)); 
-  gap: 1.5rem; 
-  margin-bottom: 2rem; 
-}
+/* Všechny styly se přesunuly do CatalogGrid.vue, tento blok může zůstat prázdný nebo ho lze smazat. 
+Ponecháváme čisté řešení bez tagu <style>. */
 </style>

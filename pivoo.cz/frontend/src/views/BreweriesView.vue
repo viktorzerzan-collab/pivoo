@@ -32,7 +32,7 @@
     </template>
 
     <div v-if="viewMode === 'list'" class="list-wrapper">
-      <div class="breweries-grid">
+      <CatalogGrid>
         <CatalogCard 
           v-for="brewery in breweries" 
           :key="brewery.id" 
@@ -40,7 +40,7 @@
           type="brewery"
           @showDetail="openDetail" 
         />
-      </div>
+      </CatalogGrid>
     </div>
 
     <div v-else class="map-wrapper">
@@ -66,6 +66,7 @@ import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
 
 import BaseCatalogLayout from '../components/BaseCatalogLayout.vue'
+import CatalogGrid from '../components/CatalogGrid.vue'
 import CatalogCard from '../components/CatalogCard.vue'
 import FilterInput from '../components/FilterInput.vue'
 import MapView from '../components/MapView.vue'
@@ -164,14 +165,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.breweries-grid { 
-  display: grid; 
-  /* Zastropováno na max 2 sloupce, plynule přejde na 1 při nedostatku místa */
-  grid-template-columns: repeat(auto-fit, minmax(max(300px, calc((100% - 1.5rem) / 2)), 1fr));
-  gap: 1.5rem; 
-  margin-bottom: 2rem; 
-}
-
 .map-wrapper { margin-bottom: 2rem; }
 .map-info { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); text-align: center; font-style: italic; }
 </style>

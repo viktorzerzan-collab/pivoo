@@ -1,44 +1,42 @@
 <template>
-  <div class="auth-wrapper">
-    <div class="auth-card">
-      <div class="logo-container">
-        <BeerIcon :size="64" color="var(--primary)" stroke-width="1.5" />
-        <h1 class="logo-text">{{ $t('app.title') }}</h1>
-      </div>
-      <p class="auth-subtitle">{{ $t('app.subtitle') }}</p>
+  <BaseAuthLayout
+    :title="$t('app.title')"
+    :subtitle="$t('app.subtitle')"
+    @submit="handleLogin"
+  >
+    <template #icon>
+      <BeerIcon :size="64" color="var(--primary)" stroke-width="1.5" />
+    </template>
 
-      <form @submit.prevent="handleLogin" class="auth-form">
-        <BaseInput 
-          v-model="username" 
-          :label="$t('views.login.username')" 
-          :placeholder="$t('views.login.username_placeholder')" 
-          required 
-        />
-        
-        <BaseInput 
-          v-model="password" 
-          type="password" 
-          :label="$t('views.login.password')" 
-          :placeholder="$t('views.login.password_placeholder')" 
-          required 
-        />
+    <BaseInput 
+      v-model="username" 
+      :label="$t('views.login.username')" 
+      :placeholder="$t('views.login.username_placeholder')" 
+      required 
+    />
+    
+    <BaseInput 
+      v-model="password" 
+      type="password" 
+      :label="$t('views.login.password')" 
+      :placeholder="$t('views.login.password_placeholder')" 
+      required 
+    />
 
-        <BaseButton 
-          type="submit" 
-          variant="primary" 
-          style="margin-top: 1rem; width: 100%;" 
-          :disabled="isLoading"
-        >
-          <template #icon><LogInIcon :size="18" /></template>
-          {{ isLoading ? $t('auth.logging_in') : $t('auth.enter') }}
-        </BaseButton>
+    <BaseButton 
+      type="submit" 
+      variant="primary" 
+      style="margin-top: 1rem; width: 100%;" 
+      :disabled="isLoading"
+    >
+      <template #icon><LogInIcon :size="18" /></template>
+      {{ isLoading ? $t('auth.logging_in') : $t('auth.enter') }}
+    </BaseButton>
 
-        <div class="auth-footer-link">
-          {{ $t('views.login.no_account') }} <router-link to="/register">{{ $t('views.login.register_here') }}</router-link>
-        </div>
-      </form>
-    </div>
-  </div>
+    <template #footer>
+      {{ $t('views.login.no_account') }} <router-link to="/register">{{ $t('views.login.register_here') }}</router-link>
+    </template>
+  </BaseAuthLayout>
 </template>
 
 <script setup>
@@ -51,6 +49,7 @@ import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast' 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
+import BaseAuthLayout from '../components/BaseAuthLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -88,75 +87,5 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.auth-wrapper {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--bg-app);
-  padding: 1rem;
-  transition: background-color 0.3s ease;
-}
-
-.auth-card {
-  background: var(--bg-panel);
-  padding: 3.5rem 2.5rem;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-floating);
-  width: 100%;
-  max-width: 700px;
-  text-align: center;
-  border: 1px solid var(--border);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.logo-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.logo-text {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--text-main);
-  letter-spacing: -0.05em;
-  margin: 0;
-  transition: color 0.3s ease;
-}
-
-.auth-subtitle {
-  color: var(--text-muted);
-  font-size: 1.1rem;
-  margin-bottom: 2.5rem;
-  margin-top: 0.25rem;
-  transition: color 0.3s ease;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  text-align: left;
-}
-
-.auth-footer-link {
-  margin-top: 2rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  transition: color 0.3s ease;
-}
-
-.auth-footer-link a {
-  color: var(--primary-hover);
-  text-decoration: none;
-  font-weight: 700;
-}
-
-.auth-footer-link a:hover {
-  text-decoration: underline;
-}
+/* Všechny styly se přesunuly do BaseAuthLayout.vue, zde nepotřebujeme nic! */
 </style>

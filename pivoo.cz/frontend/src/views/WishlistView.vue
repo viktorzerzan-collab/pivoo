@@ -11,7 +11,7 @@
       <BaseSwitch v-model="viewMode" :options="viewModeOptions" />
     </template>
 
-    <div class="items-grid">
+    <CatalogGrid>
       <template v-if="viewMode === 'beers'">
         <CatalogCard 
           v-for="beer in wishlistBeers" 
@@ -41,7 +41,7 @@
           @showDetail="openDetail('location', $event)"
         />
       </template>
-    </div>
+    </CatalogGrid>
 
     <template #modals>
       <DetailModal 
@@ -59,11 +59,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { BookmarkIcon, BeerIcon, FactoryIcon, MapIcon } from 'lucide-vue-next'
+import { BeerIcon, FactoryIcon, MapIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useCatalogStore } from '../stores/catalog'
 
 import BaseCatalogLayout from '../components/BaseCatalogLayout.vue'
+import CatalogGrid from '../components/CatalogGrid.vue'
 import CatalogCard from '../components/CatalogCard.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
@@ -129,13 +130,3 @@ onMounted(async () => {
   await catalogStore.fetchAllData()
 })
 </script>
-
-<style scoped>
-.items-grid {
-  display: grid;
-  /* ZMĚNĚNO NA AUTO-FILL: Zabrání roztažení jedné karty přes celou šířku */
-  grid-template-columns: repeat(auto-fill, minmax(max(300px, calc((100% - 1.5rem) / 2)), 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-}
-</style>
