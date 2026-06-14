@@ -175,6 +175,12 @@
     "PLN": "PLN - Złoty polský",
     "GBP": "GBP - Libra šterlinků"
   },
+  "packaging": {
+    "bottle": "Láhev",
+    "can": "Plechovka",
+    "pet": "PET",
+    "keg": "Sud"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Opravdu smazat?",
@@ -271,6 +277,8 @@
       "title_add": "Zaznamenat vypitá piva",
       "title_edit": "Upravit záznam",
       "btn_scan": "Rozpoznat pivo z etikety/plechovky",
+      "scanner_title": "Skenování čárového kódu",
+      "btn_scan_barcode": "Naskenovat čárový kód",
       "btn_scanning": "Analyzuji etiketu...",
       "btn_photo": "Vyfotit",
       "btn_camera": "Vyfotit",
@@ -293,6 +301,8 @@
       "msg_speak": "Mluvte... (např. \"Dal jsem si dvě velký točený Plzně za 120 korun\")",
       "msg_mic_error": "Chyba mikrofonu: ",
       "msg_unsupported_mic": "Váš prohlížeč bohužel nepodporuje rozpoznávání hlasu.",
+      "msg_barcode_camera_error": "Nepodařilo se spustit kameru. Zkontrolujte oprávnění prohlížeče.",
+      "msg_barcode_not_found": "Tento čárový kód zatím v databázi nemáme.",
       "add_brewery_link": "Přidat nový pivovar",
       "add_beer_link": "Přidat pivo do katalogu",
       "add_location_link": "Přidat nový podnik zde",
@@ -546,7 +556,8 @@
       "beers": "Piva",
       "breweries": "Pivovary",
       "locations": "Podniky",
-      "styles": "Styly"
+      "styles": "Styly",
+      "barcodes": "EAN kódy"
     },
     "search_placeholder": "Hledat v sekci {section}...",
     "add_item": "Přidat {item}",
@@ -563,7 +574,11 @@
       "city": "Město",
       "country": "Země",
       "type": "Typ",
-      "author": "Autor"
+      "author": "Autor",
+      "ean": "EAN Kód",
+      "beer": "Pivo",
+      "packaging": "Balení",
+      "volume": "Objem"
     },
     "entity_beer": "Pivo",
     "entity_brewery": "Pivovar",
@@ -606,7 +621,19 @@
       "brewery": "pivovar",
       "location": "podnik",
       "style": "styl",
-      "user": "uživatele"
+      "user": "uživatele",
+      "barcode": "čárový kód"
+    },
+    "barcode": {
+      "add_title": "Přidat čárový kód",
+      "edit_title": "Upravit čárový kód",
+      "ean": "Čárový kód (EAN) *",
+      "brewery": "Pivovar *",
+      "select_brewery": "-- Vyber pivovar --",
+      "beer": "Pivo *",
+      "select_beer": "-- Vyber pivo --",
+      "packaging": "Druh balení *",
+      "volume": "Objem (v litrech) *"
     }
   },
   "statistics": {

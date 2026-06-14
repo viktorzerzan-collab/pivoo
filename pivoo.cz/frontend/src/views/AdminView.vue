@@ -5,7 +5,7 @@
     </div>
 
     <div class="admin-layout">
-      <BaseLoader :show="isLoading || isUsersLoading" />
+      <BaseLoader :show="isLoading || isUsersLoading || isBarcodesLoading" />
 
       <BasePanel class="admin-section">
         <div class="section-header">
@@ -35,6 +35,13 @@
                 <th>{{ $t('admin.table.name') }}</th>
                 <th>{{ $t('admin.table.type') }}</th>
                 <th>{{ $t('admin.table.author') }}</th>
+                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
+              </tr>
+              <tr v-else-if="activeTab === 'barcodes'">
+                <th>{{ $t('admin.table.ean') }}</th>
+                <th>{{ $t('admin.table.beer') }}</th>
+                <th>{{ $t('admin.table.packaging') }}</th>
+                <th>{{ $t('admin.table.volume') }}</th>
                 <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
               </tr>
               <tr v-else>
@@ -136,6 +143,41 @@
               </tr>
             </template>
 
+            <template v-else-if="activeTab === 'barcodes'">
+              <tr v-for="item in paginatedCurrentItems" :key="item?.id">
+                <td :data-label="$t('admin.table.ean')">
+                  <div class="main-item-cell">
+                    <BaseEntityIcon :icon="BarcodeIcon" bg-class="barcodes-bg" />
+                    <div class="item-text">
+                      <strong>{{ item.ean }}</strong>
+                      <small class="mobile-only">{{ item.beer_name }} ({{ item.volume }} l)</small>
+                    </div>
+                  </div>
+                </td>
+                <td :data-label="$t('admin.table.beer')" class="desktop-only">
+                  {{ item.beer_name }} <small class="text-muted">({{ item.brewery_name }})</small>
+                </td>
+                <td :data-label="$t('admin.table.packaging')" class="desktop-only">
+                  <span class="badge type-badge">{{ item.packaging }}</span>
+                </td>
+                <td :data-label="$t('admin.table.volume')" class="desktop-only">{{ item.volume }} l</td>
+                <td :data-label="$t('admin.table.actions')">
+                  <BaseActionGroup>
+                    <BaseTooltip :text="$t('admin.tooltips.edit')" position="top-end">
+                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(item, activeTab)">
+                        <template #icon><PencilIcon :size="16" /></template>
+                      </BaseButton>
+                    </BaseTooltip>
+                    <BaseTooltip :text="$t('admin.tooltips.delete')" position="top-end">
+                      <BaseButton variant="danger" :isIconOnly="true" @click="confirmDelete(item.id, activeTab)">
+                        <template #icon><Trash2Icon :size="16" /></template>
+                      </BaseButton>
+                    </BaseTooltip>
+                  </BaseActionGroup>
+                </td>
+              </tr>
+            </template>
+
             <template v-else>
               <tr v-for="item in paginatedCurrentItems" :key="item?.id">
                 <td :data-label="$t('admin.table.name')">
@@ -218,6 +260,7 @@
     <RemoveAvatarConfirmModal :show="modals.removeAvatar" :user="selectedUserForAvatarRemove" :is-current-user="selectedUserForAvatarRemove?.id === user?.id" @close="modals.removeAvatar = false" @confirm="executeRemoveAvatar" />
     <AddStyleModal :show="modals.style" :isEditing="isEditing" :form="formData.style" @close="modals.style = false" @submit="submitForm('style')" />
     <MergeLocationsModal :show="modals.merge" :form="mergeForm" :targetOptions="mergeTargetOptions" @close="modals.merge = false" @submit="submitMerge" />
+    <AddBarcodeModal :show="modals.barcode" :isEditing="isEditing" :form="formData.barcode" :breweries="breweries" :beers="beers" @close="modals.barcode = false" @submit="submitForm('barcode')" />
   </div>
 </template>
 
@@ -227,7 +270,7 @@ import { storeToRefs } from 'pinia'
 import { 
   PlusCircleIcon, PencilIcon, Trash2Icon, KeyIcon, BanIcon, 
   UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
-  GitMergeIcon, ListChecksIcon, CheckIcon
+  GitMergeIcon, ListChecksIcon, CheckIcon, BarcodeIcon
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
@@ -257,6 +300,7 @@ import BanConfirmModal from '../components/modals/BanConfirmModal.vue'
 import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
 import AddStyleModal from '../components/modals/AddStyleModal.vue'
 import MergeLocationsModal from '../components/modals/MergeLocationsModal.vue'
+import AddBarcodeModal from '../components/modals/AddBarcodeModal.vue'
 
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
@@ -268,9 +312,11 @@ const { beers, breweries, locations, styles, countries, isLoading } = storeToRef
 
 const activeTab = ref('users')
 const allUsers = ref([])
+const allBarcodes = ref([])
 const isUsersLoading = ref(false)
+const isBarcodesLoading = ref(false)
 const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, password: false, ban: false, removeAvatar: false, merge: false })
+const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, barcode: false, password: false, ban: false, removeAvatar: false, merge: false })
 const mergeForm = ref({ source: null, target_id: '' })
 const isEditing = ref(false)
 const selectedUserForPassword = ref(null)
@@ -286,12 +332,19 @@ const formData = ref({
   brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null },
   location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' },
   style: { id: null, name: '' },
-  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
+  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null },
+  barcode: { id: null, ean: '', beer_id: '', packaging: 'láhev', volume: '0.50' }
 })
 
 // LOGIKA
 const handleResize = () => { isMobileMode.value = window.innerWidth <= 768 }
-watch(activeTab, (newTab) => { searchQuery.value = ''; currentPage.value = 1; if (newTab === 'pending') catalogStore.fetchPendingApprovals() })
+
+watch(activeTab, (newTab) => { 
+  searchQuery.value = ''; 
+  currentPage.value = 1; 
+  if (newTab === 'pending') catalogStore.fetchPendingApprovals();
+  if (newTab === 'barcodes' && allBarcodes.value.length === 0) fetchBarcodes();
+})
 watch(searchQuery, () => { currentPage.value = 1 })
 
 const tabs = computed(() => [
@@ -300,11 +353,12 @@ const tabs = computed(() => [
   { value: 'beers', label: t('admin.tabs.beers'), icon: BeerIcon },
   { value: 'breweries', label: t('admin.tabs.breweries'), icon: FactoryIcon },
   { value: 'locations', label: t('admin.tabs.locations'), icon: MapPinIcon },
-  { value: 'styles', label: t('admin.tabs.styles'), icon: HopIcon }
+  { value: 'styles', label: t('admin.tabs.styles'), icon: HopIcon },
+  { value: 'barcodes', label: t('admin.tabs.barcodes'), icon: BarcodeIcon }
 ])
 
 const getTabLabel = (val) => tabs.value.find(t => t.value === val)?.label || ''
-const currentLabelSingle = computed(() => activeTab.value === 'pending' ? '' : t(`admin.items.${activeTab.value === 'users' ? 'user' : (activeTab.value === 'beers' ? 'beer' : (activeTab.value === 'breweries' ? 'brewery' : (activeTab.value === 'locations' ? 'location' : 'style')))}`))
+const currentLabelSingle = computed(() => activeTab.value === 'pending' ? '' : t(`admin.items.${activeTab.value === 'users' ? 'user' : (activeTab.value === 'beers' ? 'beer' : (activeTab.value === 'breweries' ? 'brewery' : (activeTab.value === 'locations' ? 'location' : (activeTab.value === 'styles' ? 'style' : 'barcode'))))}`))
 
 const filteredUsers = computed(() => {
   let items = [...allUsers.value]
@@ -315,12 +369,27 @@ const filteredUsers = computed(() => {
   return items.sort((a, b) => (a.username || '').localeCompare(b.username || '', 'cs'))
 })
 
-const currentItems = computed(() => ({ beers: beers.value, breweries: breweries.value, locations: locations.value, styles: styles.value, pending: catalogStore.pendingApprovals || [] }[activeTab.value] || []))
+const currentItems = computed(() => ({ 
+  beers: beers.value, 
+  breweries: breweries.value, 
+  locations: locations.value, 
+  styles: styles.value, 
+  pending: catalogStore.pendingApprovals || [],
+  barcodes: allBarcodes.value 
+}[activeTab.value] || []))
+
 const filteredCurrentItems = computed(() => {
   let items = [...currentItems.value]
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
-    items = items.filter(item => item.name.toLowerCase().includes(q))
+    if (activeTab.value === 'barcodes') {
+      items = items.filter(item => item.ean.includes(q) || item.beer_name?.toLowerCase().includes(q) || item.brewery_name?.toLowerCase().includes(q))
+    } else {
+      items = items.filter(item => item.name.toLowerCase().includes(q))
+    }
+  }
+  if (activeTab.value === 'barcodes') {
+    return items // EAN kódy necháváme seřazené z databáze (podle pivovaru a piva)
   }
   return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
 })
@@ -341,24 +410,27 @@ watch(loadMoreTrigger, (el) => {
 })
 
 const fetchUsers = async () => { isUsersLoading.value = true; try { const res = await apiFetch('/users.php'); if (res.status === 'success') allUsers.value = res.data } finally { isUsersLoading.value = false } }
+const fetchBarcodes = async () => { isBarcodesLoading.value = true; try { const res = await apiFetch('/barcodes.php'); if (res.status === 'success') allBarcodes.value = res.data } finally { isBarcodesLoading.value = false } }
+
 onMounted(() => { catalogStore.fetchAllData(); fetchUsers(); window.addEventListener('resize', handleResize) })
 onUnmounted(() => { window.removeEventListener('resize', handleResize); if (observer) observer.disconnect() })
 
 const openAddModal = (t) => { 
   isEditing.value = false
   Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : 'user')))
+  const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : (t === 'barcodes' ? 'barcode' : 'user'))))
   if (keyMap === 'beer') formData.value.beer = { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false }
   else if (keyMap === 'brewery') formData.value.brewery = { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null }
   else if (keyMap === 'location') formData.value.location = { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
   else if (keyMap === 'style') formData.value.style = { id: null, name: '' }
   else if (keyMap === 'user') formData.value.user = { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
+  else if (keyMap === 'barcode') formData.value.barcode = { id: null, ean: '', beer_id: '', packaging: 'láhev', volume: '0.50' }
   modals.value[keyMap] = true 
 }
 
 const openEditModal = (item, typeParam) => { 
   isEditing.value = true
-  const key = typeParam === 'styles' ? 'style' : (typeParam === 'beers' ? 'beer' : (typeParam === 'locations' ? 'location' : (typeParam === 'breweries' ? 'brewery' : 'user')))
+  const key = typeParam === 'styles' ? 'style' : (typeParam === 'beers' ? 'beer' : (typeParam === 'locations' ? 'location' : (typeParam === 'breweries' ? 'brewery' : (typeParam === 'barcodes' ? 'barcode' : 'user'))))
   formData.value[key] = key === 'beer' ? { ...item, is_unfiltered: !!item.is_unfiltered, is_unpasteurized: !!item.is_unpasteurized } : { ...item, logoFile: null }
   modals.value[key] = true 
 }
@@ -378,21 +450,39 @@ const submitForm = async (f) => {
     let body;
     if (f === 'brewery') { body = new FormData(); Object.keys(formData.value[f]).forEach(k => { if (formData.value[f][k] != null) body.append(k, formData.value[f][k]) }) }
     else body = JSON.stringify(formData.value[f])
+    
     const res = await apiFetch(`/${endpoint}`, { method: 'POST', body });
-    if (res.status === 'success') { toastStore.showToast(res.message); modals.value[f] = false; if (f === 'user') fetchUsers(); else catalogStore.fetchAllData() } 
+    if (res.status === 'success') { 
+      toastStore.showToast(res.message); 
+      modals.value[f] = false; 
+      if (f === 'user') fetchUsers(); 
+      else if (f === 'barcode') fetchBarcodes();
+      else catalogStore.fetchAllData() 
+    } 
     else toastStore.showToast(res.message || 'Error', 'toast-error')
   } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-const confirmDelete = (id, typeParam) => { deleteModal.value = { show: true, id, type: { users: 'user', beers: 'beer', breweries: 'brewery', locations: 'location', styles: 'style' }[typeParam] } }
-const handleDelete = async () => { try { const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { method: 'POST', body: JSON.stringify({ id: deleteModal.value.id }) }); if (res.status === 'success') { toastStore.showToast("Smazáno"); if (deleteModal.value.type === 'user') fetchUsers(); else catalogStore.fetchAllData() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.delete_error'), 'toast-error') } finally { deleteModal.value.show = false } }
+const confirmDelete = (id, typeParam) => { deleteModal.value = { show: true, id, type: { users: 'user', beers: 'beer', breweries: 'brewery', locations: 'location', styles: 'style', barcodes: 'barcode' }[typeParam] } }
+const handleDelete = async () => { 
+  try { 
+    const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { method: 'POST', body: JSON.stringify({ id: deleteModal.value.id }) }); 
+    if (res.status === 'success') { 
+      toastStore.showToast("Smazáno"); 
+      if (deleteModal.value.type === 'user') fetchUsers(); 
+      else if (deleteModal.value.type === 'barcode') fetchBarcodes();
+      else catalogStore.fetchAllData() 
+    } else toastStore.showToast(res.message || 'Error', 'toast-error') 
+  } catch { toastStore.showToast(t('toast.delete_error'), 'toast-error') } 
+  finally { deleteModal.value.show = false } 
+}
+
 const handleApprove = async (item, action) => { try { const res = await apiFetch('/approve_entity.php', { method: 'POST', body: JSON.stringify({ entity_type: item.entity_type, entity_id: item.id, action }) }); if (res.status === 'success') { toastStore.showToast(res.message); catalogStore.fetchPendingApprovals(); catalogStore.fetchAllData() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
 </script>
 
 <style scoped>
 .admin-page { flex: 1; display: flex; flex-direction: column; }
 
-/* ODSTRANĚNA ČÁRA (border-bottom) A ZBYTEČNÝ PADDING */
 .admin-header { margin-bottom: 2rem; overflow-x: auto; }
 
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
@@ -422,6 +512,8 @@ const handleApprove = async (item, action) => { try { const res = await apiFetch
 .load-more-trigger { height: 20px; width: 100%; }
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
 .title-icon { color: var(--blue); }
+
+.barcodes-bg { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 
 @media (max-width: 768px) {
   .section-header { flex-direction: column; align-items: stretch; gap: 1rem; }

@@ -175,6 +175,12 @@
     "PLN": "PLN - Polski złoty",
     "GBP": "GBP - Funt brytyjski"
   },
+  "packaging": {
+    "bottle": "Butelka",
+    "can": "Puszka",
+    "pet": "Butelka PET",
+    "keg": "Beczka"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Trwale usunąć?",
@@ -271,6 +277,8 @@
       "title_add": "Zanotuj wypite piwo",
       "title_edit": "Edytuj wpis",
       "btn_scan": "Rozpoznaj piwo z etykiety/puszki",
+      "scanner_title": "Skanowanie kodu kreskowego",
+      "btn_scan_barcode": "Zeskanuj kod kreskowy",
       "btn_scanning": "Analizowanie etykiety...",
       "btn_photo": "Zrób zdjęcie",
       "btn_camera": "Zrób zdjęcie",
@@ -293,6 +301,8 @@
       "msg_speak": "Mów... (np. \"Wypiłem dwa duże Pilznery z kija za 120 koron\")",
       "msg_mic_error": "Błąd mikrofonu: ",
       "msg_unsupported_mic": "Twoja przeglądarka niestety nie obsługuje rozpoznawania głosu.",
+      "msg_barcode_camera_error": "Nie udało się uruchomić kamery. Sprawdź uprawnienia przeglądarki.",
+      "msg_barcode_not_found": "Tego kodu kreskowego nie ma jeszcze w naszej bazie.",
       "add_brewery_link": "Dodaj nowy browar",
       "add_beer_link": "Dodaj piwo do katalogu",
       "add_location_link": "Dodaj nowy lokal tutaj",
@@ -546,7 +556,8 @@
       "beers": "Piwa",
       "breweries": "Browary",
       "locations": "Lokale",
-      "styles": "Style"
+      "styles": "Style",
+      "barcodes": "Kody EAN"
     },
     "search_placeholder": "Szukaj w {section}...",
     "add_item": "Dodaj {item}",
@@ -563,7 +574,11 @@
       "city": "Miasto",
       "country": "Kraj",
       "type": "Typ",
-      "author": "Autor"
+      "author": "Autor",
+      "ean": "Kod EAN",
+      "beer": "Piwo",
+      "packaging": "Opakowanie",
+      "volume": "Pojemność"
     },
     "entity_beer": "Piwo",
     "entity_brewery": "Browar",
@@ -606,7 +621,19 @@
       "brewery": "browar",
       "location": "lokal",
       "style": "styl",
-      "user": "użytkownika"
+      "user": "użytkownika",
+      "barcode": "kod kreskowy"
+    },
+    "barcode": {
+      "add_title": "Dodaj kod kreskowy",
+      "edit_title": "Edytuj kod kreskowy",
+      "ean": "Kod kreskowy (EAN) *",
+      "brewery": "Browar *",
+      "select_brewery": "-- Wybierz browar --",
+      "beer": "Piwo *",
+      "select_beer": "-- Wybierz piwo --",
+      "packaging": "Rodzaj opakowania *",
+      "volume": "Pojemność (w litrach) *"
     }
   },
   "statistics": {

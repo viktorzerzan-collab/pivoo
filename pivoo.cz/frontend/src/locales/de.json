@@ -175,6 +175,12 @@
     "PLN": "PLN - Polnischer Złoty",
     "GBP": "GBP - Britisches Pfund"
   },
+  "packaging": {
+    "bottle": "Flasche",
+    "can": "Dose",
+    "pet": "PET",
+    "keg": "Fass"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Wirklich löschen?",
@@ -271,6 +277,8 @@
       "title_add": "Bier eintragen",
       "title_edit": "Eintrag bearbeiten",
       "btn_scan": "Bier vom Etikett/Dose erkennen",
+      "scanner_title": "Barcode scannen",
+      "btn_scan_barcode": "Barcode scannen",
       "btn_scanning": "Etikett wird analysiert...",
       "btn_photo": "Foto machen",
       "btn_camera": "Foto machen",
@@ -293,6 +301,8 @@
       "msg_speak": "Sprechen Sie... (z. B. \"Ich hatte zwei große Pils vom Fass für 120 Kronen\")",
       "msg_mic_error": "Mikrofonfehler: ",
       "msg_unsupported_mic": "Leider unterstützt Ihr Browser keine Spracherkennung.",
+      "msg_barcode_camera_error": "Kamera konnte nicht gestartet werden. Bitte überprüfe die Browser-Berechtigungen.",
+      "msg_barcode_not_found": "Dieser Barcode ist noch nicht in unserer Datenbank.",
       "add_brewery_link": "Neue Brauerei hinzufügen",
       "add_beer_link": "Bier zum Katalog hinzufügen",
       "add_location_link": "Neues Lokal hier hinzufügen",
@@ -546,7 +556,8 @@
       "beers": "Biere",
       "breweries": "Brauereien",
       "locations": "Lokale",
-      "styles": "Stile"
+      "styles": "Stile",
+      "barcodes": "EAN-Codes"
     },
     "search_placeholder": "Suche in {section}...",
     "add_item": "{item} hinzufügen",
@@ -563,7 +574,11 @@
       "city": "Stadt",
       "country": "Land",
       "type": "Typ",
-      "author": "Autor"
+      "author": "Autor",
+      "ean": "EAN-Code",
+      "beer": "Bier",
+      "packaging": "Verpackung",
+      "volume": "Volumen"
     },
     "entity_beer": "Bier",
     "entity_brewery": "Brauerei",
@@ -606,7 +621,19 @@
       "brewery": "Brauerei",
       "location": "Lokal",
       "style": "Stil",
-      "user": "Benutzer"
+      "user": "Benutzer",
+      "barcode": "Barcode"
+    },
+    "barcode": {
+      "add_title": "Barcode hinzufügen",
+      "edit_title": "Barcode bearbeiten",
+      "ean": "Barcode (EAN) *",
+      "brewery": "Brauerei *",
+      "select_brewery": "-- Brauerei auswählen --",
+      "beer": "Bier *",
+      "select_beer": "-- Bier auswählen --",
+      "packaging": "Verpackung *",
+      "volume": "Volumen (in Litern) *"
     }
   },
   "statistics": {

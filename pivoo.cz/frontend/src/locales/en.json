@@ -175,6 +175,12 @@
     "PLN": "PLN - Polish Złoty",
     "GBP": "GBP - British Pound"
   },
+  "packaging": {
+    "bottle": "Bottle",
+    "can": "Can",
+    "pet": "PET",
+    "keg": "Keg"
+  },
   "modals": {
     "delete_confirm": {
       "title": "Delete permanently?",
@@ -271,6 +277,8 @@
       "title_add": "Log consumed beers",
       "title_edit": "Edit entry",
       "btn_scan": "Recognize beer from label/can",
+      "scanner_title": "Barcode scanner",
+      "btn_scan_barcode": "Scan barcode",
       "btn_scanning": "Analyzing label...",
       "btn_photo": "Take photo",
       "btn_camera": "Take photo",
@@ -293,6 +301,8 @@
       "msg_speak": "Speak... (e.g. \"I had two large draft Pilsners for 120 crowns\")",
       "msg_mic_error": "Microphone error: ",
       "msg_unsupported_mic": "Unfortunately, your browser does not support voice recognition.",
+      "msg_barcode_camera_error": "Failed to start the camera. Please check your browser permissions.",
+      "msg_barcode_not_found": "This barcode is not in our database yet.",
       "add_brewery_link": "Add new brewery",
       "add_beer_link": "Add beer to catalog",
       "add_location_link": "Add new location here",
@@ -546,7 +556,8 @@
       "beers": "Beers",
       "breweries": "Breweries",
       "locations": "Locations",
-      "styles": "Styles"
+      "styles": "Styles",
+      "barcodes": "Barcodes"
     },
     "search_placeholder": "Search in {section}...",
     "add_item": "Add {item}",
@@ -563,7 +574,11 @@
       "city": "City",
       "country": "Country",
       "type": "Type",
-      "author": "Author"
+      "author": "Author",
+      "ean": "EAN Code",
+      "beer": "Beer",
+      "packaging": "Packaging",
+      "volume": "Volume"
     },
     "entity_beer": "Beer",
     "entity_brewery": "Brewery",
@@ -606,7 +621,19 @@
       "brewery": "brewery",
       "location": "location",
       "style": "style",
-      "user": "user"
+      "user": "user",
+      "barcode": "barcode"
+    },
+    "barcode": {
+      "add_title": "Add barcode",
+      "edit_title": "Edit barcode",
+      "ean": "Barcode (EAN) *",
+      "brewery": "Brewery *",
+      "select_brewery": "-- Select brewery --",
+      "beer": "Beer *",
+      "select_beer": "-- Select beer --",
+      "packaging": "Packaging *",
+      "volume": "Volume (in liters) *"
     }
   },
   "statistics": {
