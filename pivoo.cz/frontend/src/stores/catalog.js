@@ -21,14 +21,18 @@ export const useCatalogStore = defineStore('catalog', {
     pendingApprovals: [], // Fronta ke schválení
     isLoading: false,
     isInitialLoaded: false, // Sleduje, zda už byla prvotní data načtena
-    isFormDataLoaded: false, // PŘIDÁNO: Sleduje, zda se stáhly kompletní číselníky
-    isLoadingFormData: false, // PŘIDÁNO: Chrání před vícenásobným spouštěním stahování
+    isFormDataLoaded: false, // Sleduje, zda se stáhly kompletní číselníky
+    isLoadingFormData: false, // Chrání před vícenásobným spouštěním stahování
     error: null,
   }),
   actions: {
-    // ZMĚNA: Přidán parametr 'force' pro možnost vynuceného obnovení
+    // PŘIDÁNO: Nová metoda pro explicitní vynucení obnovy všech dat (tichý režim bez rušivého načítání)
+    async forceRefresh() {
+      await this.fetchAllData(true, true)
+    },
+
     async fetchAllData(silent = false, force = false) {
-      if (this.isLoading && !silent) return
+      if (this.isLoading && !silent && !force) return
       
       // Pokud už jsou data načtena a nevyžadujeme vynucenou aktualizaci, tak zbytečně nestahujeme
       if (this.isInitialLoaded && !force) return
@@ -37,7 +41,6 @@ export const useCatalogStore = defineStore('catalog', {
       this.error = null
       
       try {
-        // ZMĚNA: Odsud zmizely 3 nejtěžší 'compact=1' requesty. Dashboard se tak načte bleskově.
         const results = await Promise.allSettled([
           apiFetch('/beers.php'),
           apiFetch('/breweries.php'),   
@@ -60,7 +63,7 @@ export const useCatalogStore = defineStore('catalog', {
 
         this.isInitialLoaded = true
 
-        // PŘIDÁNO: Nyní odstartujeme stahování "těžkých" dat formulářů na pozadí, aniž by to blokovalo UI (nečekáme na await)
+        // Odstartujeme stahování "těžkých" dat formulářů na pozadí, aniž by to blokovalo UI
         this.fetchFormData(force)
 
       } catch (err) {
@@ -71,9 +74,9 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
-    // PŘIDÁNO: Samostatná funkce pro načtení obřích seznamů pro formuláře
+    // Samostatná funkce pro načtení obřích seznamů pro formuláře
     async fetchFormData(force = false) {
-      if (this.isLoadingFormData) return
+      if (this.isLoadingFormData && !force) return
       if (this.isFormDataLoaded && !force) return
 
       this.isLoadingFormData = true

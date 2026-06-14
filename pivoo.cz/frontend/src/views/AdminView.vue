@@ -5,7 +5,7 @@
     </div>
 
     <div class="admin-layout">
-      <BaseLoader :show="isLoading || isUsersLoading || isBarcodesLoading" />
+      <BaseLoader :show="isLoading || isUsersLoading || isBarcodesLoading || isAdminDataLoading" />
 
       <BasePanel class="admin-section">
         <div class="section-header">
@@ -40,6 +40,7 @@
               <tr v-else-if="activeTab === 'barcodes'">
                 <th>{{ $t('admin.table.ean') }}</th>
                 <th>{{ $t('admin.table.beer') }}</th>
+                <th>{{ $t('admin.table.brewery') }}</th>
                 <th>{{ $t('admin.table.packaging') }}</th>
                 <th>{{ $t('admin.table.volume') }}</th>
                 <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
@@ -150,12 +151,15 @@
                     <BaseEntityIcon :icon="BarcodeIcon" bg-class="barcodes-bg" />
                     <div class="item-text">
                       <strong>{{ item.ean }}</strong>
-                      <small class="mobile-only">{{ item.beer_name }} ({{ item.volume }} l)</small>
+                      <small class="mobile-only text-muted">{{ item.beer_name }} ({{ item.volume }} l)</small>
                     </div>
                   </div>
                 </td>
                 <td :data-label="$t('admin.table.beer')" class="desktop-only">
-                  {{ item.beer_name }} <small class="text-muted">({{ item.brewery_name }})</small>
+                  {{ item.beer_name }}
+                </td>
+                <td :data-label="$t('admin.table.brewery')" class="desktop-only">
+                  {{ item.brewery_name }}
                 </td>
                 <td :data-label="$t('admin.table.packaging')" class="desktop-only">
                   <span class="badge type-badge">{{ item.packaging }}</span>
@@ -189,7 +193,7 @@
                     />
                     <div class="item-text">
                       <strong>{{ item.name }}</strong>
-                      <small v-if="activeTab === 'beers'" class="mobile-only">{{ item.brewery_name }} • {{ item.style }}</small>
+                      <small v-if="activeTab === 'beers'" class="mobile-only text-muted">{{ item.brewery_name }} • {{ item.style }}</small>
                       <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only combined-meta">
                         <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" class="mobile-flag" />
                         {{ item.city || $t('admin.unknown_location') }}{{ item.city && item.country ? ', ' : '' }}{{ item.country }}
@@ -260,7 +264,7 @@
     <RemoveAvatarConfirmModal :show="modals.removeAvatar" :user="selectedUserForAvatarRemove" :is-current-user="selectedUserForAvatarRemove?.id === user?.id" @close="modals.removeAvatar = false" @confirm="executeRemoveAvatar" />
     <AddStyleModal :show="modals.style" :isEditing="isEditing" :form="formData.style" @close="modals.style = false" @submit="submitForm('style')" />
     <MergeLocationsModal :show="modals.merge" :form="mergeForm" :targetOptions="mergeTargetOptions" @close="modals.merge = false" @submit="submitMerge" />
-    <AddBarcodeModal :show="modals.barcode" :isEditing="isEditing" :form="formData.barcode" :breweries="breweries" :beers="beers" @close="modals.barcode = false" @submit="submitForm('barcode')" />
+    <AddBarcodeModal :show="modals.barcode" :isEditing="isEditing" :form="formData.barcode" @close="modals.barcode = false" @submit="submitForm('barcode')" />
   </div>
 </template>
 
@@ -308,13 +312,19 @@ const toastStore = useToastStore()
 const { t } = useI18n()
 
 const { user } = storeToRefs(authStore)
-const { beers, breweries, locations, styles, countries, isLoading } = storeToRefs(catalogStore)
+const { styles, countries, isLoading } = storeToRefs(catalogStore) 
 
 const activeTab = ref('users')
 const allUsers = ref([])
 const allBarcodes = ref([])
 const isUsersLoading = ref(false)
 const isBarcodesLoading = ref(false)
+
+const adminBeers = ref([])
+const adminBreweries = ref([])
+const adminLocations = ref([])
+const isAdminDataLoading = ref(false)
+
 const deleteModal = ref({ show: false, id: null, type: '' })
 const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, barcode: false, password: false, ban: false, removeAvatar: false, merge: false })
 const mergeForm = ref({ source: null, target_id: '' })
@@ -336,7 +346,6 @@ const formData = ref({
   barcode: { id: null, ean: '', beer_id: '', packaging: 'láhev', volume: '0.50' }
 })
 
-// LOGIKA
 const handleResize = () => { isMobileMode.value = window.innerWidth <= 768 }
 
 watch(activeTab, (newTab) => { 
@@ -370,9 +379,9 @@ const filteredUsers = computed(() => {
 })
 
 const currentItems = computed(() => ({ 
-  beers: beers.value, 
-  breweries: breweries.value, 
-  locations: locations.value, 
+  beers: adminBeers.value, 
+  breweries: adminBreweries.value, 
+  locations: adminLocations.value, 
   styles: styles.value, 
   pending: catalogStore.pendingApprovals || [],
   barcodes: allBarcodes.value 
@@ -389,7 +398,7 @@ const filteredCurrentItems = computed(() => {
     }
   }
   if (activeTab.value === 'barcodes') {
-    return items // EAN kódy necháváme seřazené z databáze (podle pivovaru a piva)
+    return items 
   }
   return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
 })
@@ -409,10 +418,34 @@ watch(loadMoreTrigger, (el) => {
   }
 })
 
+const loadAdminData = async () => {
+  isAdminDataLoading.value = true
+  try {
+    const [beersRes, breweriesRes, locsRes] = await Promise.all([
+      apiFetch('/beers.php?limit=10000'),
+      apiFetch('/breweries.php?limit=10000'),
+      apiFetch('/locations.php?limit=10000&include_all=1')
+    ])
+    if (beersRes.status === 'success') adminBeers.value = beersRes.data
+    if (breweriesRes.status === 'success') adminBreweries.value = breweriesRes.data
+    if (locsRes.status === 'success') adminLocations.value = locsRes.data
+  } catch (e) {
+    console.error("Chyba při načítání admin dat", e)
+  } finally {
+    isAdminDataLoading.value = false
+  }
+}
+
 const fetchUsers = async () => { isUsersLoading.value = true; try { const res = await apiFetch('/users.php'); if (res.status === 'success') allUsers.value = res.data } finally { isUsersLoading.value = false } }
 const fetchBarcodes = async () => { isBarcodesLoading.value = true; try { const res = await apiFetch('/barcodes.php'); if (res.status === 'success') allBarcodes.value = res.data } finally { isBarcodesLoading.value = false } }
 
-onMounted(() => { catalogStore.fetchAllData(); fetchUsers(); window.addEventListener('resize', handleResize) })
+onMounted(() => { 
+  catalogStore.fetchAllData(); 
+  fetchUsers(); 
+  loadAdminData(); 
+  window.addEventListener('resize', handleResize) 
+})
+
 onUnmounted(() => { window.removeEventListener('resize', handleResize); if (observer) observer.disconnect() })
 
 const openAddModal = (t) => { 
@@ -436,7 +469,24 @@ const openEditModal = (item, typeParam) => {
 }
 
 const openMergeModal = (item) => { mergeForm.value = { source: item, target_id: '' }; modals.value.merge = true }
-const submitMerge = async () => { if (!mergeForm.value.source || !mergeForm.value.target_id) return; try { const res = await apiFetch('/merge_locations.php', { method: 'POST', body: JSON.stringify({ source_id: mergeForm.value.source.id, target_id: mergeForm.value.target_id }) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.merge = false; catalogStore.locations = catalogStore.locations.filter(l => l.id !== mergeForm.value.source.id) } else { toastStore.showToast(res.message || 'Error', 'toast-error') } } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
+const submitMerge = async () => { 
+  if (!mergeForm.value.source || !mergeForm.value.target_id) return; 
+  try { 
+    const res = await apiFetch('/merge_locations.php', { method: 'POST', body: JSON.stringify({ source_id: mergeForm.value.source.id, target_id: mergeForm.value.target_id }) }); 
+    if (res.status === 'success') { 
+      toastStore.showToast(res.message); 
+      modals.value.merge = false; 
+      catalogStore.locations = catalogStore.locations.filter(l => l.id !== mergeForm.value.source.id);
+      adminLocations.value = adminLocations.value.filter(l => l.id !== mergeForm.value.source.id);
+      loadAdminData();
+    } else { 
+      toastStore.showToast(res.message || 'Error', 'toast-error') 
+    } 
+  } catch { 
+    toastStore.showToast(t('toast.communication_error'), 'toast-error') 
+  } 
+}
+
 const openPasswordModal = (u) => { selectedUserForPassword.value = u; modals.value.password = true }
 const handlePasswordChange = async (payload) => { try { const res = await apiFetch('/admin_change_password.php', { method: 'POST', body: JSON.stringify(payload) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.password = false } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
 const handleRemoveAvatar = (userId) => { selectedUserForAvatarRemove.value = allUsers.value.find(u => u.id === userId); modals.value.removeAvatar = true }
@@ -457,7 +507,10 @@ const submitForm = async (f) => {
       modals.value[f] = false; 
       if (f === 'user') fetchUsers(); 
       else if (f === 'barcode') fetchBarcodes();
-      else catalogStore.fetchAllData() 
+      else {
+        catalogStore.forceRefresh()
+        loadAdminData() 
+      }
     } 
     else toastStore.showToast(res.message || 'Error', 'toast-error')
   } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
@@ -471,16 +524,35 @@ const handleDelete = async () => {
       toastStore.showToast("Smazáno"); 
       if (deleteModal.value.type === 'user') fetchUsers(); 
       else if (deleteModal.value.type === 'barcode') fetchBarcodes();
-      else catalogStore.fetchAllData() 
+      else {
+        catalogStore.forceRefresh()
+        loadAdminData()
+      }
     } else toastStore.showToast(res.message || 'Error', 'toast-error') 
   } catch { toastStore.showToast(t('toast.delete_error'), 'toast-error') } 
   finally { deleteModal.value.show = false } 
 }
 
-const handleApprove = async (item, action) => { try { const res = await apiFetch('/approve_entity.php', { method: 'POST', body: JSON.stringify({ entity_type: item.entity_type, entity_id: item.id, action }) }); if (res.status === 'success') { toastStore.showToast(res.message); catalogStore.fetchPendingApprovals(); catalogStore.fetchAllData() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
+const handleApprove = async (item, action) => { 
+  try { 
+    const res = await apiFetch('/approve_entity.php', { method: 'POST', body: JSON.stringify({ entity_type: item.entity_type, entity_id: item.id, action }) }); 
+    if (res.status === 'success') { 
+      toastStore.showToast(res.message); 
+      catalogStore.fetchPendingApprovals(); 
+      catalogStore.forceRefresh();
+      loadAdminData(); 
+    } else {
+      toastStore.showToast(res.message || 'Error', 'toast-error') 
+    }
+  } catch { 
+    toastStore.showToast(t('toast.communication_error'), 'toast-error') 
+  } 
+}
 </script>
 
 <style scoped>
+.mobile-only { display: none; }
+
 .admin-page { flex: 1; display: flex; flex-direction: column; }
 
 .admin-header { margin-bottom: 2rem; overflow-x: auto; }
