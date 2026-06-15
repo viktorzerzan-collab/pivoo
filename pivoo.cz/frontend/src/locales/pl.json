@@ -176,10 +176,12 @@
     "GBP": "GBP - Funt brytyjski"
   },
   "packaging": {
+    "draft": "Z nalewaka",
     "bottle": "Butelka",
     "can": "Puszka",
     "pet": "Butelka PET",
-    "keg": "Beczka"
+    "keg": "Beczka",
+    "mini_keg": "Baryłka (5l)"
   },
   "modals": {
     "delete_confirm": {
@@ -331,13 +333,6 @@
       "select_location": "-- Wybierz lokal --",
       "select_brewery": "-- Wybierz browar --",
       "select_beer": "-- Wybierz piwo --",
-      "packaging": {
-        "draft": "Z nalewaka",
-        "bottle": "Butelka",
-        "can": "Puszka",
-        "pet": "Butelka PET",
-        "keg": "Prywatna beczka"
-      },
       "volume": {
         "glass": "Szklanka (0.2l)",
         "small": "Małe (0.3l)",

@@ -56,11 +56,12 @@
 
         <div class="form-row">
           <BaseSelect class="half" v-model="form.packaging" :label="$t('modals.checkin.packaging_label')" required>
-            <option value="točené">{{ $t('modals.checkin.packaging.draft') }}</option>
-            <option value="lahev">{{ $t('modals.checkin.packaging.bottle') }}</option>
-            <option value="plechovka">{{ $t('modals.checkin.packaging.can') }}</option>
-            <option value="pet">{{ $t('modals.checkin.packaging.pet') }}</option>
-            <option value="sud">{{ $t('modals.checkin.packaging.keg') }}</option>
+            <option value="draft">{{ $t('packaging.draft') }}</option>
+            <option value="bottle">{{ $t('packaging.bottle') }}</option>
+            <option value="can">{{ $t('packaging.can') }}</option>
+            <option value="pet">{{ $t('packaging.pet') }}</option>
+            <option value="keg">{{ $t('packaging.keg') }}</option>
+            <option value="mini_keg">{{ $t('packaging.mini_keg') }}</option>
           </BaseSelect>
 
           <div class="half">
@@ -224,7 +225,6 @@ const tempCoords = ref(null)
 const isAiUpdating = ref(false)
 const isCompressing = ref(false)
 
-// Lokální stavy pro galerijní fotky
 const existingPhotos = ref([])
 const removedPhotoIds = ref([])
 const newPhotos = ref([])
@@ -326,7 +326,6 @@ watch(() => props.show, (newVal) => {
   if (newVal) {
     locationMessage.value = ''
     
-    // Obnovení stavu galerie při otevření modalu
     existingPhotos.value = props.isEditing && props.form.photos ? [...props.form.photos] : []
     removedPhotoIds.value = []
     newPhotos.value = []
@@ -371,8 +370,6 @@ watch(() => props.show, (newVal) => {
     }
   }
 })
-
-// === LOGIKA PRO GALERII A KOMPRESI ===
 
 const triggerPhotoInput = () => {
   if (photoInput.value) photoInput.value.click()
@@ -459,15 +456,12 @@ const removeNewPhoto = (idx) => {
   newPhotos.value.splice(idx, 1)
 }
 
-// Odeslání dat včetně nahraných fotek
 const emitSubmit = () => {
   emit('submit', { 
     newPhotos: newPhotos.value, 
     removedPhotoIds: removedPhotoIds.value 
   })
 }
-
-// === GEOLOKACE A POMOCNÉ FUNKCE ===
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371
@@ -579,7 +573,6 @@ watch(() => props.form.location_id, () => {
 .rating-box { display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
 .input-label { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); transition: color 0.3s ease; }
 
-/* Stylování galerie fotek */
 .gallery-box { background: var(--bg-app); border: 1px solid var(--border); padding: 0.75rem; border-radius: var(--radius-md); }
 .gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
 .compress-loader { font-size: 0.8rem; font-weight: 600; color: var(--primary); animation: pulse 1s infinite; }
@@ -587,7 +580,6 @@ watch(() => props.form.location_id, () => {
 .preview-item { position: relative; width: 60px; height: 60px; border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden; }
 .preview-item img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Vycentrované tlačítko odstranění s použitím flexboxu */
 .remove-btn { 
   position: absolute; 
   top: 4px; 
@@ -607,13 +599,7 @@ watch(() => props.form.location_id, () => {
   box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
 }
 .remove-btn:hover { background: #ef4444; }
-
-/* OCHRANA PŘED GLOBÁLNÍM STYLEM Z APP.VUE */
-.remove-btn :deep(svg) { 
-  margin: 0 !important; 
-  width: 14px !important; 
-  height: 14px !important; 
-}
+.remove-btn :deep(svg) { margin: 0 !important; width: 14px !important; height: 14px !important; }
 
 .add-photo-btn { width: 60px; height: 60px; border: 1px dashed var(--border); border-radius: var(--radius-sm); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease; }
 .add-photo-btn:hover { background: var(--bg-panel); }

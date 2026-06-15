@@ -176,10 +176,12 @@
     "GBP": "GBP - Britisches Pfund"
   },
   "packaging": {
+    "draft": "Fassbier",
     "bottle": "Flasche",
     "can": "Dose",
-    "pet": "PET",
-    "keg": "Fass"
+    "pet": "PET-Flasche",
+    "keg": "Privates Fass",
+    "mini_keg": "Fässchen (5l)"
   },
   "modals": {
     "delete_confirm": {
@@ -331,13 +333,6 @@
       "select_location": "-- Lokal auswählen --",
       "select_brewery": "-- Brauerei auswählen --",
       "select_beer": "-- Bier auswählen --",
-      "packaging": {
-        "draft": "Fassbier",
-        "bottle": "Flasche",
-        "can": "Dose",
-        "pet": "PET-Flasche",
-        "keg": "Privates Fass"
-      },
       "volume": {
         "glass": "Glas (0.2l)",
         "small": "Klein (0.3l)",

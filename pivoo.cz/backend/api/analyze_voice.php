@@ -29,7 +29,7 @@ try {
     "2. Identifikuj objem (např. slova 'velké' nebo 'půllitr' znamenají 0.5; 'malé' nebo 'třetinka' = 0.3; 'šnyt' = 0.4). Vrať jako desetinné číslo.\n" .
     "3. Identifikuj počet vypitých kusů (pokud není výslovně uvedeno číslo, výchozí hodnota je 1).\n" .
     "4. Identifikuj cenu za 1 kus. POZOR: Pokud uživatel řekne celkovou útratu za více piv (např. 'dal jsem si 2 piva a platil 100'), musíš cenu vydělit počtem kusů, abys získal cenu za jedno pivo!\n" .
-    "5. Identifikuj typ balení. Povolené hodnoty: 'točené', 'lahev', 'plechovka', 'pet', 'sud'. Pokud z kontextu nevyplývá nic jiného (např. je v hospodě), použij 'točené'.\n" .
+    "5. Identifikuj typ balení. Povolené hodnoty: 'draft', 'bottle', 'can', 'pet', 'keg', 'mini_keg'. Pokud z kontextu nevyplývá nic jiného (např. je v hospodě), použij 'draft'.\n" .
     "6. Identifikuj měnu (CZK, EUR, PLN, GBP). Pokud uživatel řekne 'euro' nebo 'éčka', použij EUR.\n" .
     "7. Identifikuj název podniku (lokace), pokud ho uživatel zmínil.\n" .
     "8. Porovnej nalezený pivovar se seznamem: " . json_encode($breweries_list) . ". Pokud najdeš shodu, vrať jeho ID.\n" .
@@ -48,7 +48,7 @@ try {
     "    \"quantity\": 1,\n" .
     "    \"price\": null,\n" .
     "    \"currency\": \"CZK\",\n" .
-    "    \"packaging\": \"točené\",\n" .
+    "    \"packaging\": \"draft\",\n" .
     "    \"rating_beer\": null,\n" .
     "    \"rating_care\": null\n" .
     "}";

@@ -129,8 +129,8 @@ import {
 } from 'lucide-vue-next'
 import BaseTooltip from './BaseTooltip.vue'
 import BaseActionGroup from './BaseActionGroup.vue'
-import StarRating from './StarRating.vue' // <-- Import komponenty
-import BaseLightbox from './BaseLightbox.vue' // <-- Import nové lightbox komponenty
+import StarRating from './StarRating.vue'
+import BaseLightbox from './BaseLightbox.vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 
@@ -144,7 +144,6 @@ const userCurrency = computed(() => authStore.defaultCurrency || 'CZK')
 const exchangeRate = ref(1.0)
 const isLoadingRate = ref(false)
 
-// Reaktivní stav držící název vybraného obrázku
 const selectedImage = ref(null)
 
 const fetchRate = async () => {
@@ -175,15 +174,12 @@ watch(userCurrency, () => {
   fetchRate()
 })
 
-const packagingMap = {
-  'točené': 'modals.checkin.packaging.draft',
-  'lahev': 'modals.checkin.packaging.bottle',
-  'plechovka': 'modals.checkin.packaging.can',
-  'pet': 'modals.checkin.packaging.pet',
-  'sud': 'modals.checkin.packaging.keg'
+const translatePackaging = (val) => {
+  if (!val) return val
+  const key = `packaging.${val}`
+  // fallback na surovou hodnotu, pokud by z nějakého důvodu klíč chyběl
+  return te(key) ? t(key) : val
 }
-
-const translatePackaging = (val) => packagingMap[val] ? t(packagingMap[val]) : val
 
 const translateLocation = (val) => {
   if (!val) return val
@@ -201,12 +197,10 @@ const formatDate = (dateStr) => {
   })
 }
 
-// Nastavení názvu souboru pro zobrazení v lightboxu
 const openImage = (filename) => {
   selectedImage.value = filename
 }
 
-// Resetování stavu a skrytí lightboxu
 const closeImage = () => {
   selectedImage.value = null
 }
@@ -284,7 +278,6 @@ const closeImage = () => {
   backdrop-filter: blur(2px);
 }
 
-/* Nové styly pro odznáčky hodnocení */
 .ratings-row { 
   display: flex; 
   gap: 0.75rem; 
@@ -336,7 +329,6 @@ const closeImage = () => {
 .text-muted { color: var(--text-muted); }
 .icon-shrink { flex-shrink: 0; }
 
-/* Styly pro minigalerii uvnitř deníčku */
 .photo-gallery {
   display: flex;
   gap: 0.4rem;

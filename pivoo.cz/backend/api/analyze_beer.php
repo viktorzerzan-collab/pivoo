@@ -91,7 +91,7 @@ try {
         exit();
     }
 
-    // 3. Prompt pro Gemini (PŘIDÁNA logika pro párování ID existujících piv a fuzzy matching)
+    // 3. Prompt pro Gemini 
     $promptText = "Jsi pivní expert. Zanalyzuj tyto přiložené fotografie piva (mohou obsahovat přední/zadní etiketu, plechovku, láhev, točené pivo ve sklenici nebo i nápojový lístek).
 Tvé úkoly:
 1. Identifikuj přesný název piva a jméno pivovaru ze všech dostupných indicií.
@@ -99,7 +99,7 @@ Tvé úkoly:
 3. Najdi technické parametry: EPM (Stupňovitost v °), ABV (Alkohol v %), IBU (Hořkost), EBC (Barva).
 4. Zjisti, zda je pivo nefiltrované nebo nepasterizované.
 5. Porovnej nalezený pivovar, pivo a styl se seznamy, které ti dodám. Využij fuzzy matching (ignoruj drobné překlepy, velikost písmen a odlišné slovosledy). Pokud najdeš shodu, vrať jejich příslušná ID (brewery_id, beer_id, style_id). U piva zkontroluj, že patří ke správnému brewery_id!
-6. Odhadni z fotek, o jaký typ obalu se jedná (povolené hodnoty: 'točené', 'lahev', 'plechovka', 'pet', 'sud'). Pokud si nejsi jistý, vrať 'točené'.
+6. Odhadni z fotek, o jaký typ obalu se jedná (povolené hodnoty: 'draft', 'bottle', 'can', 'pet', 'keg', 'mini_keg'). Pokud si nejsi jistý, vrať 'draft'.
 7. Odhadni objem piva (např. 0.50, 0.33, 0.30), pokud to lze z obalu, sklenice nebo nápojového lístku vyčíst/odhadnout.
 
 Zde je seznam existujících pivovarů: " . json_encode($breweries_list) . "
@@ -136,7 +136,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     \"ebc\": null,
     \"is_unfiltered\": false,
     \"is_unpasteurized\": false,
-    \"packaging\": \"točené\",
+    \"packaging\": \"draft\",
     \"volume\": null
 }";
 
@@ -183,7 +183,8 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     
     if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
         $ai_response_text = trim($result['candidates'][0]['content']['parts'][0]['text']);
-        $ai_response_text = str_replace(['```json', '```'], '', $ai_response_text);
+        $ai_response_text = str_replace(['```json', '
+```'], '', $ai_response_text);
         
         $ai_json = json_decode($ai_response_text, true);
         
@@ -193,7 +194,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
             $db->beginTransaction();
             try {
                 $brewery_id = $ai_json['brewery_id'] ?? null;
-                $beer_id = $ai_json['beer_id'] ?? null; // PŘIDÁNO načtení beer_id z odpovědi
+                $beer_id = $ai_json['beer_id'] ?? null; 
 
                 // A) Pokud pivovar neexistuje, založíme ho jako KONCEPT (2)
                 if (!$brewery_id || !empty($ai_json['is_new_brewery'])) {
@@ -216,14 +217,12 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
                 if ($brewery_id && !empty($ai_json['beer_name'])) {
                     $existing_beer = false;
                     
-                    // ZMĚNA: Preferujeme beer_id vrácené z AI fuzzy matchingu
                     if ($beer_id) {
                         $find_beer = $db->prepare("SELECT id FROM beers WHERE id = ?");
                         $find_beer->execute([$beer_id]);
                         $existing_beer = $find_beer->fetch();
                     } 
                     
-                    // Fallback na starší vyhledávání pomocí textu, pokud se AI nevrátilo přesné ID, ale název se shoduje
                     if (!$existing_beer) {
                         $find_beer = $db->prepare("SELECT id FROM beers WHERE brewery_id = ? AND name LIKE ? LIMIT 1");
                         $find_beer->execute([$brewery_id, '%' . trim($ai_json['beer_name']) . '%']);

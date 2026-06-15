@@ -46,10 +46,11 @@
             class="half"
             required
           >
-            <option value="láhev">{{ $t('packaging.bottle') }}</option>
-            <option value="plechovka">{{ $t('packaging.can') }}</option>
-            <option value="PET">{{ $t('packaging.pet') }}</option>
-            <option value="sud">{{ $t('packaging.keg') }}</option>
+            <option value="bottle">{{ $t('packaging.bottle') }}</option>
+            <option value="can">{{ $t('packaging.can') }}</option>
+            <option value="pet">{{ $t('packaging.pet') }}</option>
+            <option value="keg">{{ $t('packaging.keg') }}</option>
+            <option value="mini_keg">{{ $t('packaging.mini_keg') }}</option>
           </BaseSelect>
 
           <div class="half volume-container">
@@ -114,18 +115,13 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submit'])
 
-// Pomocný stav pro filtrování piv podle pivovaru
 const selectedBreweryId = ref('')
-
-// Pomocný stav pro vlastní objem
 const isCustomVolume = ref(false)
 const volumeSelect = ref('0.50')
 const predefinedVolumes = ['0.33', '0.50', '0.75', '1.00', '1.50', '5.00']
 
-// Pokud se modál otevře (nebo se změní props.form), nastavíme správný pivovar a objem
 watch(() => props.show, (isShown) => {
   if (isShown) {
-    // Logika pivovaru
     if (props.form.beer_id) {
       const beer = catalogStore.allBeers.find(b => b.id == props.form.beer_id)
       selectedBreweryId.value = beer ? beer.brewery_id : ''
@@ -133,7 +129,6 @@ watch(() => props.show, (isShown) => {
       selectedBreweryId.value = ''
     }
 
-    // Logika objemu
     if (props.form.volume) {
       const normalized = parseFloat(props.form.volume).toFixed(2)
       if (!predefinedVolumes.includes(normalized)) {
@@ -152,7 +147,6 @@ watch(() => props.show, (isShown) => {
   }
 })
 
-// Pokud uživatel ručně změní pivovar v selectu, resetujeme vybrané pivo (pokud staré pivo nepatří pod nový pivovar)
 watch(selectedBreweryId, (newBreweryId) => {
   if (!props.show) return
   const currentBeer = catalogStore.allBeers.find(b => b.id == props.form.beer_id)
@@ -161,26 +155,23 @@ watch(selectedBreweryId, (newBreweryId) => {
   }
 })
 
-// Pokud uživatel změní volbu objemu
 watch(volumeSelect, (newVal) => {
   if (!props.show) return
   if (newVal === 'custom') {
     isCustomVolume.value = true
-    props.form.volume = '' // Vyprázdníme pro ruční zadání
+    props.form.volume = ''
   } else {
     isCustomVolume.value = false
     props.form.volume = newVal
   }
 })
 
-// Návrat z vlastního zadání objemu na standardní roletku
 const cancelCustomVolume = () => {
   isCustomVolume.value = false
   volumeSelect.value = '0.50'
   props.form.volume = '0.50'
 }
 
-// Vypočtená vlastnost: Piva pouze pro vybraný pivovar, seřazená podle abecedy
 const filteredBeers = computed(() => {
   if (!selectedBreweryId.value) return []
   return catalogStore.allBeers
@@ -194,7 +185,6 @@ const handleSubmit = () => {
 </script>
 
 <style scoped>
-/* Standardizované styly pro modály */
 .modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; }
 .title-icon { color: var(--blue); }
 .modal-form { display: flex; flex-direction: column; gap: 1.5rem; }
@@ -202,7 +192,6 @@ const handleSubmit = () => {
 .half { flex: 1; }
 .justify-center { justify-content: center; }
 
-/* Styly pro vlastní objem */
 .volume-container { display: flex; flex-direction: column; }
 .custom-volume-wrapper { display: flex; flex-direction: column; gap: 0.5rem; }
 .cancel-custom { font-size: 0.85rem; color: var(--text-muted); text-align: right; text-decoration: none; margin-top: -0.25rem; }

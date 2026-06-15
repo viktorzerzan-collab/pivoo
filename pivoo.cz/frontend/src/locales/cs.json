@@ -176,10 +176,12 @@
     "GBP": "GBP - Libra šterlinků"
   },
   "packaging": {
+    "draft": "Točené",
     "bottle": "Láhev",
     "can": "Plechovka",
     "pet": "PET",
-    "keg": "Sud"
+    "keg": "Sud",
+    "mini_keg": "Soudek (5l)"
   },
   "modals": {
     "delete_confirm": {
@@ -331,13 +333,6 @@
       "select_location": "-- Vyber lokaci --",
       "select_brewery": "-- Vyber pivovar --",
       "select_beer": "-- Vyber pivo --",
-      "packaging": {
-        "draft": "Točené",
-        "bottle": "Lahev",
-        "can": "Plechovka",
-        "pet": "PET lahev",
-        "keg": "Soukromý sud"
-      },
       "volume": {
         "glass": "Sklenička (0.2l)",
         "small": "Malé (0.3l)",

@@ -176,10 +176,12 @@
     "GBP": "GBP - British Pound"
   },
   "packaging": {
+    "draft": "Draft",
     "bottle": "Bottle",
     "can": "Can",
     "pet": "PET",
-    "keg": "Keg"
+    "keg": "Keg",
+    "mini_keg": "Mini Keg (5l)"
   },
   "modals": {
     "delete_confirm": {
@@ -331,13 +333,6 @@
       "select_location": "-- Select location --",
       "select_brewery": "-- Select brewery --",
       "select_beer": "-- Select beer --",
-      "packaging": {
-        "draft": "Draft",
-        "bottle": "Bottle",
-        "can": "Can",
-        "pet": "PET bottle",
-        "keg": "Private keg"
-      },
       "volume": {
         "glass": "Glass (0.2l)",
         "small": "Small (0.3l)",
