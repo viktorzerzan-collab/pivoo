@@ -6,8 +6,6 @@
       </div>
       <div class="app-version">
         <span>{{ $t('footer.version') }} {{ appVersion }}</span>
-        <span class="version-dot"></span>
-        <span>{{ $t('footer.build') }} {{ buildDate }}</span>
       </div>
     </div>
   </footer>
@@ -16,7 +14,6 @@
 <script setup>
 import packageJson from '../../package.json'
 const appVersion = packageJson.version
-const buildDate = new Date().toISOString().split('T')[0]
 </script>
 
 <style scoped>
@@ -33,8 +30,10 @@ const buildDate = new Date().toISOString().split('T')[0]
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
+  gap: 0.5rem;
 }
 
 .copyright strong {
@@ -48,21 +47,5 @@ const buildDate = new Date().toISOString().split('T')[0]
   gap: 0.75rem;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 0.8rem;
-}
-
-.version-dot {
-  width: 4px;
-  height: 4px;
-  background-color: var(--border);
-  border-radius: 50%;
-  transition: background-color 0.5s ease;
-}
-
-@media (max-width: 600px) {
-  .footer-content {
-    flex-direction: column;
-    gap: 0.75rem;
-    text-align: center;
-  }
 }
 </style>
