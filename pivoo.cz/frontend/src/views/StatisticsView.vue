@@ -26,29 +26,77 @@
           <StatsRankingCard 
             :title="$t('statistics.fav_beers')"
             :icon="BeerIcon"
-            :items="statsData.beers.map(item => ({ name: item.name, sub: item.brewery, count: item.count }))"
+            :items="statsData.beers.map(item => ({ 
+              id: item.id, 
+              type: 'beer', 
+              name: item.name, 
+              sub: item.brewery, 
+              count: item.count 
+            }))"
             :emptyText="$t('statistics.empty_data')"
+            :clickable="true"
+            @itemClick="openDetailModal"
           />
 
           <StatsRankingCard 
             :title="$t('statistics.fav_breweries')"
             :icon="FactoryIcon"
             :items="statsData.breweries.map(item => ({ 
+              id: item.id,
+              type: 'brewery',
               name: item.name, 
               sub: $t('statistics.tasted_types', { count: item.beer_types }), 
               count: item.count 
             }))"
             :emptyText="$t('statistics.empty_data')"
+            :clickable="true"
+            @itemClick="openDetailModal"
           />
 
           <StatsRankingCard 
             :title="$t('statistics.fav_locations')"
             :icon="MapPinIcon"
             :items="statsData.locations.map(item => ({ 
+              id: item.id,
+              type: 'location',
               name: translateDynamic(item.name), 
               sub: (item.city ? translateDynamic(item.city) + ' • ' : '') + $t('statistics.visits', { count: item.visits }), 
               count: item.count 
             }))"
+            :emptyText="$t('statistics.empty_data')"
+            :clickable="true"
+            @itemClick="openDetailModal"
+          />
+
+          <StatsRankingCard 
+            :title="$t('statistics.top_rated_beers')"
+            :icon="StarIcon"
+            :items="statsData.top_rated_beers?.map(item => ({ 
+              id: item.id,
+              type: 'beer',
+              name: item.name, 
+              sub: item.brewery + ' (' + item.ratings_count + 'x)', 
+              count: item.avg_rating 
+            })) || []"
+            :isRating="true"
+            :clickable="true"
+            @itemClick="openDetailModal"
+            :emptyText="$t('statistics.empty_data')"
+          />
+
+          <StatsRankingCard 
+            :title="$t('statistics.top_rated_locations')"
+            :icon="StarIcon"
+            :items="statsData.top_rated_locations?.map(item => ({ 
+              id: item.id,
+              type: 'location',
+              name: translateDynamic(item.name), 
+              sub: (item.city ? translateDynamic(item.city) + ' • ' : '') + '(' + item.ratings_count + 'x)', 
+              count: item.avg_rating 
+            })) || []"
+            :isRating="true"
+            :clickable="true"
+            @itemClick="openDetailModal"
             :emptyText="$t('statistics.empty_data')"
           />
 
@@ -117,6 +165,14 @@
         </div>
       </template>
     </div>
+
+    <DetailModal 
+      :show="isDetailModalVisible" 
+      :item="detailModalItem"
+      :type="detailModalType"
+      :reviews="detailModalReviews"
+      @close="isDetailModalVisible = false"
+    />
   </div>
 </template>
 
@@ -125,7 +181,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { 
   BeerIcon, FactoryIcon, MapPinIcon, 
   CalendarDaysIcon, TrophyIcon, 
-  CoinsIcon, ShapesIcon
+  CoinsIcon, ShapesIcon, StarIcon
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
@@ -136,12 +192,13 @@ import BaseSwitch from '../components/BaseSwitch.vue'
 import BasePeriodSelector from '../components/BasePeriodSelector.vue'
 import StatsBoard from '../components/StatsBoard.vue'
 
-// Import nových komponent
+// Import komponent
 import StatsRankingCard from '../components/StatsRankingCard.vue'
 import StatsChartCard from '../components/StatsChartCard.vue'
 import StatsStylesCard from '../components/StatsStylesCard.vue'
 import StatsDiversityCard from '../components/StatsDiversityCard.vue'
 import StatsEconomyCard from '../components/StatsEconomyCard.vue'
+import DetailModal from '../components/modals/DetailModal.vue'
 
 const toastStore = useToastStore()
 const authStore = useAuthStore()
@@ -164,12 +221,55 @@ const scopeOptions = computed(() => [
 ])
 
 const statsData = ref({
-  beers: [], breweries: [], locations: [], days: [], months: [], month_days: [],
+  beers: [], breweries: [], locations: [], 
+  top_rated_beers: [], top_rated_locations: [], 
+  days: [], months: [], month_days: [],
   collector: { unique_count: 0, total_count: 0 },
   overview: null,
   styles: [], prices: { avg_price: 0, min_price: 0, max_price: 0 },
   price_details: { min_beer: null, max_beer: null }
 })
+
+// Stav pro detailní modál
+const isDetailModalVisible = ref(false)
+const detailModalItem = ref({})
+const detailModalType = ref('')
+const detailModalReviews = ref([])
+
+const openDetailModal = async (item) => {
+  if (!item || !item.id || !item.type) return
+
+  // 1. Otevřeme modál a vyčistíme předchozí data (aby uživatel neviděl stará data během načítání)
+  detailModalType.value = item.type
+  detailModalItem.value = {}
+  detailModalReviews.value = []
+  isDetailModalVisible.value = true
+
+  try {
+    // 2. Načtení detailu entity z API
+    let endpoint = ''
+    if (item.type === 'beer') endpoint = `/beers.php?id=${item.id}`
+    else if (item.type === 'brewery') endpoint = `/breweries.php?id=${item.id}`
+    else if (item.type === 'location') endpoint = `/locations.php?id=${item.id}`
+
+    const res = await apiFetch(endpoint)
+    if (res.status === 'success' && res.data) {
+      detailModalItem.value = Array.isArray(res.data) ? res.data[0] : res.data
+    }
+
+    // 3. Pokud je to pivo, načteme k němu i historii recenzí
+    if (item.type === 'beer') {
+      const revRes = await apiFetch(`/beer_reviews.php?beer_id=${item.id}`)
+      if (revRes.status === 'success' && revRes.data) {
+        detailModalReviews.value = revRes.data
+      }
+    }
+  } catch (error) {
+    console.error("Nepodařilo se načíst detail:", error)
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+    isDetailModalVisible.value = false // Při chybě okno zase zavřeme
+  }
+}
 
 const userCurrency = computed(() => authStore.defaultCurrency || 'CZK')
 const exchangeRate = ref(1.0)
@@ -329,20 +429,17 @@ onMounted(() => {
   gap: 1rem;
 }
 
-/* Pomocí deep selektoru vynutíme změnu pořadí prvků uvnitř zapouzdřené komponenty */
 .period-picker-right :deep(> *) {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-/* Hlavní selectbox (.mode-wrapper / první potomek) dostane vyšší order a skočí doprava */
 .period-picker-right :deep(> *:first-child),
 .period-picker-right :deep(.mode-wrapper) {
   order: 2 !important;
 }
 
-/* Jakékoliv další elementy (výběr měsíce, roku atd.) dostanou nižší order a skočí doleva před něj */
 .period-picker-right :deep(> *:nth-child(2)),
 .period-picker-right :deep(> *:not(.mode-wrapper)) {
   order: 1 !important;
@@ -374,7 +471,6 @@ onMounted(() => {
 </style>
 
 <style>
-/* Rozšíření selektoru období, aby se texty nelámaly */
 .statistics-page .mode-wrapper {
   width: 240px !important;
 }

@@ -30,6 +30,8 @@ $response = [
     "beers" => [],
     "breweries" => [],
     "locations" => [],
+    "top_rated_beers" => [],
+    "top_rated_locations" => [],
     "days" => [],
     "months" => [],
     "month_days" => [],
@@ -40,9 +42,9 @@ $response = [
     "price_details" => ["min_beer" => null, "max_beer" => null]
 ];
 
-// 1. TOP PIVA
+// 1. TOP PIVA (podle množství) - přidáno b.id
 try {
-    $beers_query = "SELECT b.name, br.name as brewery, SUM(c.quantity) as count
+    $beers_query = "SELECT b.id, b.name, br.name as brewery, SUM(c.quantity) as count
                     FROM consumptions c
                     JOIN beers b ON c.beer_id = b.id
                     JOIN breweries br ON b.brewery_id = br.id
@@ -53,9 +55,9 @@ try {
     $response["beers"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) { error_log("DB Error detailed_stats (beers): " . $e->getMessage()); }
 
-// 2. TOP PIVOVARY
+// 2. TOP PIVOVARY (podle množství) - přidáno br.id
 try {
-    $brew_query = "SELECT br.name, COUNT(DISTINCT c.beer_id) as beer_types, SUM(c.quantity) as count
+    $brew_query = "SELECT br.id, br.name, COUNT(DISTINCT c.beer_id) as beer_types, SUM(c.quantity) as count
                    FROM consumptions c
                    JOIN beers b ON c.beer_id = b.id
                    JOIN breweries br ON b.brewery_id = br.id
@@ -66,9 +68,9 @@ try {
     $response["breweries"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) { error_log("DB Error detailed_stats (breweries): " . $e->getMessage()); }
 
-// 3. TOP MÍSTA
+// 3. TOP MÍSTA (podle návštěv a množství) - přidáno l.id
 try {
-    $loc_query = "SELECT l.name, l.city, COUNT(c.id) as visits, SUM(c.quantity) as count
+    $loc_query = "SELECT l.id, l.name, l.city, COUNT(c.id) as visits, SUM(c.quantity) as count
                   FROM consumptions c
                   JOIN locations l ON c.location_id = l.id
                   WHERE $userCondition $dateCondition
@@ -77,6 +79,37 @@ try {
     $stmt->execute($params);
     $response["locations"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) { error_log("DB Error detailed_stats (locations): " . $e->getMessage()); }
+
+// 3A. NEJLÉPE HODNOCENÁ PIVA (průměr > 0) - přidáno b.id
+try {
+    $top_beers_query = "SELECT b.id, b.name, br.name as brewery, ROUND(AVG(NULLIF(c.rating_beer, 0)), 1) as avg_rating, COUNT(c.id) as ratings_count
+                        FROM consumptions c
+                        JOIN beers b ON c.beer_id = b.id
+                        JOIN breweries br ON b.brewery_id = br.id
+                        WHERE $userCondition $dateCondition AND c.rating_beer IS NOT NULL AND c.rating_beer > 0
+                        GROUP BY c.beer_id 
+                        HAVING ratings_count > 0
+                        ORDER BY avg_rating DESC, ratings_count DESC LIMIT 5";
+    $stmt = $api->db->prepare($top_beers_query);
+    $stmt->execute($params);
+    $response["top_rated_beers"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) { error_log("DB Error detailed_stats (top_rated_beers): " . $e->getMessage()); }
+
+// 3B. NEJLÉPE HODNOCENÉ PODNIKY (průměr z hodnocení péče a obsluhy) - přidáno l.id
+try {
+    $top_loc_query = "SELECT l.id, l.name, l.city, ROUND(AVG(NULLIF(c.rating_care, 0)), 1) as avg_rating, COUNT(c.rating_care) as ratings_count
+                      FROM consumptions c
+                      JOIN locations l ON c.location_id = l.id
+                      WHERE $userCondition $dateCondition 
+                      AND c.rating_care IS NOT NULL AND c.rating_care > 0
+                      AND l.type != 'jine'
+                      GROUP BY l.id 
+                      HAVING ratings_count > 0
+                      ORDER BY avg_rating DESC, ratings_count DESC LIMIT 5";
+    $stmt = $api->db->prepare($top_loc_query);
+    $stmt->execute($params);
+    $response["top_rated_locations"] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) { error_log("DB Error detailed_stats (top_rated_locations): " . $e->getMessage()); }
 
 // 4. AKTIVITA PODLE DNŮ V TÝDNU (Týdenní rytmus)
 try {

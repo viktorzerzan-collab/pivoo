@@ -36,7 +36,10 @@ defineProps({
 .panel-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; transition: border-color 0.3s ease; }
 .panel-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--text-main); transition: color 0.3s ease; }
 .panel-icon { color: var(--primary); }
-.styles-list { display: flex; flex-direction: column; gap: 1rem; max-height: 290px; overflow-y: auto; padding-right: 0.5rem; flex-grow: 1;}
+
+/* Zde bylo smazáno max-height: 290px; */
+.styles-list { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 0.5rem; flex-grow: 1;}
+
 .styles-list::-webkit-scrollbar { width: 6px; }
 .styles-list::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: var(--radius-sm); }
 .styles-list::-webkit-scrollbar-thumb:hover { background-color: var(--primary); }

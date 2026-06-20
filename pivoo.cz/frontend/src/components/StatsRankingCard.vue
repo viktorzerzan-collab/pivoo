@@ -7,13 +7,29 @@
       </h3>
     </div>
     <div class="ranking-list" v-if="items && items.length > 0">
-      <div v-for="(item, index) in items" :key="index" class="ranking-item">
+      <div 
+        v-for="(item, index) in items" 
+        :key="index" 
+        class="ranking-item"
+        :class="{ 'is-clickable': clickable }"
+        @click="clickable ? $emit('itemClick', item) : null"
+      >
         <div class="rank-number">{{ index + 1 }}</div>
         <div class="item-info">
           <div class="item-name"><strong>{{ item.name }}</strong></div>
           <div class="item-sub" v-if="item.sub">{{ item.sub }}</div>
         </div>
-        <div class="item-count">{{ item.count }}x</div>
+        <div class="item-count" :class="{ 'rating-count': isRating }">
+          <template v-if="isRating">
+            {{ item.count }} / 5
+          </template>
+          <template v-else-if="suffix">
+            {{ item.count }}{{ suffix }}
+          </template>
+          <template v-else>
+            {{ item.count }}x
+          </template>
+        </div>
       </div>
     </div>
     <div v-else class="empty-stats">{{ emptyText }}</div>
@@ -24,9 +40,14 @@
 defineProps({
   title: { type: String, required: true },
   icon: { type: [Object, Function], required: true },
-  items: { type: Array, required: true }, // [{ name, sub, count }]
-  emptyText: { type: String, required: true }
+  items: { type: Array, required: true }, // [{ name, sub, count, id, type }]
+  emptyText: { type: String, required: true },
+  isRating: { type: Boolean, default: false },
+  suffix: { type: String, default: '' },
+  clickable: { type: Boolean, default: false }
 })
+
+defineEmits(['itemClick'])
 </script>
 
 <style scoped>
@@ -38,11 +59,17 @@ defineProps({
 .ranking-list { display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; }
 .ranking-item { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: var(--bg-app); border: 1px solid var(--border); border-radius: var(--radius-md); transition: all 0.2s; min-width: 0; }
 .ranking-item:hover { border-color: var(--primary); }
+
+/* Nové styly pro klikatelné položky */
+.ranking-item.is-clickable { cursor: pointer; }
+.ranking-item.is-clickable:hover { transform: translateX(4px); box-shadow: var(--shadow-sm); }
+
 .rank-number { width: 28px; height: 28px; background: var(--primary); color: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
 .item-info { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
 .item-name { color: var(--text-main); font-size: 0.95rem; word-break: break-word; line-height: 1.3; transition: color 0.3s ease; }
 .item-sub { color: var(--text-muted); font-size: 0.8rem; word-break: break-word; line-height: 1.3; transition: color 0.3s ease; }
 .item-count { font-weight: 800; color: var(--primary); font-size: 1.1rem; background: rgba(250, 204, 21, 0.1); padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); flex-shrink: 0; }
+.rating-count { color: #eab308; }
 .empty-stats { padding: 3rem 1rem; text-align: center; color: var(--text-muted); font-style: italic; transition: color 0.3s ease; flex-grow: 1; display: flex; align-items: center; justify-content: center; }
 
 @media (max-width: 800px) {
