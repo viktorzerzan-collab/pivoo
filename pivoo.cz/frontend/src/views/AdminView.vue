@@ -162,7 +162,7 @@
                   {{ item.brewery_name }}
                 </td>
                 <td :data-label="$t('admin.table.packaging')" class="desktop-only">
-                  <span class="badge type-badge">{{ item.packaging }}</span>
+                  <span class="badge type-badge">{{ translatePackaging(item.packaging) }}</span>
                 </td>
                 <td :data-label="$t('admin.table.volume')" class="desktop-only">{{ item.volume }} l</td>
                 <td :data-label="$t('admin.table.actions')">
@@ -309,7 +309,7 @@ import AddBarcodeModal from '../components/modals/AddBarcodeModal.vue'
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 const { user } = storeToRefs(authStore)
 const { styles, countries, isLoading } = storeToRefs(catalogStore) 
@@ -368,6 +368,12 @@ const tabs = computed(() => [
 
 const getTabLabel = (val) => tabs.value.find(t => t.value === val)?.label || ''
 const currentLabelSingle = computed(() => activeTab.value === 'pending' ? '' : t(`admin.items.${activeTab.value === 'users' ? 'user' : (activeTab.value === 'beers' ? 'beer' : (activeTab.value === 'breweries' ? 'brewery' : (activeTab.value === 'locations' ? 'location' : (activeTab.value === 'styles' ? 'style' : 'barcode'))))}`))
+
+const translatePackaging = (val) => {
+  if (!val) return val
+  const key = `packaging.${val}`
+  return te(key) ? t(key) : val
+}
 
 const filteredUsers = computed(() => {
   let items = [...allUsers.value]
