@@ -399,7 +399,9 @@
       "password": "Heslo",
       "password_placeholder": "••••••••",
       "no_account": "Nemáš účet?",
-      "register_here": "Registruj se zde"
+      "register_here": "Registruj se zde",
+      "totp_code": "Ověřovací kód (2FA)",
+      "totp_placeholder": "Zadejte 6místný kód"
     },
     "register": {
       "title": "Nová registrace",
@@ -458,7 +460,16 @@
       "delete_confirm_title": "Smazat účet?",
       "delete_confirm_desc": "Pro potvrzení smazání účtu prosím zadej své aktuální heslo.",
       "delete_password": "Tvé heslo *",
-      "delete_submit": "Ano, smazat vše"
+      "delete_submit": "Ano, smazat vše",
+      "two_fa_title": "Dvoufázové ověření (2FA)",
+      "two_fa_desc": "Zvyšte bezpečnost svého účtu. Při přihlašování bude vyžadován kód z mobilní aplikace (např. Google Authenticator).",
+      "two_fa_enabled": "Dvoufázové ověření je AKTIVNÍ",
+      "two_fa_disable_btn": "Vypnout 2FA",
+      "two_fa_enable_btn": "Zapnout 2FA",
+      "two_fa_setup_instructions": "Naskenujte QR kód v autentizační aplikaci a zadejte vygenerovaný kód níže.",
+      "two_fa_backup_key": "Záložní klíč pro ruční zadání:",
+      "two_fa_verification_code": "Šestimístný kód z aplikace",
+      "two_fa_verify_btn": "Ověřit a zapnout"
     },
     "wishlist": {
       "no_beers": "Zatím zde nemáš žádná piva.",
@@ -485,7 +496,8 @@
     "record_deleted": "Záznam smazán.",
     "delete_error": "Chyba při mazání.",
     "theme_saved": "Nastavení vzhledu uloženo.",
-    "theme_error": "Chyba při ukládání nastavení."
+    "theme_error": "Chyba při ukládání nastavení.",
+    "two_fa_reset_success": "2FA ochrana byla uživateli úspěšně vypnuta."
   },
   "catalog": {
     "add_beer": "Přidat pivo",
@@ -595,7 +607,9 @@
       "edit": "Upravit",
       "delete": "Smazat",
       "approve": "Schválit záznam",
-      "reject": "Zamítnout a smazat"
+      "reject": "Zamítnout a smazat",
+      "reset_2fa": "Vypnout uživateli 2FA",
+      "reset_2fa_confirm": "Opravdu chcete uživateli {user} nouzově vypnout dvoufázové ověření?"
     },
     "empty_search": "Žádné záznamy neodpovídají hledání.",
     "showing": "Zobrazeno",

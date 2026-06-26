@@ -1,11 +1,70 @@
 <?php
 // backend/api/update_profile.php
 require_once '../core/ApiHandler.php';
+require_once '../core/TOTPHandler.php'; // Přidáno pro 2FA
 
 $api = new ApiHandler();
 $user = JwtHandler::checkUser();
 
 $action = $api->request->getParam('action', 'change_password');
+
+// 1. Získání dat o novém QR kódu pro zapnutí 2FA
+if ($action === 'setup_2fa') {
+    try {
+        $stmt = $api->db->prepare("SELECT username, email FROM users WHERE id = ?");
+        $stmt->execute([$user['user_id']]);
+        $dbUser = $stmt->fetch();
+
+        $secret = TOTPHandler::generateSecret();
+        
+        // Uložíme secret, ale 2FA zatím není "enabled" (musí se nejprve potvrdit kódem)
+        $update = $api->db->prepare("UPDATE users SET totp_secret = ?, is_2fa_enabled = 0 WHERE id = ?");
+        $update->execute([$secret, $user['user_id']]);
+
+        // Název pro zobrazení v aplikaci (např. Google Authenticator)
+        $qrCodeUrl = TOTPHandler::getQRCodeUrl('Pivoo.cz', $dbUser['email'], $secret);
+
+        $api->response->sendSuccess("QR kód byl vygenerován.", [
+            "qr_url" => $qrCodeUrl,
+            "secret" => $secret
+        ]);
+    } catch (Exception $e) {
+        $api->response->sendError("Chyba při přípravě 2FA.", 500);
+    }
+}
+
+// 2. Potvrzení (aktivace) 2FA po zadání kódu z mobilu
+if ($action === 'confirm_2fa') {
+    $code = $api->request->getParam('totp_code');
+    if (!$code) $api->response->sendError("Zadejte kód z aplikace.", 400);
+
+    $stmt = $api->db->prepare("SELECT totp_secret FROM users WHERE id = ?");
+    $stmt->execute([$user['user_id']]);
+    $dbUser = $stmt->fetch();
+
+    if ($dbUser && !empty($dbUser['totp_secret'])) {
+        if (TOTPHandler::verifyCode($dbUser['totp_secret'], $code)) {
+            $update = $api->db->prepare("UPDATE users SET is_2fa_enabled = 1 WHERE id = ?");
+            $update->execute([$user['user_id']]);
+            $api->response->sendSuccess("Dvoufázové ověření bylo úspěšně aktivováno.");
+        } else {
+            $api->response->sendError("Neplatný kód. Zkuste to znovu.", 400);
+        }
+    } else {
+        $api->response->sendError("Chybí secret klíč. Zkuste to znovu od začátku.", 400);
+    }
+}
+
+// 3. Vypnutí 2FA
+if ($action === 'disable_2fa') {
+    try {
+        $update = $api->db->prepare("UPDATE users SET is_2fa_enabled = 0, totp_secret = NULL WHERE id = ?");
+        $update->execute([$user['user_id']]);
+        $api->response->sendSuccess("Dvoufázové ověření bylo vypnuto.");
+    } catch (Exception $e) {
+        $api->response->sendError("Chyba při vypínání 2FA.", 500);
+    }
+}
 
 if ($action === 'update_currency') {
     $currency_raw = $api->request->getParam('default_currency');

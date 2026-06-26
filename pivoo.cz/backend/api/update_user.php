@@ -14,6 +14,13 @@ if (!$id || !$username || !$email) {
 }
 
 try {
+    // Novinka: Administrátor může resetovat (vypnout) 2FA
+    $reset_2fa = $api->request->getParam('reset_2fa');
+    if ($reset_2fa) {
+        $reset_stmt = $api->db->prepare("UPDATE users SET totp_secret = NULL, is_2fa_enabled = 0 WHERE id = ?");
+        $reset_stmt->execute([$id]);
+    }
+
     $query = "UPDATE users 
               SET username = ?, first_name = ?, last_name = ?, email = ?, role = ? 
               WHERE id = ?";

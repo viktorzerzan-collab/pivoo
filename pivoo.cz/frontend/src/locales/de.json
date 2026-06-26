@@ -399,7 +399,9 @@
       "password": "Passwort",
       "password_placeholder": "••••••••",
       "no_account": "Hast du noch kein Konto?",
-      "register_here": "Hier registrieren"
+      "register_here": "Hier registrieren",
+      "totp_code": "Bestätigungscode (2FA)",
+      "totp_placeholder": "6-stelligen Code eingeben"
     },
     "register": {
       "title": "Neue Registrierung",
@@ -458,7 +460,16 @@
       "delete_confirm_title": "Konto löschen?",
       "delete_confirm_desc": "Um die Löschung des Kontos zu bestätigen, gib bitte dein aktuelles Passwort ein.",
       "delete_password": "Dein Passwort *",
-      "delete_submit": "Ja, alles löschen"
+      "delete_submit": "Ja, alles löschen",
+      "two_fa_title": "Zwei-Faktor-Authentifizierung (2FA)",
+      "two_fa_desc": "Erhöhe die Sicherheit deines Kontos. Bei der Anmeldung wird ein Code aus einer mobilen App (z.B. Google Authenticator) erforderlich sein.",
+      "two_fa_enabled": "Zwei-Faktor-Authentifizierung ist AKTIV",
+      "two_fa_disable_btn": "2FA deaktivieren",
+      "two_fa_enable_btn": "2FA aktivieren",
+      "two_fa_setup_instructions": "Scanne den QR-Code in deiner Authentifizierungs-App und gib den generierten Code unten ein.",
+      "two_fa_backup_key": "Sicherheitsschlüssel für manuelle Eingabe:",
+      "two_fa_verification_code": "6-stelliger Code aus der App",
+      "two_fa_verify_btn": "Überprüfen und aktivieren"
     },
     "wishlist": {
       "no_beers": "Du hast hier noch keine Biere.",
@@ -485,7 +496,8 @@
     "record_deleted": "Eintrag gelöscht.",
     "delete_error": "Fehler beim Löschen.",
     "theme_saved": "Erscheinungsbild gespeichert.",
-    "theme_error": "Fehler beim Speichern der Einstellungen."
+    "theme_error": "Fehler beim Speichern der Einstellungen.",
+    "two_fa_reset_success": "2FA wurde für den Benutzer erfolgreich deaktiviert."
   },
   "catalog": {
     "add_beer": "Bier hinzufügen",
@@ -595,7 +607,9 @@
       "edit": "Bearbeiten",
       "delete": "Löschen",
       "approve": "Eintrag genehmigen",
-      "reject": "Ablehnen und löschen"
+      "reject": "Ablehnen und löschen",
+      "reset_2fa": "2FA für Benutzer deaktivieren",
+      "reset_2fa_confirm": "Bist du sicher, dass du die Zwei-Faktor-Authentifizierung für den Benutzer {user} notfallmäßig deaktivieren möchtest?"
     },
     "empty_search": "Keine Einträge entsprechen deiner Suche.",
     "showing": "Angezeigt",

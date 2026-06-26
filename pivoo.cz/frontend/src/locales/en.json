@@ -399,7 +399,9 @@
       "password": "Password",
       "password_placeholder": "••••••••",
       "no_account": "Don't have an account?",
-      "register_here": "Register here"
+      "register_here": "Register here",
+      "totp_code": "Verification code (2FA)",
+      "totp_placeholder": "Enter 6-digit code"
     },
     "register": {
       "title": "New registration",
@@ -458,7 +460,16 @@
       "delete_confirm_title": "Delete account?",
       "delete_confirm_desc": "To confirm account deletion, please enter your current password.",
       "delete_password": "Your password *",
-      "delete_submit": "Yes, delete everything"
+      "delete_submit": "Yes, delete everything",
+      "two_fa_title": "Two-Factor Authentication (2FA)",
+      "two_fa_desc": "Increase your account security. A code from a mobile app (e.g. Google Authenticator) will be required when logging in.",
+      "two_fa_enabled": "Two-Factor Authentication is ENABLED",
+      "two_fa_disable_btn": "Disable 2FA",
+      "two_fa_enable_btn": "Enable 2FA",
+      "two_fa_setup_instructions": "Scan the QR code in your authenticator app and enter the generated code below.",
+      "two_fa_backup_key": "Backup key for manual entry:",
+      "two_fa_verification_code": "6-digit code from the app",
+      "two_fa_verify_btn": "Verify and enable"
     },
     "wishlist": {
       "no_beers": "You don't have any beers here yet.",
@@ -485,7 +496,8 @@
     "record_deleted": "Entry deleted.",
     "delete_error": "Error deleting.",
     "theme_saved": "Appearance settings saved.",
-    "theme_error": "Error saving settings."
+    "theme_error": "Error saving settings.",
+    "two_fa_reset_success": "2FA has been successfully disabled for the user."
   },
   "catalog": {
     "add_beer": "Add beer",
@@ -595,7 +607,9 @@
       "edit": "Edit",
       "delete": "Delete",
       "approve": "Approve record",
-      "reject": "Reject and delete"
+      "reject": "Reject and delete",
+      "reset_2fa": "Disable user's 2FA",
+      "reset_2fa_confirm": "Are you sure you want to emergency disable Two-Factor Authentication for user {user}?"
     },
     "empty_search": "No records match your search.",
     "showing": "Showing",

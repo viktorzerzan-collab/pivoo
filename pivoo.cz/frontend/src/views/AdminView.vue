@@ -89,6 +89,13 @@
                         <template #icon><PencilIcon :size="16" /></template>
                       </BaseButton>
                     </BaseTooltip>
+                    
+                    <BaseTooltip v-if="u.is_2fa_enabled" :text="$t('admin.tooltips.reset_2fa')" position="top-end">
+                      <BaseButton variant="secondary" :isIconOnly="true" @click="handleReset2FA(u)">
+                        <template #icon><ShieldOffIcon :size="16" /></template>
+                      </BaseButton>
+                    </BaseTooltip>
+
                     <BaseTooltip v-if="u?.id !== user?.id" :text="$t('admin.tooltips.change_pwd')" position="top-end">
                       <BaseButton variant="add" :isIconOnly="true" @click="openPasswordModal(u)">
                         <template #icon><KeyIcon :size="16" /></template>
@@ -274,7 +281,7 @@ import { storeToRefs } from 'pinia'
 import { 
   PlusCircleIcon, PencilIcon, Trash2Icon, KeyIcon, BanIcon, 
   UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
-  GitMergeIcon, ListChecksIcon, CheckIcon, BarcodeIcon
+  GitMergeIcon, ListChecksIcon, CheckIcon, BarcodeIcon, ShieldOffIcon
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '../api'
@@ -453,6 +460,34 @@ onMounted(() => {
 })
 
 onUnmounted(() => { window.removeEventListener('resize', handleResize); if (observer) observer.disconnect() })
+
+// Akce administrátora: Vyresetování 2FA uživateli
+const handleReset2FA = async (u) => {
+  if (!confirm(t('admin.tooltips.reset_2fa_confirm', { user: u.username }))) return;
+  try {
+    const payload = {
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      first_name: u.first_name,
+      last_name: u.last_name,
+      role: u.role,
+      reset_2fa: true
+    };
+    const res = await apiFetch('/update_user.php', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    if (res.status === 'success') {
+      toastStore.showToast(t('toast.two_fa_reset_success'), 'toast-success');
+      fetchUsers();
+    } else {
+      toastStore.showToast(res.message || 'Error', 'toast-error');
+    }
+  } catch (e) {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error');
+  }
+}
 
 const openAddModal = (t) => { 
   isEditing.value = false

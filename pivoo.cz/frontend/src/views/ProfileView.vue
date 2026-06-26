@@ -100,6 +100,59 @@
             </form>
           </BasePanel>
 
+          <BasePanel :title="$t('views.profile.two_fa_title')" :icon="ShieldIcon">
+            <p class="setting-desc">{{ $t('views.profile.two_fa_desc') }}</p>
+            
+            <div v-if="user?.is_2fa_enabled" class="two-fa-status-active">
+              <span class="badge role_admin" style="background-color: #10b981; color: white; margin-bottom: 1rem; padding: 0.5rem 1rem; display: inline-block;">
+                {{ $t('views.profile.two_fa_enabled') }}
+              </span>
+              <div>
+                <BaseButton @click="disable2fa" variant="danger" :disabled="is2faLoading">
+                  {{ $t('views.profile.two_fa_disable_btn') }}
+                </BaseButton>
+              </div>
+            </div>
+
+            <div v-else-if="!show2faSetup">
+              <BaseButton @click="initiate2fa" variant="add" :disabled="is2faLoading">
+                {{ $t('views.profile.two_fa_enable_btn') }}
+              </BaseButton>
+            </div>
+
+            <div v-else class="two-fa-setup-wrapper">
+              <p class="setting-desc" style="font-weight: 500;">{{ $t('views.profile.two_fa_setup_instructions') }}</p>
+              
+              <div class="qr-container" style="background: white; padding: 1rem; display: inline-block; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem;">
+                <img :src="qrCodeUrl" alt="2FA QR Code" style="display: block; max-width: 200px; height: auto;" />
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <small class="username">{{ $t('views.profile.two_fa_backup_key') }} <code style="background: var(--bg-app); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--text-main); font-weight: bold; letter-spacing: 1px;">{{ totpSecret }}</code></small>
+              </div>
+
+              <form @submit.prevent="confirm2fa" style="max-width: 300px; display: flex; flex-direction: column; gap: 1rem;">
+                <BaseInput 
+                  v-model="twoFaCode" 
+                  type="text" 
+                  inputmode="numeric" 
+                  pattern="[0-9]*" 
+                  maxlength="6" 
+                  :label="$t('views.profile.two_fa_verification_code')" 
+                  required 
+                />
+                <div style="display: flex; gap: 1rem;">
+                  <BaseButton type="button" variant="secondary" style="background: var(--bg-app); border: 1px solid var(--border); color: var(--text-main);" @click="show2faSetup = false; twoFaCode = ''">
+                    {{ $t('buttons.cancel') }}
+                  </BaseButton>
+                  <BaseButton type="submit" variant="primary" :disabled="is2faLoading || twoFaCode.length !== 6">
+                    {{ $t('views.profile.two_fa_verify_btn') }}
+                  </BaseButton>
+                </div>
+              </form>
+            </div>
+          </BasePanel>
+
           <BasePanel :title="$t('views.profile.danger_zone')" :icon="AlertTriangleIcon" class="danger-zone">
             <p class="setting-desc">{{ $t('views.profile.danger_desc') }}</p>
             <BaseButton @click="showDeleteModal = true" variant="danger">{{ $t('views.profile.delete_account') }}</BaseButton>
@@ -150,7 +203,7 @@
         <form @submit.prevent="deleteAccount">
           <BaseInput v-model="deletePassword" type="password" :label="$t('views.profile.delete_password')" required style="margin-bottom:1.5rem;" />
           <div style="display:flex; gap:1rem;">
-             <BaseButton type="button" variant="secondary" style="flex:1; background:var(--bg-app); border:1px solid var(--border); color:var(--text-main);" @click="showDeleteModal = false">{{ $t('buttons.cancel') }}</BaseButton>
+             <BaseButton type="button" variant="secondary" style="background:var(--bg-app); border:1px solid var(--border); color:var(--text-main);" @click="showDeleteModal = false">{{ $t('buttons.cancel') }}</BaseButton>
              <BaseButton type="submit" variant="danger" style="flex:1;">{{ $t('views.profile.delete_submit') }}</BaseButton>
           </div>
         </form>
@@ -180,7 +233,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { 
-  KeyIcon, SunMoonIcon, ClockIcon, AlertTriangleIcon, BanknoteIcon, SettingsIcon, HistoryIcon 
+  KeyIcon, SunMoonIcon, ClockIcon, AlertTriangleIcon, BanknoteIcon, SettingsIcon, HistoryIcon, ShieldIcon
 } from 'lucide-vue-next'
 
 import BaseLoader from '../components/BaseLoader.vue'
@@ -236,6 +289,13 @@ const localCurrency = ref('CZK')
 
 const showDeleteModal = ref(false)
 const deletePassword = ref('')
+
+// Stav pro 2FA
+const show2faSetup = ref(false)
+const qrCodeUrl = ref('')
+const totpSecret = ref('')
+const twoFaCode = ref('')
+const is2faLoading = ref(false)
 
 // Historie - Stav
 const isHistoryLoading = ref(false)
@@ -515,6 +575,74 @@ const changePassword = async () => {
     }
   } catch (err) {
     toastStore.showToast('Chyba komunikace se serverem.', 'toast-error')
+  }
+}
+
+// === 2FA LOGIKA ===
+const initiate2fa = async () => {
+  is2faLoading.value = true
+  try {
+    const res = await apiFetch('/update_profile.php', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'setup_2fa' })
+    })
+    if (res.status === 'success') {
+      qrCodeUrl.value = res.qr_url
+      totpSecret.value = res.secret
+      show2faSetup.value = true
+    } else {
+      toastStore.showToast(res.message || 'Chyba inicializace 2FA.', 'toast-error')
+    }
+  } catch (err) {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+  } finally {
+    is2faLoading.value = false
+  }
+}
+
+const confirm2fa = async () => {
+  if (twoFaCode.value.length !== 6) return
+  is2faLoading.value = true
+  try {
+    const res = await apiFetch('/update_profile.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'confirm_2fa',
+        totp_code: twoFaCode.value
+      })
+    })
+    if (res.status === 'success') {
+      authStore.updateUser({ is_2fa_enabled: true })
+      toastStore.showToast(res.message, 'toast-success')
+      show2faSetup.value = false
+      twoFaCode.value = ''
+    } else {
+      toastStore.showToast(res.message || 'Neplatný kód.', 'toast-error')
+    }
+  } catch (err) {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+  } finally {
+    is2faLoading.value = false
+  }
+}
+
+const disable2fa = async () => {
+  is2faLoading.value = true
+  try {
+    const res = await apiFetch('/update_profile.php', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'disable_2fa' })
+    })
+    if (res.status === 'success') {
+      authStore.updateUser({ is_2fa_enabled: false })
+      toastStore.showToast(res.message, 'toast-success')
+    } else {
+      toastStore.showToast(res.message || 'Chyba při vypínání 2FA.', 'toast-error')
+    }
+  } catch (err) {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+  } finally {
+    is2faLoading.value = false
   }
 }
 

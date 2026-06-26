@@ -1,6 +1,7 @@
 <?php
 // backend/api/login.php
 require_once '../core/ApiHandler.php';
+require_once '../core/TOTPHandler.php'; // Přidáno pro 2FA
 
 function getClientIp() {
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
@@ -17,6 +18,7 @@ $api = new ApiHandler();
 try {
     $username = $api->request->getParam('username');
     $password = $api->request->getParam('password');
+    $totp_code = $api->request->getParam('totp_code'); // Může být prázdné při prvním kroku
 
     if (!$username || !$password) {
         $api->response->sendError("Zadejte jméno a heslo.", 400);
@@ -41,8 +43,8 @@ try {
         }
     }
 
-    // 2. OVĚŘENÍ UŽIVATELE
-    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference, is_banned, default_currency 
+    // 2. OVĚŘENÍ UŽIVATELE (přidány sloupce pro 2FA)
+    $query = "SELECT id, username, first_name, last_name, password_hash, role, avatar, theme_mode, theme_preference, is_banned, default_currency, totp_secret, is_2fa_enabled 
               FROM users WHERE username = ? OR email = ? LIMIT 1";
     $stmt = $api->db->prepare($query);
     $stmt->execute([$username, $username]);
@@ -53,6 +55,20 @@ try {
         // KONTROLA BANU
         if (isset($user['is_banned']) && $user['is_banned'] == 1) {
             $api->response->sendError("Váš účet byl zablokován administrátorem.", 403);
+        }
+
+        // KONTROLA 2FA (DVOUFAKTOROVÉ OVĚŘENÍ)
+        if (isset($user['is_2fa_enabled']) && $user['is_2fa_enabled'] == 1) {
+            if (empty($totp_code)) {
+                // Pokud uživatel nezadal kód, vrátíme speciální odpověď, aby si frontend vyžádal kód
+                $api->response->sendSuccess("Vyžadováno 2FA.", ["require_2fa" => true]);
+                exit; // Ukončíme skript, čekáme na další požadavek s kódem
+            } else {
+                // Uživatel zadal kód, ověříme ho
+                if (!TOTPHandler::verifyCode($user['totp_secret'], $totp_code)) {
+                    $api->response->sendError("Neplatný dvoufázový kód.", 401);
+                }
+            }
         }
 
         // Vymazání záznamů o neúspěšných pokusech pro tuto IP
@@ -68,7 +84,8 @@ try {
             "avatar" => $user['avatar'],
             "theme_mode" => $user['theme_mode'] ?? 'manual',
             "theme_preference" => $user['theme_preference'] ?? 'light',
-            "default_currency" => $user['default_currency'] ?? 'CZK'
+            "default_currency" => $user['default_currency'] ?? 'CZK',
+            "is_2fa_enabled" => (bool)$user['is_2fa_enabled'] // Pošleme frontendu stav 2FA
         ];
 
         $token = JwtHandler::encode([
@@ -78,7 +95,8 @@ try {
 
         $api->response->sendSuccess("Přihlášení úspěšné.", [
             "user" => $userData,
-            "token" => $token
+            "token" => $token,
+            "require_2fa" => false
         ]);
     } else {
         // PŘIHLÁŠENÍ SELHALO
