@@ -26,7 +26,7 @@ export const useCatalogStore = defineStore('catalog', {
     error: null,
   }),
   actions: {
-    // PŘIDÁNO: Nová metoda pro explicitní vynucení obnovy všech dat (tichý režim bez rušivého načítání)
+    // Nová metoda pro explicitní vynucení obnovy všech dat (tichý režim bez rušivého načítání)
     async forceRefresh() {
       await this.fetchAllData(true, true)
     },
@@ -139,7 +139,17 @@ export const useCatalogStore = defineStore('catalog', {
     },
     addLocationLocally(location) {
       this.locations.unshift(location)
-      this.allLocations.unshift({ id: location.id, name: location.name, type: location.type, city: location.city, is_favorite: location.is_favorite || 0, is_wishlist: location.is_wishlist || 0 })
+      // ZMĚNA: Přidáno lat a lng do vkládaného objektu pro allLocations
+      this.allLocations.unshift({ 
+        id: location.id, 
+        name: location.name, 
+        type: location.type, 
+        city: location.city, 
+        lat: location.lat, 
+        lng: location.lng, 
+        is_favorite: location.is_favorite || 0, 
+        is_wishlist: location.is_wishlist || 0 
+      })
     },
     
     addCheckinLocally(record) {

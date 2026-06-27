@@ -12,12 +12,15 @@ $userRole = $decoded ? $decoded['role'] : 'user';
 try {
     if (isset($_GET['compact']) && $_GET['compact'] == 1) {
         $includeAll = isset($_GET['include_all']) && $_GET['include_all'] == 1;
-        $where = "loc.is_approved = 1";
+        
+        // Uživatel vidí schválené lokace PLUS své vlastní neschválené lokace
+        $where = "(loc.is_approved = 1 OR loc.created_by = :uid)";
         if (!$includeAll) { 
             $where .= " AND loc.type != 'jine'"; 
         }
         
-        $query = "SELECT loc.id, loc.name, loc.type, loc.city, 
+        // Přidáno loc.lat a loc.lng
+        $query = "SELECT loc.id, loc.name, loc.type, loc.city, loc.lat, loc.lng,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                          IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
                   FROM locations loc 
@@ -46,7 +49,8 @@ try {
     if ($status === 'pending' && $userRole === 'admin') {
         $whereParts[] = "loc.is_approved = 0";
     } else {
-        $whereParts[] = "loc.is_approved = 1";
+        // Viditelnost vlastních neschválených lokací ve standardním seznamu
+        $whereParts[] = "(loc.is_approved = 1 OR loc.created_by = :uid)";
     }
 
     if (!$includeAll) {
@@ -80,10 +84,15 @@ try {
     if (trim($country) !== '') {
         $countJoins .= " LEFT JOIN countries c ON loc.country_id = c.id";
     }
+    
     $countQuery = "SELECT COUNT(loc.id) as total FROM locations loc $countJoins $whereSql";
     
     $countParams = $params;
-    unset($countParams[':uid']);
+    // ZMĚNA: Pokud je status 'pending' a uživatel admin, :uid v dotazu COUNT vůbec nefiguruje, proto ho z parametrů pro COUNT smažeme
+    if ($status === 'pending' && $userRole === 'admin') {
+        unset($countParams[':uid']);
+    }
+    
     $countStmt = $api->db->prepare($countQuery);
     $countStmt->execute($countParams);
     $totalItems = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -130,6 +139,6 @@ try {
     ]);
 } catch (PDOException $e) {
     error_log("DB Error (locations): " . $e->getMessage());
-    $api->response->sendError("Vnitřní chyba.", 500);
+    $api->response->sendError("Vnitřní chyba databáze.", 500);
 }
 ?>

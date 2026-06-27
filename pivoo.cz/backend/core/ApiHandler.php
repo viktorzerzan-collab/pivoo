@@ -31,5 +31,10 @@ class ApiHandler {
     public function requireAdmin() {
         return JwtHandler::checkAdmin();
     }
+
+    // Wrapper pro ověření běžného uživatele
+    public function requireUser() {
+        return JwtHandler::checkUser();
+    }
 }
 ?>

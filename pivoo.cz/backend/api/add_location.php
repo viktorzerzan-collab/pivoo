@@ -4,7 +4,9 @@ require_once '../core/ApiHandler.php';
 
 // Inicializace
 $api = new ApiHandler();
-$user = $api->requireAdmin();
+
+// ZMĚNA: Umožníme přidávat lokace všem přihlášeným uživatelům (nejen adminům)
+$user = $api->requireUser(); 
 
 $name = $api->request->getParam('name');
 $type = $api->request->getParam('type');
@@ -13,9 +15,13 @@ if (!$name || !$type) {
     $api->response->sendError("Název a typ místa jsou povinné údaje.", 400);
 }
 
+// ZMĚNA: Admin schvaluje rovnou, pro běžného uživatele jde lokace do fronty ke schválení
+$is_approved = (isset($user['role']) && $user['role'] === 'admin') ? 1 : 0;
+
 try {
+    // ZMĚNA: Místo natvrdo napsané 1 v SQL dotazu vložíme parametr pro is_approved
     $query = "INSERT INTO locations (name, type, city, country_id, address, zip_code, email, phone, website, lat, lng, opening_hours, is_approved, created_by) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $stmt = $api->db->prepare($query);
     
@@ -43,10 +49,20 @@ try {
         $lat,
         $lng,
         $opening_hours,
+        $is_approved, // Doplněná proměnná z logiky výše
         $user['user_id']
     ])) {
         $new_id = $api->db->lastInsertId();
-        $api->response->sendSuccess("Nové místo bylo úspěšně přidáno.", ["id" => $new_id]);
+        
+        // ZMĚNA: Zpráva a návratová data odráží stav schválení
+        $message = $is_approved ? "Nové místo bylo úspěšně přidáno." : "Místo bylo přidáno a čeká na schválení administrátorem.";
+        
+        $api->response->sendSuccess($message, [
+            "id" => $new_id,
+            "is_approved" => $is_approved,
+            "lat" => $lat,
+            "lng" => $lng
+        ]);
     } else {
         $api->response->sendError("Nepodařilo se uložit místo.", 500);
     }
