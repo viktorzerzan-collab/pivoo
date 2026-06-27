@@ -27,10 +27,23 @@
             </option>
           </BaseSelect>
           
-          <GeoLocateButton 
-            :isLocating="isLocating" 
-            @locate="autodetectLocation" 
-          />
+          <div class="location-actions">
+            <GeoLocateButton 
+              :isLocating="isLocating" 
+              @locate="autodetectLocation" 
+            />
+            
+            <BaseTooltip :text="$t('modals.checkin.add_location_tooltip') || 'Přidat nový podnik'" position="top-end">
+              <button 
+                type="button" 
+                class="btn-add-loc is-icon-only" 
+                @click="$emit('open-add-location', tempCoords)"
+                aria-label="Přidat podnik"
+              >
+                <PlusIcon />
+              </button>
+            </BaseTooltip>
+          </div>
         </div>
 
         <div v-if="locationMessage" class="location-message" :class="locationMessageType">
@@ -180,11 +193,39 @@
       </form>
     </template>
   </BaseModal>
+
+  <BaseModal :show="showNearbyModal" @close="showNearbyModal = false" customStyle="max-width: 400px; z-index: 1000;">
+    <template #header>
+      <h3 style="margin:0; font-size: 1.25rem; color: var(--text-main);">
+        {{ $t('modals.checkin.nearby_title') || 'Vyberte podnik v okolí' }}
+      </h3>
+    </template>
+    <template #body>
+      <div class="nearby-list">
+        <button 
+          v-for="loc in nearbyLocations" 
+          :key="loc.id"
+          type="button"
+          class="nearby-item"
+          @click="selectNearbyLocation(loc)"
+        >
+          <div class="nearby-info">
+            <strong class="nearby-name">{{ loc.is_favorite ? '⭐' : '📍' }} {{ translateLocation(loc.name) }}</strong>
+            <span class="nearby-dist">{{ (loc.distance * 1000).toFixed(0) }} m</span>
+          </div>
+          <div class="nearby-address" v-if="loc.address">{{ loc.address }}</div>
+        </button>
+      </div>
+      <BaseButton type="button" variant="outline" @click="showNearbyModal = false" style="width: 100%; margin-top: 1rem;">
+        {{ $t('common.cancel') || 'Zrušit' }}
+      </BaseButton>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { PencilIcon, PlusCircleIcon, CameraIcon, XIcon } from 'lucide-vue-next'
+import { PencilIcon, PlusCircleIcon, CameraIcon, XIcon, PlusIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -194,6 +235,7 @@ import BaseDatePicker from '../BaseDatePicker.vue'
 import StarRating from '../StarRating.vue'
 import BaseCheckbox from '../BaseCheckbox.vue'
 import GeoLocateButton from '../GeoLocateButton.vue'
+import BaseTooltip from '../BaseTooltip.vue'
 import MagicScanner from '../MagicScanner.vue'
 import BackgroundWatermark from '../BackgroundWatermark.vue'
 
@@ -221,6 +263,9 @@ const isLocating = ref(false)
 const locationMessage = ref('')
 const locationMessageType = ref('')
 const tempCoords = ref(null)
+
+const showNearbyModal = ref(false)
+const nearbyLocations = ref([])
 
 const isAiUpdating = ref(false)
 const isCompressing = ref(false)
@@ -325,6 +370,8 @@ watch(() => props.form.is_free, (isFree) => {
 watch(() => props.show, (newVal) => {
   if (newVal) {
     locationMessage.value = ''
+    showNearbyModal.value = false
+    nearbyLocations.value = []
     
     existingPhotos.value = props.isEditing && props.form.photos ? [...props.form.photos] : []
     removedPhotoIds.value = []
@@ -476,7 +523,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 
 const autodetectLocation = () => {
   if (!navigator.geolocation) {
-    locationMessage.value = 'Geolokace není prohlížečem podporována.'
+    locationMessage.value = t('modals.checkin.geolocation_not_supported') || 'Geolokace není prohlížečem podporována.'
     locationMessageType.value = 'error'
     return
   }
@@ -491,36 +538,50 @@ const autodetectLocation = () => {
       const lng = pos.coords.longitude
       tempCoords.value = { lat, lng }
 
-      let nearestLoc = null
-      let minDistance = Infinity
+      const nearby = []
 
       catalogStore.allLocations.forEach(loc => {
         if (loc.lat && loc.lng) {
           const dist = calculateDistance(lat, lng, loc.lat, loc.lng)
-          if (dist < minDistance) {
-            minDistance = dist
-            nearestLoc = loc
+          // Zvýšený limit na 150 metrů (0.150 km)
+          if (dist <= 0.150) {
+            nearby.push({ ...loc, distance: dist })
           }
         }
       })
 
-      if (nearestLoc && minDistance <= 0.05) {
-        props.form.location_id = nearestLoc.id
-        locationMessage.value = `📍 Nalezeno: ${translateLocation(nearestLoc.name)} (${(minDistance * 1000).toFixed(0)} m)`
+      // Seřazení od nejbližšího
+      nearby.sort((a, b) => a.distance - b.distance)
+
+      if (nearby.length === 1) {
+        props.form.location_id = nearby[0].id
+        locationMessage.value = `📍 Nalezeno: ${translateLocation(nearby[0].name)} (${(nearby[0].distance * 1000).toFixed(0)} m)`
+        locationMessageType.value = 'success'
+      } else if (nearby.length > 1) {
+        nearbyLocations.value = nearby
+        showNearbyModal.value = true
+        locationMessage.value = t('modals.checkin.multiple_locations') || 'Nalezeno více podniků v okolí.'
         locationMessageType.value = 'success'
       } else {
         props.form.location_id = ''
-        locationMessage.value = 'Žádný známý podnik v okolí 50m.'
+        locationMessage.value = t('modals.checkin.no_locations') || 'Žádný známý podnik v okolí 150m.'
         locationMessageType.value = 'warning'
       }
     },
     (err) => {
       isLocating.value = false
-      locationMessage.value = 'Nepodařilo se zjistit polohu. Zkontrolujte oprávnění.'
+      locationMessage.value = t('modals.checkin.location_error') || 'Nepodařilo se zjistit polohu. Zkontrolujte oprávnění.'
       locationMessageType.value = 'error'
     },
     { enableHighAccuracy: true, timeout: 10000 }
   )
+}
+
+const selectNearbyLocation = (loc) => {
+  props.form.location_id = loc.id
+  locationMessage.value = `📍 Vybráno: ${translateLocation(loc.name)} (${(loc.distance * 1000).toFixed(0)} m)`
+  locationMessageType.value = 'success'
+  showNearbyModal.value = false
 }
 
 const sortedBeers = computed(() => {
@@ -559,6 +620,41 @@ watch(() => props.form.location_id, () => {
   align-items: flex-end; 
   gap: 0.5rem; 
   flex-wrap: nowrap; 
+}
+
+.location-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Skleněný styl nového tlačítka – zkopírováno z GeoLocateButton */
+.btn-add-loc { 
+  height: 38px !important; 
+  width: 38px !important; 
+  flex-shrink: 0; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  background-color: transparent;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  color: var(--text-muted); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-sm); 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  padding: 0 !important; 
+}
+.btn-add-loc:hover { 
+  background-color: rgba(250, 204, 21, 0.1); 
+  border-color: var(--primary); 
+  color: var(--primary); 
+}
+.btn-add-loc :deep(svg) {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0;
+  margin: 0 !important;
 }
 
 .location-message { font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-weight: 600; margin-top: -0.5rem; }
@@ -605,6 +701,55 @@ watch(() => props.form.location_id, () => {
 .add-photo-btn:hover { background: var(--bg-panel); }
 .icon-muted { color: var(--text-muted); }
 .hidden-input { display: none; }
+
+/* Styly pro seznam okolních lokací */
+.nearby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+.nearby-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+.nearby-item:hover {
+  border-color: var(--primary);
+  background: var(--bg-panel);
+}
+.nearby-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+.nearby-name {
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 1rem;
+}
+.nearby-dist {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: rgba(250, 204, 21, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+.nearby-address {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
 
 @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 

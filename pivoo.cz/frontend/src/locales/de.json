@@ -308,6 +308,7 @@
       "add_brewery_link": "Neue Brauerei hinzufügen",
       "add_beer_link": "Bier zum Katalog hinzufügen",
       "add_location_link": "Neues Lokal hier hinzufügen",
+      "add_location_tooltip": "Neuen Ort hinzufügen",
       "date_label": "Wann war das?",
       "location_label": "Wo war das?",
       "brewery_label": "Brauerei",

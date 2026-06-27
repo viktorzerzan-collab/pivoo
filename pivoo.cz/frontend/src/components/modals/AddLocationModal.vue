@@ -42,6 +42,7 @@
           >
             <template #append-coords>
               <span v-if="isGeocoding" style="color: var(--blue); margin-left: 10px;">{{ $t('modals.add_location.geocoding') }}</span>
+              <span v-else-if="isAutoLocating" style="color: var(--primary); margin-left: 10px;">(Hledám vaši polohu...)</span>
             </template>
           </BaseMapPicker>
 
@@ -106,6 +107,7 @@ const { t } = useI18n()
 
 const duplicateWarning = ref('')
 const isGeocoding = ref(false)
+const isAutoLocating = ref(false)
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371
@@ -167,10 +169,36 @@ const handleLocationChange = ({ lat, lng }) => {
 watch(() => props.show, (isVisible) => {
   if (isVisible) {
     duplicateWarning.value = ''
+    isAutoLocating.value = false
+    
     nextTick(() => {
-      if (!props.isEditing && props.form.lat && props.form.lng && props.form.type !== 'jine') {
-        checkDuplicates(props.form.lat, props.form.lng)
-        fetchAddressFromGPS(props.form.lat, props.form.lng)
+      if (!props.isEditing && props.form.type !== 'jine') {
+        // Pokud už modul dostal souřadnice zvenku (např. z CheckIn modálu, kde uživatel polohu zjistil)
+        if (props.form.lat && props.form.lng) {
+          checkDuplicates(props.form.lat, props.form.lng)
+          fetchAddressFromGPS(props.form.lat, props.form.lng)
+        } else if (navigator.geolocation) {
+          // Jinak zkusíme automaticky zjistit polohu rovnou po otevření modálu
+          isAutoLocating.value = true
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              isAutoLocating.value = false
+              // Ochrana: aktualizujeme pouze pokud uživatel mezitím modál nezavřel a sám nevyplnil jinou polohu
+              if (props.show && !props.form.lat && !props.form.lng) {
+                props.form.lat = pos.coords.latitude.toFixed(8)
+                props.form.lng = pos.coords.longitude.toFixed(8)
+                
+                checkDuplicates(props.form.lat, props.form.lng)
+                fetchAddressFromGPS(props.form.lat, props.form.lng)
+              }
+            },
+            (err) => {
+              isAutoLocating.value = false
+              console.warn("Nepodařilo se automaticky zjistit polohu pro nový podnik:", err)
+            },
+            { enableHighAccuracy: true, timeout: 5000 }
+          )
+        }
       }
     })
   }
