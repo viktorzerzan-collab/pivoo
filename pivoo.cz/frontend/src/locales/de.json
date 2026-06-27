@@ -248,6 +248,7 @@
       "type_pub": "Kneipe / Bar",
       "type_shop": "Biergeschäft",
       "type_store": "Laden",
+      "type_city": "Stadt / Gemeinde",
       "type_other": "Sonstiges",
       "map_label": "Standort auf der Karte (Pin ziehen für automatische Adresse)",
       "geocoding": "(Adresse wird von der Karte geladen...)",
@@ -717,6 +718,7 @@
       "hospoda": "Kneipe / Bar",
       "pivoteka": "Biergeschäft",
       "obchod": "Laden",
+      "mesto": "Stadt / Gemeinde",
       "jine": "Sonstiges",
       "kavarna": "Café"
     },

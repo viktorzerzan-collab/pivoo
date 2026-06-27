@@ -248,6 +248,7 @@
       "type_pub": "Pub / Bar",
       "type_shop": "Beer shop",
       "type_store": "Store",
+      "type_city": "City / Town",
       "type_other": "Other",
       "map_label": "Location on map (drag the pin to auto-fill address)",
       "geocoding": "(Fetching address from map...)",
@@ -717,6 +718,7 @@
       "hospoda": "Pub / Bar",
       "pivoteka": "Beer shop",
       "obchod": "Store",
+      "mesto": "City / Town",
       "jine": "Other",
       "kavarna": "Café"
     },

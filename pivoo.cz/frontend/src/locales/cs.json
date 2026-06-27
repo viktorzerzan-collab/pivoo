@@ -248,6 +248,7 @@
       "type_pub": "Hospoda / Bar",
       "type_shop": "Pivotéka",
       "type_store": "Obchod",
+      "type_city": "Město / Obec",
       "type_other": "Jiné",
       "map_label": "Poloha na mapě (přetáhněte špendlík pro automatické načtení adresy)",
       "geocoding": "(Načítám adresu z mapy...)",
@@ -717,6 +718,7 @@
       "hospoda": "Hospoda / Bar",
       "pivoteka": "Pivotéka",
       "obchod": "Obchod",
+      "mesto": "Město / Obec",
       "jine": "Jiné",
       "kavarna": "Kavárna"
     },

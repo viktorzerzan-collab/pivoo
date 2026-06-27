@@ -28,6 +28,7 @@
           <option value="hospoda">{{ $t('modals.add_location.type_pub') }}</option>
           <option value="pivoteka">{{ $t('modals.add_location.type_shop') }}</option>
           <option value="obchod">{{ $t('modals.add_location.type_store') }}</option>
+          <option value="mesto">{{ $t('modals.add_location.type_city') }}</option>
           <option value="jine">{{ $t('modals.add_location.type_other') }}</option>
         </BaseSelect>
 

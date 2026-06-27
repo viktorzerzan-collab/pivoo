@@ -248,6 +248,7 @@
       "type_pub": "Pub / Bar",
       "type_shop": "Sklep z piwem",
       "type_store": "Sklep",
+      "type_city": "Miasto / Gmina",
       "type_other": "Inne",
       "map_label": "Lokalizacja na mapie (przesuń znacznik, aby pobrać adres)",
       "geocoding": "(Pobieranie adresu z mapy...)",
@@ -717,6 +718,7 @@
       "hospoda": "Pub / Bar",
       "pivoteka": "Sklep z piwem",
       "obchod": "Sklep",
+      "mesto": "Miasto / Gmina",
       "jine": "Inne",
       "kavarna": "Kawiarnia"
     },

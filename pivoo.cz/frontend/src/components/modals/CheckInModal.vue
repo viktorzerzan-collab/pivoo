@@ -23,7 +23,7 @@
           <BaseSelect v-model="form.location_id" :label="$t('modals.checkin.location_label')" searchable required style="flex: 1; min-width: 0;">
             <option disabled value="">{{ $t('modals.checkin.select_location') }}</option>
             <option v-for="loc in catalogStore.allLocations" :key="loc.id" :value="loc.id">
-              {{ loc.is_favorite ? '⭐' : '📍' }} {{ translateLocation(loc.name) }}
+              {{ loc.is_favorite ? '⭐' : (loc.type === 'mesto' ? '🏙️' : '📍') }} {{ translateLocation(loc.name) }}
             </option>
           </BaseSelect>
           
@@ -210,8 +210,11 @@
           @click="selectNearbyLocation(loc)"
         >
           <div class="nearby-info">
-            <strong class="nearby-name">{{ loc.is_favorite ? '⭐' : '📍' }} {{ translateLocation(loc.name) }}</strong>
-            <span class="nearby-dist">{{ (loc.distance * 1000).toFixed(0) }} m</span>
+            <strong class="nearby-name">
+              {{ loc.is_favorite ? '⭐' : (loc.type === 'mesto' ? '🏙️' : '📍') }} 
+              {{ translateLocation(loc.name) }}
+            </strong>
+            <span class="nearby-dist">{{ loc.type === 'mesto' ? 'Obec' : (loc.distance * 1000).toFixed(0) + ' m' }}</span>
           </div>
           <div class="nearby-address" v-if="loc.address">{{ loc.address }}</div>
         </button>
@@ -239,6 +242,7 @@ import BaseTooltip from '../BaseTooltip.vue'
 import MagicScanner from '../MagicScanner.vue'
 import BackgroundWatermark from '../BackgroundWatermark.vue'
 
+import { apiFetch } from '../../api'
 import { useCatalogStore } from '../../stores/catalog'
 import { useAuthStore } from '../../stores/auth'
 import { useToastStore } from '../../stores/toast'
@@ -532,16 +536,16 @@ const autodetectLocation = () => {
   locationMessage.value = ''
   
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      isLocating.value = false
+    async (pos) => {
       const lat = pos.coords.latitude
       const lng = pos.coords.longitude
       tempCoords.value = { lat, lng }
 
       const nearby = []
 
+      // Běžné vyhledávání okolních podniků
       catalogStore.allLocations.forEach(loc => {
-        if (loc.lat && loc.lng) {
+        if (loc.lat && loc.lng && loc.type !== 'mesto') {
           const dist = calculateDistance(lat, lng, loc.lat, loc.lng)
           // Zvýšený limit na 150 metrů (0.150 km)
           if (dist <= 0.150) {
@@ -550,12 +554,65 @@ const autodetectLocation = () => {
         }
       })
 
+      // Pokusit se zjistit obec přes Nominatim API a případně ji rovnou založit
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`)
+        const data = await res.json()
+        
+        if (data && data.address) {
+          const cityName = data.address.city || data.address.town || data.address.village
+          
+          if (cityName) {
+            // Hledáme přesný název u lokací typu město
+            let cityLoc = catalogStore.allLocations.find(l => l.type === 'mesto' && l.name === cityName)
+            
+            // Město ještě v databázi nemáme, automaticky ho založíme!
+            if (!cityLoc) {
+              const createRes = await apiFetch('/add_location.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                  name: cityName,
+                  type: 'mesto',
+                  city: cityName,
+                  lat: lat,
+                  lng: lng
+                })
+              })
+              
+              if (createRes.status === 'success') {
+                cityLoc = {
+                  id: createRes.data.id,
+                  name: cityName,
+                  type: 'mesto',
+                  city: cityName,
+                  lat: lat,
+                  lng: lng,
+                  is_favorite: 0,
+                  is_wishlist: 0
+                }
+                // Přidáme ho okamžitě do lokálního stavu, aby bylo k dispozici ve formuláři
+                catalogStore.addLocationLocally(cityLoc)
+              }
+            }
+            
+            if (cityLoc) {
+              // Přidáme ho na seznam s virtuální vzdáleností 0, aby bylo na prvním místě (nebo prioritně blízko)
+              nearby.push({ ...cityLoc, distance: 0 })
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Nepodařilo se zjistit obec pro Check-in:", e)
+      }
+
       // Seřazení od nejbližšího
       nearby.sort((a, b) => a.distance - b.distance)
 
+      isLocating.value = false
+
       if (nearby.length === 1) {
         props.form.location_id = nearby[0].id
-        locationMessage.value = t('modals.checkin.found_location', { name: translateLocation(nearby[0].name), dist: (nearby[0].distance * 1000).toFixed(0) })
+        locationMessage.value = t('modals.checkin.found_location', { name: translateLocation(nearby[0].name), dist: nearby[0].type === 'mesto' ? 'Město' : (nearby[0].distance * 1000).toFixed(0) })
         locationMessageType.value = 'success'
       } else if (nearby.length > 1) {
         nearbyLocations.value = nearby
@@ -579,7 +636,7 @@ const autodetectLocation = () => {
 
 const selectNearbyLocation = (loc) => {
   props.form.location_id = loc.id
-  locationMessage.value = t('modals.checkin.selected_location', { name: translateLocation(loc.name), dist: (loc.distance * 1000).toFixed(0) })
+  locationMessage.value = t('modals.checkin.selected_location', { name: translateLocation(loc.name), dist: loc.type === 'mesto' ? 'Město' : (loc.distance * 1000).toFixed(0) })
   locationMessageType.value = 'success'
   showNearbyModal.value = false
 }
