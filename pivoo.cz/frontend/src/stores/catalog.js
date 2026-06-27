@@ -138,18 +138,23 @@ export const useCatalogStore = defineStore('catalog', {
       this.allBreweries.unshift({ id: brewery.id, name: brewery.name, is_favorite: brewery.is_favorite || 0, is_wishlist: brewery.is_wishlist || 0 })
     },
     addLocationLocally(location) {
-      this.locations.unshift(location)
-      // ZMĚNA: Přidáno lat a lng do vkládaného objektu pro allLocations
-      this.allLocations.unshift({ 
-        id: location.id, 
-        name: location.name, 
-        type: location.type, 
-        city: location.city, 
-        lat: location.lat, 
-        lng: location.lng, 
-        is_favorite: location.is_favorite || 0, 
-        is_wishlist: location.is_wishlist || 0 
-      })
+      // Ochrana proti duplicitnímu uložení (důležité při automatickém zakládání měst)
+      if (!this.locations.some(loc => loc.id === location.id)) {
+        this.locations.unshift(location)
+      }
+      
+      if (!this.allLocations.some(loc => loc.id === location.id)) {
+        this.allLocations.unshift({ 
+          id: location.id, 
+          name: location.name, 
+          type: location.type, 
+          city: location.city, 
+          lat: location.lat, 
+          lng: location.lng, 
+          is_favorite: location.is_favorite || 0, 
+          is_wishlist: location.is_wishlist || 0 
+        })
+      }
     },
     
     addCheckinLocally(record) {

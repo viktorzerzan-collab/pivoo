@@ -47,12 +47,17 @@
             </template>
           </BaseMapPicker>
 
-          <BaseInput v-model="form.address" :label="$t('modals.add_brewery.address')" />
+          <template v-if="form.type !== 'mesto'">
+            <BaseInput v-model="form.address" :label="$t('modals.add_brewery.address')" />
 
-          <div class="form-row">
-            <BaseInput v-model="form.city" :label="$t('modals.add_brewery.city')" class="half" />
-            <BaseInput v-model="form.zip_code" :label="$t('modals.add_brewery.zip')" class="half" />
-          </div>
+            <div class="form-row">
+              <BaseInput v-model="form.city" :label="$t('modals.add_brewery.city')" class="half" />
+              <BaseInput v-model="form.zip_code" :label="$t('modals.add_brewery.zip')" class="half" />
+            </div>
+          </template>
+          <template v-else>
+            <BaseInput v-model="form.zip_code" :label="$t('modals.add_brewery.zip')" />
+          </template>
 
           <BaseSelect v-model="form.country_id" :label="$t('modals.add_brewery.country')">
             <option v-for="c in countries" :key="c.id" :value="c.id">
@@ -60,14 +65,16 @@
             </option>
           </BaseSelect>
 
-          <div class="form-row">
-            <BaseInput v-model="form.email" type="email" :label="$t('modals.add_brewery.email')" class="half" />
-            <BaseInput v-model="form.phone" :label="$t('modals.add_brewery.phone')" class="half" />
-          </div>
+          <template v-if="form.type !== 'mesto'">
+            <div class="form-row">
+              <BaseInput v-model="form.email" type="email" :label="$t('modals.add_brewery.email')" class="half" />
+              <BaseInput v-model="form.phone" :label="$t('modals.add_brewery.phone')" class="half" />
+            </div>
 
-          <BaseInput v-model="form.website" type="url" :label="$t('modals.add_brewery.website')" />
-          
-          <OpeningHoursInput v-model="form.opening_hours" :label="$t('opening_hours.label')" />
+            <BaseInput v-model="form.website" type="url" :label="$t('modals.add_brewery.website')" />
+            
+            <OpeningHoursInput v-model="form.opening_hours" :label="$t('opening_hours.label')" />
+          </template>
         </template>
 
         <BaseButton type="submit" variant="add" style="margin-top: 1rem; width: 100%;">
@@ -140,19 +147,43 @@ const checkDuplicates = (lat, lng) => {
 }
 
 const fetchAddressFromGPS = async (lat, lng) => {
-  if (props.isEditing) return 
+  // Povolíme získání adresy/PSČ i při editaci, pokud se jedná o město
+  if (props.isEditing && props.form.type !== 'mesto') return 
 
   isGeocoding.value = true
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`)
     const data = await res.json()
     if (data && data.address) {
-      if (!props.form.city) props.form.city = data.address.city || data.address.town || data.address.village || ''
-      if (!props.form.zip_code) props.form.zip_code = data.address.postcode || ''
-      if (!props.form.address) {
+      if (props.form.type !== 'mesto' && !props.form.city) {
+        props.form.city = data.address.city || data.address.town || data.address.village || ''
+      }
+      
+      if (!props.form.zip_code) {
+        props.form.zip_code = data.address.postcode || ''
+      }
+      
+      if (props.form.type !== 'mesto' && !props.form.address) {
         const street = data.address.road || data.address.pedestrian || ''
         const houseNum = data.address.house_number || ''
         props.form.address = `${street} ${houseNum}`.trim()
+      }
+
+      // Pokud zakládáme nové "mesto" a ještě nemáme název, zkusíme ho rovnou doplnit
+      if (props.form.type === 'mesto' && !props.form.name) {
+        props.form.name = data.address.city || data.address.town || data.address.village || ''
+      }
+
+      // Automatická detekce země z OpenStreetMap country_code (pokud je k dispozici v seznamu prop.countries)
+      if (data.address.country_code && props.countries && props.countries.length) {
+        const cCode = data.address.country_code.toLowerCase()
+        const foundCountry = props.countries.find(c => 
+          (c.code && c.code.toLowerCase() === cCode) || 
+          (c.iso && c.iso.toLowerCase() === cCode)
+        )
+        if (foundCountry && !props.form.country_id) {
+          props.form.country_id = foundCountry.id
+        }
       }
     }
   } catch (e) {

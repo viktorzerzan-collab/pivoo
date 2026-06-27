@@ -216,7 +216,7 @@
                 <td v-if="activeTab === 'breweries'" class="desktop-only"><strong>{{ item.total_beers_in_catalog || 0 }}</strong></td>
                 <td v-if="activeTab === 'beers'" class="desktop-only">{{ item.brewery_name }}</td>
                 <td v-if="activeTab === 'beers'" class="desktop-only">{{ item.style }}</td>
-                <td v-if="activeTab === 'locations'" class="desktop-only">{{ item.type === 'hospoda' ? $t('admin.type_pub') : (item.type === 'jine' ? $t('admin.type_other') : item.type) }}</td>
+                <td v-if="activeTab === 'locations'" class="desktop-only">{{ translateLocationType(item.type) }}</td>
                 <td v-if="['breweries', 'locations'].includes(activeTab)" class="desktop-only">{{ item.city || '-' }}</td>
                 <td v-if="['breweries', 'locations'].includes(activeTab)" class="desktop-only">
                   <div class="country-cell">
@@ -384,6 +384,12 @@ const currentLabelSingle = computed(() => activeTab.value === 'pending' ? '' : t
 const translatePackaging = (val) => {
   if (!val) return val
   const key = `packaging.${val}`
+  return te(key) ? t(key) : val
+}
+
+const translateLocationType = (val) => {
+  if (!val) return val
+  const key = `dynamic.location_types.${val}`
   return te(key) ? t(key) : val
 }
 

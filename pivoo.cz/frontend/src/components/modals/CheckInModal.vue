@@ -568,12 +568,27 @@ const autodetectLocation = () => {
             
             // Město ještě v databázi nemáme, automaticky ho založíme!
             if (!cityLoc) {
+              const zipCode = data.address.postcode || ''
+              let countryId = null
+              
+              if (data.address.country_code && catalogStore.countries && catalogStore.countries.length) {
+                const cCode = data.address.country_code.toLowerCase()
+                const foundCountry = catalogStore.countries.find(c => 
+                  (c.code && c.code.toLowerCase() === cCode) || 
+                  (c.iso && c.iso.toLowerCase() === cCode)
+                )
+                if (foundCountry) {
+                  countryId = foundCountry.id
+                }
+              }
+
               const createRes = await apiFetch('/add_location.php', {
                 method: 'POST',
                 body: JSON.stringify({
                   name: cityName,
                   type: 'mesto',
-                  city: cityName,
+                  zip_code: zipCode,
+                  country_id: countryId,
                   lat: lat,
                   lng: lng
                 })
@@ -584,7 +599,8 @@ const autodetectLocation = () => {
                   id: createRes.data.id,
                   name: cityName,
                   type: 'mesto',
-                  city: cityName,
+                  zip_code: zipCode,
+                  country_id: countryId,
                   lat: lat,
                   lng: lng,
                   is_favorite: 0,
@@ -597,7 +613,9 @@ const autodetectLocation = () => {
             
             if (cityLoc) {
               // Přidáme ho na seznam s virtuální vzdáleností 0, aby bylo na prvním místě (nebo prioritně blízko)
-              nearby.push({ ...cityLoc, distance: 0 })
+              if (!nearby.some(n => n.id === cityLoc.id)) {
+                nearby.push({ ...cityLoc, distance: 0 })
+              }
             }
           }
         }
