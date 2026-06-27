@@ -136,6 +136,11 @@
                 <td :data-label="$t('admin.table.author')" class="desktop-only">{{ item.created_by_user || $t('admin.unknown_author') }}</td>
                 <td :data-label="$t('admin.table.actions')">
                   <BaseActionGroup>
+                    <BaseTooltip :text="$t('admin.tooltips.edit')" position="top-end">
+                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(item, item.entity_type)">
+                        <template #icon><PencilIcon :size="16" /></template>
+                      </BaseButton>
+                    </BaseTooltip>
                     <BaseTooltip :text="$t('admin.tooltips.approve')" position="top-end">
                       <BaseButton variant="primary" :isIconOnly="true" style="background-color: #10b981; color: white;" @click="handleApprove(item, 'approve')">
                         <template #icon><CheckIcon :size="16" /></template>
@@ -504,7 +509,15 @@ const openAddModal = (t) => {
 
 const openEditModal = (item, typeParam) => { 
   isEditing.value = true
-  const key = typeParam === 'styles' ? 'style' : (typeParam === 'beers' ? 'beer' : (typeParam === 'locations' ? 'location' : (typeParam === 'breweries' ? 'brewery' : (typeParam === 'barcodes' ? 'barcode' : 'user'))))
+  
+  // Detekce správného klíče typu položky, ať už se sem posílá z Pending nebo odjinud
+  let key = 'user'
+  if (['style', 'styles'].includes(typeParam)) key = 'style'
+  else if (['beer', 'beers'].includes(typeParam)) key = 'beer'
+  else if (['location', 'locations'].includes(typeParam)) key = 'location'
+  else if (['brewery', 'breweries'].includes(typeParam)) key = 'brewery'
+  else if (['barcode', 'barcodes'].includes(typeParam)) key = 'barcode'
+
   formData.value[key] = key === 'beer' ? { ...item, is_unfiltered: !!item.is_unfiltered, is_unpasteurized: !!item.is_unpasteurized } : { ...item, logoFile: null }
   modals.value[key] = true 
 }
@@ -551,6 +564,8 @@ const submitForm = async (f) => {
       else {
         catalogStore.forceRefresh()
         loadAdminData() 
+        // Pokud jsme zrovna schvalovali/editovali v tabu pending, překreslíme frontu
+        if (activeTab.value === 'pending') catalogStore.fetchPendingApprovals();
       }
     } 
     else toastStore.showToast(res.message || 'Error', 'toast-error')

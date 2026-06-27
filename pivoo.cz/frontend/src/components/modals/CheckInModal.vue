@@ -33,12 +33,12 @@
               @locate="autodetectLocation" 
             />
             
-            <BaseTooltip :text="$t('modals.checkin.add_location_tooltip') || 'Přidat nový podnik'" position="top-end">
+            <BaseTooltip :text="$t('modals.checkin.add_location_tooltip')" position="top-end">
               <button 
                 type="button" 
                 class="btn-add-loc is-icon-only" 
                 @click="$emit('open-add-location', tempCoords)"
-                aria-label="Přidat podnik"
+                :aria-label="$t('modals.checkin.add_location_tooltip')"
               >
                 <PlusIcon />
               </button>
@@ -197,7 +197,7 @@
   <BaseModal :show="showNearbyModal" @close="showNearbyModal = false" customStyle="max-width: 400px; z-index: 1000;">
     <template #header>
       <h3 style="margin:0; font-size: 1.25rem; color: var(--text-main);">
-        {{ $t('modals.checkin.nearby_title') || 'Vyberte podnik v okolí' }}
+        {{ $t('modals.checkin.nearby_title') }}
       </h3>
     </template>
     <template #body>
@@ -217,7 +217,7 @@
         </button>
       </div>
       <BaseButton type="button" variant="outline" @click="showNearbyModal = false" style="width: 100%; margin-top: 1rem;">
-        {{ $t('common.cancel') || 'Zrušit' }}
+        {{ $t('buttons.cancel') }}
       </BaseButton>
     </template>
   </BaseModal>
@@ -299,14 +299,14 @@ const handleAiResponse = (res) => {
     if (ai.brewery_id && !catalogStore.allBreweries.some(b => b.id == ai.brewery_id)) {
       catalogStore.addBreweryLocally({
         id: ai.brewery_id,
-        name: ai.brewery_name || 'Neznámý pivovar'
+        name: ai.brewery_name || t('modals.checkin.unknown_brewery')
       })
     }
 
     if (ai.beer_id && !catalogStore.allBeers.some(b => b.id == ai.beer_id)) {
       catalogStore.addBeerLocally({
         id: ai.beer_id,
-        name: ai.beer_name || 'Neznámé pivo',
+        name: ai.beer_name || t('modals.checkin.unknown_beer'),
         brewery_id: ai.brewery_id
       })
     }
@@ -475,7 +475,7 @@ const handlePhotoSelect = async (e) => {
   
   for (const file of files) {
     if (totalPhotos.value >= 3) {
-      toastStore.showToast(t('modals.checkin.max_photos_reached') || 'Můžete nahrát maximálně 3 fotky.', 'warning')
+      toastStore.showToast(t('modals.checkin.max_photos_reached'), 'warning')
       break;
     }
     try {
@@ -484,7 +484,7 @@ const handlePhotoSelect = async (e) => {
       newPhotoPreviews.value.push(URL.createObjectURL(compressedFile))
     } catch(err) {
       console.error("Chyba při zmenšování obrázku", err)
-      toastStore.showToast(t('modals.checkin.photo_error') || 'Nepodařilo se zpracovat fotku.', 'error')
+      toastStore.showToast(t('modals.checkin.photo_error'), 'error')
     }
   }
   
@@ -523,7 +523,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 
 const autodetectLocation = () => {
   if (!navigator.geolocation) {
-    locationMessage.value = t('modals.checkin.geolocation_not_supported') || 'Geolokace není prohlížečem podporována.'
+    locationMessage.value = t('modals.checkin.geolocation_not_supported')
     locationMessageType.value = 'error'
     return
   }
@@ -555,22 +555,22 @@ const autodetectLocation = () => {
 
       if (nearby.length === 1) {
         props.form.location_id = nearby[0].id
-        locationMessage.value = `📍 Nalezeno: ${translateLocation(nearby[0].name)} (${(nearby[0].distance * 1000).toFixed(0)} m)`
+        locationMessage.value = t('modals.checkin.found_location', { name: translateLocation(nearby[0].name), dist: (nearby[0].distance * 1000).toFixed(0) })
         locationMessageType.value = 'success'
       } else if (nearby.length > 1) {
         nearbyLocations.value = nearby
         showNearbyModal.value = true
-        locationMessage.value = t('modals.checkin.multiple_locations') || 'Nalezeno více podniků v okolí.'
+        locationMessage.value = t('modals.checkin.multiple_locations')
         locationMessageType.value = 'success'
       } else {
         props.form.location_id = ''
-        locationMessage.value = t('modals.checkin.no_locations') || 'Žádný známý podnik v okolí 150m.'
+        locationMessage.value = t('modals.checkin.no_locations')
         locationMessageType.value = 'warning'
       }
     },
     (err) => {
       isLocating.value = false
-      locationMessage.value = t('modals.checkin.location_error') || 'Nepodařilo se zjistit polohu. Zkontrolujte oprávnění.'
+      locationMessage.value = t('modals.checkin.location_error')
       locationMessageType.value = 'error'
     },
     { enableHighAccuracy: true, timeout: 10000 }
@@ -579,7 +579,7 @@ const autodetectLocation = () => {
 
 const selectNearbyLocation = (loc) => {
   props.form.location_id = loc.id
-  locationMessage.value = `📍 Vybráno: ${translateLocation(loc.name)} (${(loc.distance * 1000).toFixed(0)} m)`
+  locationMessage.value = t('modals.checkin.selected_location', { name: translateLocation(loc.name), dist: (loc.distance * 1000).toFixed(0) })
   locationMessageType.value = 'success'
   showNearbyModal.value = false
 }
@@ -735,7 +735,7 @@ watch(() => props.form.location_id, () => {
 }
 .nearby-name {
   color: var(--text-main);
-  font-weight: 600;
+  fontWeight: 600;
   font-size: 1rem;
 }
 .nearby-dist {
