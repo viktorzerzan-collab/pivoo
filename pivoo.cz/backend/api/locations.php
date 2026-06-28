@@ -15,11 +15,18 @@ try {
         
         // Uživatel vidí schválené lokace PLUS své vlastní neschválené lokace
         $where = "(loc.is_approved = 1 OR loc.created_by = :uid)";
-        if (!$includeAll) { 
+        
+        $excludeTypes = $_GET['exclude_types'] ?? '';
+        if ($excludeTypes !== '') {
+            $types = array_filter(array_map('trim', explode(',', $excludeTypes)));
+            if (!empty($types)) {
+                $quotedTypes = array_map(function($t) use ($api) { return $api->db->quote($t); }, $types);
+                $where .= " AND loc.type NOT IN (" . implode(',', $quotedTypes) . ")";
+            }
+        } else if (!$includeAll) { 
             $where .= " AND loc.type != 'jine'"; 
         }
         
-        // Přidáno loc.lat a loc.lng
         $query = "SELECT loc.id, loc.name, loc.type, loc.city, loc.lat, loc.lng,
                          IF(fav.id IS NOT NULL, 1, 0) as is_favorite,
                          IF(wl.id IS NOT NULL, 1, 0) as is_wishlist
@@ -53,7 +60,14 @@ try {
         $whereParts[] = "(loc.is_approved = 1 OR loc.created_by = :uid)";
     }
 
-    if (!$includeAll) {
+    $excludeTypes = $_GET['exclude_types'] ?? '';
+    if ($excludeTypes !== '') {
+        $types = array_filter(array_map('trim', explode(',', $excludeTypes)));
+        if (!empty($types)) {
+            $quotedTypes = array_map(function($t) use ($api) { return $api->db->quote($t); }, $types);
+            $whereParts[] = "loc.type NOT IN (" . implode(',', $quotedTypes) . ")";
+        }
+    } else if (!$includeAll) {
         $whereParts[] = "loc.type != 'jine'";
     }
 
@@ -88,7 +102,7 @@ try {
     $countQuery = "SELECT COUNT(loc.id) as total FROM locations loc $countJoins $whereSql";
     
     $countParams = $params;
-    // ZMĚNA: Pokud je status 'pending' a uživatel admin, :uid v dotazu COUNT vůbec nefiguruje, proto ho z parametrů pro COUNT smažeme
+    // Pokud je status 'pending' a uživatel admin, :uid v dotazu COUNT vůbec nefiguruje
     if ($status === 'pending' && $userRole === 'admin') {
         unset($countParams[':uid']);
     }

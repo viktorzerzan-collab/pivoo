@@ -103,7 +103,8 @@ const fetchAction = async (filterVals, baseParams, append) => {
     ...baseParams,
     search: filterVals.search,
     city: filterVals.city,
-    country: filterVals.country
+    country: filterVals.country,
+    exclude_types: 'mesto,jine'
   }
   await catalogStore.fetchLocations(params, append)
 }

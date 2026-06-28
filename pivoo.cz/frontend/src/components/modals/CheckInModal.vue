@@ -194,14 +194,20 @@
     </template>
   </BaseModal>
 
-  <BaseModal :show="showNearbyModal" @close="showNearbyModal = false" customStyle="max-width: 400px; z-index: 1000;">
+  <BaseModal :show="showNearbyModal" @close="showNearbyModal = false" customStyle="max-width: 400px; z-index: 1000; overflow: hidden;">
     <template #header>
-      <h3 style="margin:0; font-size: 1.25rem; color: var(--text-main);">
+      <BackgroundWatermark 
+        :icon="MapPinIcon" 
+        :size="180" 
+        :is-modal="true" 
+      />
+      <h2 class="modal-title" style="position: relative; z-index: 1;">
+        <MapPinIcon class="title-icon" :size="26" />
         {{ $t('modals.checkin.nearby_title') }}
-      </h3>
+      </h2>
     </template>
     <template #body>
-      <div class="nearby-list">
+      <div class="nearby-list" style="position: relative; z-index: 1;">
         <button 
           v-for="loc in nearbyLocations" 
           :key="loc.id"
@@ -219,7 +225,7 @@
           <div class="nearby-address" v-if="loc.address">{{ loc.address }}</div>
         </button>
       </div>
-      <BaseButton type="button" variant="outline" @click="showNearbyModal = false" style="width: 100%; margin-top: 1rem;">
+      <BaseButton type="button" variant="outline" @click="showNearbyModal = false" style="width: 100%; margin-top: 1rem; position: relative; z-index: 1;">
         {{ $t('buttons.cancel') }}
       </BaseButton>
     </template>
@@ -228,7 +234,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { PencilIcon, PlusCircleIcon, CameraIcon, XIcon, PlusIcon } from 'lucide-vue-next'
+import { PencilIcon, PlusCircleIcon, CameraIcon, XIcon, PlusIcon, MapPinIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseModal from '../BaseModal.vue'
 import BaseInput from '../BaseInput.vue'
@@ -556,11 +562,17 @@ const autodetectLocation = () => {
 
       // Pokusit se zjistit obec přes Nominatim API a případně ji rovnou založit
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`)
+        // Přidán Accept-Language pro zaručení lokálních názvů obcí místo anglických defaultů
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`, {
+          headers: {
+            'Accept-Language': 'cs-CZ,cs;q=0.9'
+          }
+        })
         const data = await res.json()
         
         if (data && data.address) {
-          const cityName = data.address.city || data.address.town || data.address.village
+          // Rozšířena detekce typů obcí, aby se našly i menší obce (municipality, village, atd.)
+          const cityName = data.address.city || data.address.town || data.address.village || data.address.municipality || data.address.suburb || data.address.hamlet
           
           if (cityName) {
             // Hledáme přesný název u lokací typu město
@@ -612,7 +624,7 @@ const autodetectLocation = () => {
             }
             
             if (cityLoc) {
-              // Přidáme ho na seznam s virtuální vzdáleností 0, aby bylo na prvním místě (nebo prioritně blízko)
+              // Přidáme ho na seznam s virtuální vzdáleností 0, aby bylo na prvním místě
               if (!nearby.some(n => n.id === cityLoc.id)) {
                 nearby.push({ ...cityLoc, distance: 0 })
               }
@@ -628,14 +640,16 @@ const autodetectLocation = () => {
 
       isLocating.value = false
 
-      if (nearby.length === 1) {
-        props.form.location_id = nearby[0].id
-        locationMessage.value = t('modals.checkin.found_location', { name: translateLocation(nearby[0].name), dist: nearby[0].type === 'mesto' ? 'Město' : (nearby[0].distance * 1000).toFixed(0) })
-        locationMessageType.value = 'success'
-      } else if (nearby.length > 1) {
+      // Vždy zobrazíme modál, i když je k dispozici jen jedna lokace, uživatel má mít možnost volby!
+      if (nearby.length > 0) {
         nearbyLocations.value = nearby
         showNearbyModal.value = true
-        locationMessage.value = t('modals.checkin.multiple_locations')
+        
+        if (nearby.length === 1) {
+          locationMessage.value = t('modals.checkin.found_location', { name: translateLocation(nearby[0].name), dist: nearby[0].type === 'mesto' ? 'Město' : (nearby[0].distance * 1000).toFixed(0) })
+        } else {
+          locationMessage.value = t('modals.checkin.multiple_locations')
+        }
         locationMessageType.value = 'success'
       } else {
         props.form.location_id = ''

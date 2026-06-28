@@ -152,11 +152,20 @@ const fetchAddressFromGPS = async (lat, lng) => {
 
   isGeocoding.value = true
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`)
+    // Přidán Accept-Language pro zaručení lokálních názvů místo anglických defaultů
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`, {
+      headers: {
+        'Accept-Language': 'cs-CZ,cs;q=0.9'
+      }
+    })
     const data = await res.json()
     if (data && data.address) {
+      
+      // Rozšířená detekce typů obcí, aby se našly i menší obce a vesnice
+      const cityName = data.address.city || data.address.town || data.address.village || data.address.municipality || data.address.suburb || data.address.hamlet || ''
+
       if (props.form.type !== 'mesto' && !props.form.city) {
-        props.form.city = data.address.city || data.address.town || data.address.village || ''
+        props.form.city = cityName
       }
       
       if (!props.form.zip_code) {
@@ -171,7 +180,7 @@ const fetchAddressFromGPS = async (lat, lng) => {
 
       // Pokud zakládáme nové "mesto" a ještě nemáme název, zkusíme ho rovnou doplnit
       if (props.form.type === 'mesto' && !props.form.name) {
-        props.form.name = data.address.city || data.address.town || data.address.village || ''
+        props.form.name = cityName
       }
 
       // Automatická detekce země z OpenStreetMap country_code (pokud je k dispozici v seznamu prop.countries)

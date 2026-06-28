@@ -84,7 +84,7 @@
     "to": "Do"
   },
   "geolocate": {
-    "tooltip": "Najít můj podnik podle GPS",
+    "tooltip": "Najít mou lokalitu podle GPS",
     "aria_label": "Lokalizovat"
   },
   "history": {
@@ -142,7 +142,7 @@
   "cards": {
     "beer_detail": "Detail piva",
     "brewery_detail": "Detail pivovaru",
-    "location_detail": "Detail podniku",
+    "location_detail": "Detail lokality",
     "no_style": "Bez stylu",
     "fermentation_suffix": "kvašení",
     "unfiltered": "Nefiltrované",
@@ -241,10 +241,10 @@
       "save": "Uložit pivovar"
     },
     "add_location": {
-      "title_add": "Nový podnik",
-      "title_edit": "Upravit podnik",
-      "name": "Název podniku *",
-      "type": "Typ podniku",
+      "title_add": "Nová lokalita",
+      "title_edit": "Upravit lokalitu",
+      "name": "Název lokality *",
+      "type": "Typ lokality",
       "type_pub": "Hospoda / Bar",
       "type_shop": "Pivotéka",
       "type_store": "Obchod",
@@ -252,8 +252,8 @@
       "type_other": "Jiné",
       "map_label": "Poloha na mapě (přetáhněte špendlík pro automatické načtení adresy)",
       "geocoding": "(Načítám adresu z mapy...)",
-      "duplicate_warning": "Pozor! V okruhu 50 metrů již existuje: {duplicates}. Jste si jisti, že vytváříte zcela nový podnik?",
-      "save": "Uložit podnik"
+      "duplicate_warning": "Pozor! V okruhu 50 metrů již existuje: {duplicates}. Jste si jisti, že vytváříte zcela novou lokalitu?",
+      "save": "Uložit lokalitu"
     },
     "ban_confirm": {
       "title_ban": "Opravdu zablokovat?",
@@ -308,8 +308,8 @@
       "msg_barcode_not_found": "Tento čárový kód zatím v databázi nemáme.",
       "add_brewery_link": "Přidat nový pivovar",
       "add_beer_link": "Přidat pivo do katalogu",
-      "add_location_link": "Přidat nový podnik zde",
-      "add_location_tooltip": "Přidat nový podnik",
+      "add_location_link": "Přidat novou lokalitu zde",
+      "add_location_tooltip": "Přidat novou lokalitu",
       "date_label": "Kdy to bylo?",
       "location_label": "Kde to bylo?",
       "brewery_label": "Pivovar",
@@ -338,12 +338,12 @@
       "unknown_brewery": "Neznámý pivovar",
       "unknown_beer": "Neznámé pivo",
       "found_location": "📍 Nalezeno: {name} ({dist} m)",
-      "multiple_locations": "Nalezeno více podniků v okolí.",
-      "no_locations": "Žádný známý podnik v okolí 150m.",
+      "multiple_locations": "Nalezeno více lokalit v okolí.",
+      "no_locations": "Žádná známá lokalita v okolí 150m.",
       "location_error": "Nepodařilo se zjistit polohu. Zkontrolujte oprávnění.",
       "selected_location": "📍 Vybráno: {name} ({dist} m)",
       "geolocation_not_supported": "Geolokace není prohlížečem podporována.",
-      "nearby_title": "Vyberte podnik v okolí",
+      "nearby_title": "Vyberte lokalitu v okolí",
       "volume": {
         "glass": "Sklenička (0.2l)",
         "small": "Malé (0.3l)",
@@ -485,7 +485,7 @@
     "wishlist": {
       "no_beers": "Zatím zde nemáš žádná piva.",
       "no_breweries": "Zatím zde nemáš žádné pivovary.",
-      "no_locations": "Zatím zde nemáš žádné podniky."
+      "no_locations": "Zatím zde nemáš žádné lokality."
     }
   },
   "toast": {
@@ -499,8 +499,8 @@
     "brewery_add_error": "Chyba při ukládání pivovaru.",
     "beer_added": "Pivo přidáno do katalogu!",
     "beer_add_error": "Chyba při ukládání piva.",
-    "location_added": "Podnik přidán!",
-    "location_add_error": "Chyba serveru při přidávání podniku.",
+    "location_added": "Lokalita přidána!",
+    "location_add_error": "Chyba serveru při přidávání lokality.",
     "record_added": "Záznam úspěšně zapsán!",
     "record_add_error": "Nepodařilo se vytvořit záznam.",
     "record_edited": "Záznam upraven!",
@@ -513,11 +513,11 @@
   "catalog": {
     "add_beer": "Přidat pivo",
     "add_brewery": "Přidat pivovar",
-    "add_location": "Přidat podnik",
+    "add_location": "Přidat lokalitu",
     "filters_title": "Filtrování a vyhledávání",
     "filter_name_beer": "Název piva",
     "filter_name_brewery": "Název pivovaru",
-    "filter_name_location": "Název podniku",
+    "filter_name_location": "Název lokality",
     "filter_brewery": "Pivovar",
     "filter_country": "Země původu",
     "filter_country_short": "Země",
@@ -537,10 +537,10 @@
     "sort_by": "Řadit podle...",
     "found_beers": "Nalezeno piv:",
     "found_breweries": "Nalezeno pivovarů:",
-    "found_locations": "Nalezeno podniků:",
+    "found_locations": "Nalezeno lokalit:",
     "empty_beers": "Žádná piva neodpovídají zadaným filtrům.",
     "empty_breweries": "Žádné pivovary neodpovídají zadaným filtrům.",
-    "empty_locations": "Žádné podniky neodpovídají zadaným filtrům.",
+    "empty_locations": "Žádné lokality neodpovídají zadaným filtrům.",
     "loading_more": "Načítám další...",
     "loading_more_beers": "Načítám další piva...",
     "map_info": "Zobrazuji výsledky z aktuálního výběru ({count} špendlíků).",
@@ -573,7 +573,7 @@
       "pending": "Ke schválení",
       "beers": "Piva",
       "breweries": "Pivovary",
-      "locations": "Podniky",
+      "locations": "Lokality",
       "styles": "Styly",
       "barcodes": "EAN kódy"
     },
@@ -588,7 +588,7 @@
       "beers_count": "Piva",
       "brewery": "Pivovar",
       "style": "Styl",
-      "location_type": "Typ podniku",
+      "location_type": "Typ lokality",
       "city": "Město",
       "country": "Země",
       "type": "Typ",
@@ -600,7 +600,7 @@
     },
     "entity_beer": "Pivo",
     "entity_brewery": "Pivovar",
-    "entity_location": "Podnik",
+    "entity_location": "Lokalita",
     "unknown_author": "Neznámý autor",
     "banned": "BANNED",
     "beers_in_catalog": "Piv v katalogu: {count}",
@@ -630,16 +630,16 @@
     "add_style": "Přidat styl",
     "style_name": "Název stylu *",
     "save_style": "Uložit styl",
-    "merge_title": "Sloučit podniky",
-    "merge_desc": "Chystáte se smazat duplicitu {source}. Vyberte níže podnik, který v databázi zůstane a na který se převedou všechny stávající záznamy o vypitých pivech.",
-    "merge_target": "Cílový podnik (ten, který zůstane) *",
-    "merge_target_placeholder": "-- Vyhledejte cílový podnik --",
+    "merge_title": "Sloučit lokality",
+    "merge_desc": "Chystáte se smazat duplicitu {source}. Vyberte níže lokalitu, která v databázi zůstane a na kterou se převedou všechny stávající záznamy o vypitých pivech.",
+    "merge_target": "Cílová lokalita (ta, která zůstane) *",
+    "merge_target_placeholder": "-- Vyhledejte cílovou lokalitu --",
     "merge_no_city": "Bez města",
     "merge_submit": "Provést sloučení",
     "items": {
       "beer": "pivo",
       "brewery": "pivovar",
-      "location": "podnik",
+      "location": "lokalitu",
       "style": "styl",
       "user": "uživatele",
       "barcode": "čárový kód"
@@ -669,7 +669,7 @@
     "fav_breweries": "Nejkonzumovanější pivovary",
     "fav_locations": "Nejčastější místa",
     "top_rated_beers": "Nejlépe hodnocená piva",
-    "top_rated_locations": "Nejlépe hodnocené podniky",
+    "top_rated_locations": "Nejlépe hodnocené lokality",
     "style_distribution": "Rozložení pivních stylů",
     "diversity": "Pivní rozmanitost",
     "economy": "Pivní ekonomika",
