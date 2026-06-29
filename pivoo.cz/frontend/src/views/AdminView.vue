@@ -5,8 +5,6 @@
     </div>
 
     <div class="admin-layout">
-      <BaseLoader :show="isLoading || isUsersLoading || isBarcodesLoading || isAdminDataLoading" />
-
       <BasePanel class="admin-section">
         <div class="section-header">
           <div class="header-info">
@@ -16,358 +14,79 @@
               class="admin-search"
             />
           </div>
-          <BaseButton v-if="activeTab !== 'users' && activeTab !== 'pending'" variant="add" @click="openAddModal(activeTab)" class="mobile-full-width">
+          <BaseButton 
+            v-if="activeTab !== 'users' && activeTab !== 'pending'" 
+            variant="add" 
+            @click="triggerAddModal" 
+            class="mobile-full-width"
+          >
             <template #icon><PlusCircleIcon :size="20" /></template>
             {{ $t('admin.add_item', { item: currentLabelSingle }) }}
           </BaseButton>
         </div>
 
-        <BaseTable>
-          <template #thead>
-            <thead>
-              <tr v-if="activeTab === 'users'">
-                <th>{{ $t('admin.table.user') }}</th>
-                <th>{{ $t('admin.table.email') }}</th>
-                <th>{{ $t('admin.table.role') }}</th>
-                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
-              </tr>
-              <tr v-else-if="activeTab === 'pending'">
-                <th>{{ $t('admin.table.name') }}</th>
-                <th>{{ $t('admin.table.type') }}</th>
-                <th>{{ $t('admin.table.author') }}</th>
-                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
-              </tr>
-              <tr v-else-if="activeTab === 'barcodes'">
-                <th>{{ $t('admin.table.ean') }}</th>
-                <th>{{ $t('admin.table.beer') }}</th>
-                <th>{{ $t('admin.table.brewery') }}</th>
-                <th>{{ $t('admin.table.packaging') }}</th>
-                <th>{{ $t('admin.table.volume') }}</th>
-                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
-              </tr>
-              <tr v-else>
-                <th>{{ $t('admin.table.name') }}</th>
-                <th v-if="activeTab === 'breweries'">{{ $t('admin.table.beers_count') }}</th>
-                <th v-if="activeTab === 'beers'">{{ $t('admin.table.brewery') }}</th>
-                <th v-if="activeTab === 'beers'">{{ $t('admin.table.style') }}</th>
-                <th v-if="activeTab === 'locations'">{{ $t('admin.table.location_type') }}</th>
-                <th v-if="['breweries', 'locations'].includes(activeTab)">{{ $t('admin.table.city') }}</th>
-                <th v-if="['breweries', 'locations'].includes(activeTab)">{{ $t('admin.table.country') }}</th>
-                <th class="w-100 text-right">{{ $t('admin.table.actions') }}</th>
-              </tr>
-            </thead>
-          </template>
-
-          <template #tbody>
-            <template v-if="activeTab === 'users'">
-              <tr v-for="u in paginatedUsers" :key="u?.id" :class="{ 'banned-row': u.is_banned }">
-                <td :data-label="$t('admin.table.user')">
-                  <div class="user-cell">
-                    <BaseEntityIcon 
-                      :image-url="u.avatar ? 'https://www.pivoo.cz/backend/uploads/avatars/' + u.avatar : null"
-                      :icon="UserIcon"
-                      bg-class="users-bg"
-                    />
-                    <div class="item-text">
-                      <div class="info-top-row">
-                        <strong :class="{ 'text-muted line-through': u.is_banned }">{{ u.username }}</strong>
-                        <span class="badge mobile-only" :class="u.role">{{ u.role }}</span>
-                        <span v-if="u.is_banned" class="badge banned-badge">{{ $t('admin.banned') }}</span>
-                      </div>
-                      <small class="meta-row">{{ u.first_name }} {{ u.last_name }} <span class="mobile-only meta-sep">• {{ u.email }}</span></small>
-                    </div>
-                  </div>
-                </td>
-                <td :data-label="$t('admin.table.email')" class="desktop-only">{{ u.email }}</td>
-                <td :data-label="$t('admin.table.role')" class="desktop-only">
-                  <span class="badge" :class="u.role">{{ u.role }}</span>
-                </td>
-                <td :data-label="$t('admin.table.actions')">
-                  <BaseActionGroup>
-                    <BaseTooltip :text="$t('admin.tooltips.edit_user')" position="top-end">
-                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(u, 'users')">
-                        <template #icon><PencilIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    
-                    <BaseTooltip v-if="u.is_2fa_enabled" :text="$t('admin.tooltips.reset_2fa')" position="top-end">
-                      <BaseButton variant="secondary" :isIconOnly="true" @click="handleReset2FA(u)">
-                        <template #icon><ShieldOffIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-
-                    <BaseTooltip v-if="u?.id !== user?.id" :text="$t('admin.tooltips.change_pwd')" position="top-end">
-                      <BaseButton variant="add" :isIconOnly="true" @click="openPasswordModal(u)">
-                        <template #icon><KeyIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    <BaseTooltip v-if="u?.id !== user?.id" :text="u.is_banned ? $t('admin.tooltips.unblock') : $t('admin.tooltips.block')" position="top-end">
-                      <BaseButton :variant="u.is_banned ? 'primary' : 'edit'" :isIconOnly="true" :style="u.is_banned ? 'background-color: #10b981; color: white;' : ''" @click="openBanModal(u)">
-                        <template #icon>
-                          <UnlockIcon v-if="u.is_banned" :size="16" />
-                          <BanIcon v-else :size="16" />
-                        </template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    <BaseTooltip v-if="u?.id !== user?.id" :text="$t('admin.tooltips.delete_user')" position="top-end">
-                      <BaseButton variant="danger" :isIconOnly="true" @click="confirmDelete(u.id, activeTab)">
-                        <template #icon><Trash2Icon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                  </BaseActionGroup>
-                </td>
-              </tr>
-            </template>
-
-            <template v-else-if="activeTab === 'pending'">
-              <tr v-for="item in paginatedCurrentItems" :key="item?.entity_type + item?.id">
-                <td :data-label="$t('admin.table.name')">
-                  <div class="main-item-cell">
-                    <BaseEntityIcon 
-                      :icon="item.entity_type === 'beer' ? BeerIcon : (item.entity_type === 'brewery' ? FactoryIcon : MapPinIcon)"
-                      :bg-class="item.entity_type + 's-bg'"
-                    />
-                    <div class="item-text"><strong>{{ item.name }}</strong></div>
-                  </div>
-                </td>
-                <td :data-label="$t('admin.table.type')" class="desktop-only">
-                  <span class="badge type-badge">{{ $t('admin.entity_' + item.entity_type) }}</span>
-                </td>
-                <td :data-label="$t('admin.table.author')" class="desktop-only">{{ item.created_by_user || $t('admin.unknown_author') }}</td>
-                <td :data-label="$t('admin.table.actions')">
-                  <BaseActionGroup>
-                    <BaseTooltip :text="$t('admin.tooltips.edit')" position="top-end">
-                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(item, item.entity_type)">
-                        <template #icon><PencilIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    <BaseTooltip :text="$t('admin.tooltips.approve')" position="top-end">
-                      <BaseButton variant="primary" :isIconOnly="true" style="background-color: #10b981; color: white;" @click="handleApprove(item, 'approve')">
-                        <template #icon><CheckIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    <BaseTooltip :text="$t('admin.tooltips.reject')" position="top-end">
-                      <BaseButton variant="danger" :isIconOnly="true" @click="handleApprove(item, 'reject')">
-                        <template #icon><Trash2Icon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                  </BaseActionGroup>
-                </td>
-              </tr>
-            </template>
-
-            <template v-else-if="activeTab === 'barcodes'">
-              <tr v-for="item in paginatedCurrentItems" :key="item?.id">
-                <td :data-label="$t('admin.table.ean')">
-                  <div class="main-item-cell">
-                    <BaseEntityIcon :icon="BarcodeIcon" bg-class="barcodes-bg" />
-                    <div class="item-text">
-                      <strong>{{ item.ean }}</strong>
-                      <small class="mobile-only text-muted">{{ item.beer_name }} ({{ item.volume }} l)</small>
-                    </div>
-                  </div>
-                </td>
-                <td :data-label="$t('admin.table.beer')" class="desktop-only">
-                  {{ item.beer_name }}
-                </td>
-                <td :data-label="$t('admin.table.brewery')" class="desktop-only">
-                  {{ item.brewery_name }}
-                </td>
-                <td :data-label="$t('admin.table.packaging')" class="desktop-only">
-                  <span class="badge type-badge">{{ translatePackaging(item.packaging) }}</span>
-                </td>
-                <td :data-label="$t('admin.table.volume')" class="desktop-only">{{ item.volume }} l</td>
-                <td :data-label="$t('admin.table.actions')">
-                  <BaseActionGroup>
-                    <BaseTooltip :text="$t('admin.tooltips.edit')" position="top-end">
-                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(item, activeTab)">
-                        <template #icon><PencilIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    <BaseTooltip :text="$t('admin.tooltips.delete')" position="top-end">
-                      <BaseButton variant="danger" :isIconOnly="true" @click="confirmDelete(item.id, activeTab)">
-                        <template #icon><Trash2Icon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                  </BaseActionGroup>
-                </td>
-              </tr>
-            </template>
-
-            <template v-else>
-              <tr v-for="item in paginatedCurrentItems" :key="item?.id">
-                <td :data-label="$t('admin.table.name')">
-                  <div class="main-item-cell">
-                    <BaseEntityIcon 
-                      :image-url="activeTab === 'breweries' && item.logo ? 'https://www.pivoo.cz/backend/uploads/logos/' + item.logo : null"
-                      :icon="activeTab === 'beers' ? BeerIcon : (activeTab === 'breweries' ? FactoryIcon : (activeTab === 'locations' ? MapPinIcon : HopIcon))"
-                      :bg-class="activeTab + '-bg'"
-                    />
-                    <div class="item-text">
-                      <strong>{{ item.name }}</strong>
-                      <small v-if="activeTab === 'beers'" class="mobile-only text-muted">{{ item.brewery_name }} • {{ item.style }}</small>
-                      <small v-if="['breweries', 'locations'].includes(activeTab)" class="mobile-only combined-meta">
-                        <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" class="mobile-flag" />
-                        {{ item.city || $t('admin.unknown_location') }}{{ item.city && item.country ? ', ' : '' }}{{ item.country }}
-                      </small>
-                    </div>
-                  </div>
-                </td>
-                <td v-if="activeTab === 'breweries'" class="desktop-only"><strong>{{ item.total_beers_in_catalog || 0 }}</strong></td>
-                <td v-if="activeTab === 'beers'" class="desktop-only">{{ item.brewery_name }}</td>
-                <td v-if="activeTab === 'beers'" class="desktop-only">{{ item.style }}</td>
-                <td v-if="activeTab === 'locations'" class="desktop-only">{{ translateLocationType(item.type) }}</td>
-                <td v-if="['breweries', 'locations'].includes(activeTab)" class="desktop-only">{{ item.city || '-' }}</td>
-                <td v-if="['breweries', 'locations'].includes(activeTab)" class="desktop-only">
-                  <div class="country-cell">
-                    <img v-if="item.country_code" :src="`https://flagcdn.com/w20/${item.country_code}.png`" class="admin-flag-icon" />
-                    <span>{{ item.country || '-' }}</span>
-                  </div>
-                </td>
-                <td :data-label="$t('admin.table.actions')">
-                  <BaseActionGroup>
-                    <BaseTooltip v-if="activeTab === 'locations'" :text="$t('admin.tooltips.merge')" position="top-end">
-                      <BaseButton variant="primary" :isIconOnly="true" style="background-color: #8b5cf6; color: white;" @click="openMergeModal(item)">
-                        <template #icon><GitMergeIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    <BaseTooltip :text="$t('admin.tooltips.edit')" position="top-end">
-                      <BaseButton variant="edit" :isIconOnly="true" @click="openEditModal(item, activeTab)">
-                        <template #icon><PencilIcon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                    <BaseTooltip :text="$t('admin.tooltips.delete')" position="top-end">
-                      <BaseButton variant="danger" :isIconOnly="true" @click="confirmDelete(item.id, activeTab)">
-                        <template #icon><Trash2Icon :size="16" /></template>
-                      </BaseButton>
-                    </BaseTooltip>
-                  </BaseActionGroup>
-                </td>
-              </tr>
-            </template>
-          </template>
-        </BaseTable>
+        <AdminUsersTable 
+          v-if="activeTab === 'users'" 
+          :search-query="searchQuery" 
+        />
         
-        <BaseEmptyState 
-          v-if="(activeTab === 'users' && filteredUsers.length === 0) || (activeTab !== 'users' && filteredCurrentItems.length === 0)" 
-          :text="$t('admin.empty_search')" 
-          :icon="SearchXIcon" 
-          :icon-size="40"
+        <AdminPendingTable 
+          v-else-if="activeTab === 'pending'" 
+          :search-query="searchQuery" 
+        />
+        
+        <AdminBarcodesTable 
+          v-else-if="activeTab === 'barcodes'" 
+          ref="barcodesTableRef"
+          :search-query="searchQuery" 
+        />
+        
+        <AdminCatalogTable 
+          v-else 
+          ref="catalogTableRef"
+          :active-tab="activeTab" 
+          :search-query="searchQuery" 
         />
 
-        <div class="admin-section-footer">
-          <div class="footer-info desktop-only">
-            {{ $t('admin.showing') }} <strong>{{ activeTab === 'users' ? paginatedUsers.length : paginatedCurrentItems.length }}</strong> {{ $t('admin.of') }} <strong>{{ activeTab === 'users' ? filteredUsers.length : filteredCurrentItems.length }}</strong> {{ $t('admin.records') }}
-          </div>
-          <div class="desktop-only">
-            <BasePagination v-if="totalPages > 1" v-model:currentPage="currentPage" :total-pages="totalPages" />
-          </div>
-        </div>
       </BasePanel>
     </div>
-
-    <DeleteConfirmModal :show="deleteModal.show" @close="deleteModal.show = false" @confirm="handleDelete" />
-    <AddBeerModal :show="modals.beer" :isEditing="isEditing" :form="formData.beer" @close="modals.beer = false" @submit="submitForm('beer')" />
-    <AddBreweryModal :show="modals.brewery" :isEditing="isEditing" :countries="countries" :form="formData.brewery" @close="modals.brewery = false" @submit="submitForm('brewery')" />
-    <AddLocationModal :show="modals.location" :isEditing="isEditing" :countries="countries" :form="formData.location" @close="modals.location = false" @submit="submitForm('location')" />
-    <EditUserModal :show="modals.user" :form="formData.user" :is-current-user="formData.user.id === user?.id" @close="modals.user = false" @submit="submitForm('user')" @remove-avatar="handleRemoveAvatar" />
-    <ChangePasswordModal :show="modals.password" :user="selectedUserForPassword" @close="modals.password = false" @submit="handlePasswordChange" />
-    <BanConfirmModal :show="modals.ban" :user="selectedUserForBan" @close="modals.ban = false" @confirm="handleBanConfirm" />
-    <RemoveAvatarConfirmModal :show="modals.removeAvatar" :user="selectedUserForAvatarRemove" :is-current-user="selectedUserForAvatarRemove?.id === user?.id" @close="modals.removeAvatar = false" @confirm="executeRemoveAvatar" />
-    <AddStyleModal :show="modals.style" :isEditing="isEditing" :form="formData.style" @close="modals.style = false" @submit="submitForm('style')" />
-    <MergeLocationsModal :show="modals.merge" :form="mergeForm" :targetOptions="mergeTargetOptions" @close="modals.merge = false" @submit="submitMerge" />
-    <AddBarcodeModal :show="modals.barcode" :isEditing="isEditing" :form="formData.barcode" @close="modals.barcode = false" @submit="submitForm('barcode')" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { 
-  PlusCircleIcon, PencilIcon, Trash2Icon, KeyIcon, BanIcon, 
-  UnlockIcon, UserIcon, SearchXIcon, BeerIcon, FactoryIcon, MapPinIcon, HopIcon,
-  GitMergeIcon, ListChecksIcon, CheckIcon, BarcodeIcon, ShieldOffIcon
-} from 'lucide-vue-next'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { apiFetch } from '../api'
-import { useAuthStore } from '../stores/auth'
-import { useCatalogStore } from '../stores/catalog'
-import { useToastStore } from '../stores/toast'
+import { 
+  PlusCircleIcon, UserIcon, ListChecksIcon, BeerIcon, 
+  FactoryIcon, MapPinIcon, HopIcon, BarcodeIcon 
+} from 'lucide-vue-next'
 
-import BaseButton from '../components/BaseButton.vue'
-import BaseInput from '../components/BaseInput.vue'
-import BaseLoader from '../components/BaseLoader.vue'
-import BasePanel from '../components/BasePanel.vue'
-import BaseTable from '../components/BaseTable.vue'
-import BaseEntityIcon from '../components/BaseEntityIcon.vue'
-import BaseActionGroup from '../components/BaseActionGroup.vue'
-import BaseEmptyState from '../components/BaseEmptyState.vue'
-import BasePagination from '../components/BasePagination.vue'
-import FilterInput from '../components/FilterInput.vue'
-import BaseTooltip from '../components/BaseTooltip.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
-import DeleteConfirmModal from '../components/modals/DeleteConfirmModal.vue'
-import AddBeerModal from '../components/modals/AddBeerModal.vue'
-import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
-import AddLocationModal from '../components/modals/AddLocationModal.vue'
-import EditUserModal from '../components/modals/EditUserModal.vue'
-import ChangePasswordModal from '../components/modals/ChangePasswordModal.vue'
-import BanConfirmModal from '../components/modals/BanConfirmModal.vue'
-import RemoveAvatarConfirmModal from '../components/modals/RemoveAvatarConfirmModal.vue'
-import AddStyleModal from '../components/modals/AddStyleModal.vue'
-import MergeLocationsModal from '../components/modals/MergeLocationsModal.vue'
-import AddBarcodeModal from '../components/modals/AddBarcodeModal.vue'
+import BasePanel from '../components/BasePanel.vue'
+import FilterInput from '../components/FilterInput.vue'
+import BaseButton from '../components/BaseButton.vue'
 
-const authStore = useAuthStore()
-const catalogStore = useCatalogStore()
-const toastStore = useToastStore()
-const { t, te } = useI18n()
+// Import nově vytvořených komponent
+import AdminUsersTable from '../components/admin/AdminUsersTable.vue'
+import AdminPendingTable from '../components/admin/AdminPendingTable.vue'
+import AdminBarcodesTable from '../components/admin/AdminBarcodesTable.vue'
+import AdminCatalogTable from '../components/admin/AdminCatalogTable.vue'
 
-const { user } = storeToRefs(authStore)
-const { styles, countries, isLoading } = storeToRefs(catalogStore) 
+const { t } = useI18n()
 
 const activeTab = ref('users')
-const allUsers = ref([])
-const allBarcodes = ref([])
-const isUsersLoading = ref(false)
-const isBarcodesLoading = ref(false)
-
-const adminBeers = ref([])
-const adminBreweries = ref([])
-const adminLocations = ref([])
-const isAdminDataLoading = ref(false)
-
-const deleteModal = ref({ show: false, id: null, type: '' })
-const modals = ref({ beer: false, brewery: false, location: false, style: false, user: false, barcode: false, password: false, ban: false, removeAvatar: false, merge: false })
-const mergeForm = ref({ source: null, target_id: '' })
-const isEditing = ref(false)
-const selectedUserForPassword = ref(null)
-const selectedUserForBan = ref(null)
-const selectedUserForAvatarRemove = ref(null)
 const searchQuery = ref('')
-const currentPage = ref(1)
-const itemsPerPage = 30
-const isMobileMode = ref(window.innerWidth <= 768)
 
-const formData = ref({
-  beer: { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false },
-  brewery: { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null },
-  location: { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' },
-  style: { id: null, name: '' },
-  user: { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null },
-  barcode: { id: null, ean: '', beer_id: '', packaging: 'láhev', volume: '0.50' }
+// Odkazy na vnořené komponenty, abychom z hlavičky mohli zavolat jejich funkce
+const catalogTableRef = ref(null)
+const barcodesTableRef = ref(null)
+
+// Reset vyhledávání při změně tabu
+watch(activeTab, () => { 
+  searchQuery.value = '' 
 })
 
-const handleResize = () => { isMobileMode.value = window.innerWidth <= 768 }
-
-watch(activeTab, (newTab) => { 
-  searchQuery.value = ''; 
-  currentPage.value = 1; 
-  if (newTab === 'pending') catalogStore.fetchPendingApprovals();
-  if (newTab === 'barcodes' && allBarcodes.value.length === 0) fetchBarcodes();
-})
-watch(searchQuery, () => { currentPage.value = 1 })
-
+// Definice záložek
 const tabs = computed(() => [
   { value: 'users', label: t('admin.tabs.users'), icon: UserIcon },
   { value: 'pending', label: t('admin.tabs.pending'), icon: ListChecksIcon },
@@ -379,282 +98,44 @@ const tabs = computed(() => [
 ])
 
 const getTabLabel = (val) => tabs.value.find(t => t.value === val)?.label || ''
-const currentLabelSingle = computed(() => activeTab.value === 'pending' ? '' : t(`admin.items.${activeTab.value === 'users' ? 'user' : (activeTab.value === 'beers' ? 'beer' : (activeTab.value === 'breweries' ? 'brewery' : (activeTab.value === 'locations' ? 'location' : (activeTab.value === 'styles' ? 'style' : 'barcode'))))}`))
 
-const translatePackaging = (val) => {
-  if (!val) return val
-  const key = `packaging.${val}`
-  return te(key) ? t(key) : val
-}
-
-const translateLocationType = (val) => {
-  if (!val) return val
-  const key = `dynamic.location_types.${val}`
-  return te(key) ? t(key) : val
-}
-
-const filteredUsers = computed(() => {
-  let items = [...allUsers.value]
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    items = items.filter(u => u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || `${u.first_name} ${u.last_name}`.toLowerCase().includes(q))
-  }
-  return items.sort((a, b) => (a.username || '').localeCompare(b.username || '', 'cs'))
+const currentLabelSingle = computed(() => {
+  if (activeTab.value === 'pending') return ''
+  const key = {
+    users: 'user', beers: 'beer', breweries: 'brewery', 
+    locations: 'location', styles: 'style', barcodes: 'barcode'
+  }[activeTab.value]
+  return t(`admin.items.${key}`)
 })
 
-const currentItems = computed(() => ({ 
-  beers: adminBeers.value, 
-  breweries: adminBreweries.value, 
-  locations: adminLocations.value, 
-  styles: styles.value, 
-  pending: catalogStore.pendingApprovals || [],
-  barcodes: allBarcodes.value 
-}[activeTab.value] || []))
-
-const filteredCurrentItems = computed(() => {
-  let items = [...currentItems.value]
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    if (activeTab.value === 'barcodes') {
-      items = items.filter(item => item.ean.includes(q) || item.beer_name?.toLowerCase().includes(q) || item.brewery_name?.toLowerCase().includes(q))
-    } else {
-      items = items.filter(item => item.name.toLowerCase().includes(q))
-    }
-  }
+// Funkce, která propíše kliknutí na tlačítko "Přidat" do příslušné podřízené tabulky
+const triggerAddModal = () => {
   if (activeTab.value === 'barcodes') {
-    return items 
-  }
-  return items.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'))
-})
-
-const mergeTargetOptions = computed(() => mergeForm.value.source ? catalogStore.allLocations.filter(l => l.id !== mergeForm.value.source.id).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs')) : [])
-const totalPages = computed(() => Math.ceil((activeTab.value === 'users' ? filteredUsers.value.length : filteredCurrentItems.value.length) / itemsPerPage))
-const paginatedUsers = computed(() => isMobileMode.value ? filteredUsers.value.slice(0, currentPage.value * itemsPerPage) : filteredUsers.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
-const paginatedCurrentItems = computed(() => isMobileMode.value ? filteredCurrentItems.value.slice(0, currentPage.value * itemsPerPage) : filteredCurrentItems.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
-
-const loadMoreTrigger = ref(null)
-let observer = null
-watch(loadMoreTrigger, (el) => {
-  if (observer) observer.disconnect()
-  if (el) {
-    observer = new IntersectionObserver((entries) => { if (entries[0].isIntersecting && isMobileMode.value && currentPage.value < totalPages.value) currentPage.value++ }, { rootMargin: '200px' })
-    observer.observe(el)
-  }
-})
-
-const loadAdminData = async () => {
-  isAdminDataLoading.value = true
-  try {
-    const [beersRes, breweriesRes, locsRes] = await Promise.all([
-      apiFetch('/beers.php?limit=10000'),
-      apiFetch('/breweries.php?limit=10000'),
-      apiFetch('/locations.php?limit=10000&include_all=1')
-    ])
-    if (beersRes.status === 'success') adminBeers.value = beersRes.data
-    if (breweriesRes.status === 'success') adminBreweries.value = breweriesRes.data
-    if (locsRes.status === 'success') adminLocations.value = locsRes.data
-  } catch (e) {
-    console.error("Chyba při načítání admin dat", e)
-  } finally {
-    isAdminDataLoading.value = false
-  }
-}
-
-const fetchUsers = async () => { isUsersLoading.value = true; try { const res = await apiFetch('/users.php'); if (res.status === 'success') allUsers.value = res.data } finally { isUsersLoading.value = false } }
-const fetchBarcodes = async () => { isBarcodesLoading.value = true; try { const res = await apiFetch('/barcodes.php'); if (res.status === 'success') allBarcodes.value = res.data } finally { isBarcodesLoading.value = false } }
-
-onMounted(() => { 
-  catalogStore.fetchAllData(); 
-  fetchUsers(); 
-  loadAdminData(); 
-  window.addEventListener('resize', handleResize) 
-})
-
-onUnmounted(() => { window.removeEventListener('resize', handleResize); if (observer) observer.disconnect() })
-
-// Akce administrátora: Vyresetování 2FA uživateli
-const handleReset2FA = async (u) => {
-  if (!confirm(t('admin.tooltips.reset_2fa_confirm', { user: u.username }))) return;
-  try {
-    const payload = {
-      id: u.id,
-      username: u.username,
-      email: u.email,
-      first_name: u.first_name,
-      last_name: u.last_name,
-      role: u.role,
-      reset_2fa: true
-    };
-    const res = await apiFetch('/update_user.php', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-    if (res.status === 'success') {
-      toastStore.showToast(t('toast.two_fa_reset_success'), 'toast-success');
-      fetchUsers();
-    } else {
-      toastStore.showToast(res.message || 'Error', 'toast-error');
+    // Zavolá openAddModal v AdminBarcodesTable (pokud jste ji tam přidali)
+    if (barcodesTableRef.value && barcodesTableRef.value.openAddModal) {
+      barcodesTableRef.value.openAddModal()
     }
-  } catch (e) {
-    toastStore.showToast(t('toast.communication_error'), 'toast-error');
-  }
-}
-
-const openAddModal = (t) => { 
-  isEditing.value = false
-  Object.keys(modals.value).forEach(m => modals.value[m] = false)
-  const keyMap = t === 'breweries' ? 'brewery' : (t === 'beers' ? 'beer' : (t === 'locations' ? 'location' : (t === 'styles' ? 'style' : (t === 'barcodes' ? 'barcode' : 'user'))))
-  if (keyMap === 'beer') formData.value.beer = { id: null, name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', ebc: '', hops: '', malts: '', fermentation: '', tags: '', is_unfiltered: false, is_unpasteurized: false }
-  else if (keyMap === 'brewery') formData.value.brewery = { id: null, name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null, lat: null, lng: null }
-  else if (keyMap === 'location') formData.value.location = { id: null, name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '' }
-  else if (keyMap === 'style') formData.value.style = { id: null, name: '' }
-  else if (keyMap === 'user') formData.value.user = { id: null, first_name: '', last_name: '', username: '', email: '', role: 'user', avatar: null }
-  else if (keyMap === 'barcode') formData.value.barcode = { id: null, ean: '', beer_id: '', packaging: 'láhev', volume: '0.50' }
-  modals.value[keyMap] = true 
-}
-
-const openEditModal = (item, typeParam) => { 
-  isEditing.value = true
-  
-  // Detekce správného klíče typu položky, ať už se sem posílá z Pending nebo odjinud
-  let key = 'user'
-  if (['style', 'styles'].includes(typeParam)) key = 'style'
-  else if (['beer', 'beers'].includes(typeParam)) key = 'beer'
-  else if (['location', 'locations'].includes(typeParam)) key = 'location'
-  else if (['brewery', 'breweries'].includes(typeParam)) key = 'brewery'
-  else if (['barcode', 'barcodes'].includes(typeParam)) key = 'barcode'
-
-  formData.value[key] = key === 'beer' ? { ...item, is_unfiltered: !!item.is_unfiltered, is_unpasteurized: !!item.is_unpasteurized } : { ...item, logoFile: null }
-  modals.value[key] = true 
-}
-
-const openMergeModal = (item) => { mergeForm.value = { source: item, target_id: '' }; modals.value.merge = true }
-const submitMerge = async () => { 
-  if (!mergeForm.value.source || !mergeForm.value.target_id) return; 
-  try { 
-    const res = await apiFetch('/merge_locations.php', { method: 'POST', body: JSON.stringify({ source_id: mergeForm.value.source.id, target_id: mergeForm.value.target_id }) }); 
-    if (res.status === 'success') { 
-      toastStore.showToast(res.message); 
-      modals.value.merge = false; 
-      catalogStore.locations = catalogStore.locations.filter(l => l.id !== mergeForm.value.source.id);
-      adminLocations.value = adminLocations.value.filter(l => l.id !== mergeForm.value.source.id);
-      loadAdminData();
-    } else { 
-      toastStore.showToast(res.message || 'Error', 'toast-error') 
-    } 
-  } catch { 
-    toastStore.showToast(t('toast.communication_error'), 'toast-error') 
-  } 
-}
-
-const openPasswordModal = (u) => { selectedUserForPassword.value = u; modals.value.password = true }
-const handlePasswordChange = async (payload) => { try { const res = await apiFetch('/admin_change_password.php', { method: 'POST', body: JSON.stringify(payload) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.password = false } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
-const handleRemoveAvatar = (userId) => { selectedUserForAvatarRemove.value = allUsers.value.find(u => u.id === userId); modals.value.removeAvatar = true }
-const executeRemoveAvatar = async (userId) => { try { const res = await apiFetch('/admin_remove_avatar.php', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.removeAvatar = false; modals.value.user = false; fetchUsers() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(res.message || 'Error', 'toast-error') } }
-const openBanModal = (u) => { selectedUserForBan.value = u; modals.value.ban = true }
-const handleBanConfirm = async (u) => { try { const res = await apiFetch('/admin_toggle_ban.php', { method: 'POST', body: JSON.stringify({ user_id: u.id, is_banned: u.is_banned ? 0 : 1 }) }); if (res.status === 'success') { toastStore.showToast(res.message); modals.value.ban = false; fetchUsers() } else toastStore.showToast(res.message || 'Error', 'toast-error') } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') } }
-
-const submitForm = async (f) => {
-  try {
-    const endpoint = isEditing.value ? `update_${f}.php` : `add_${f}.php`
-    let body;
-    if (f === 'brewery') { body = new FormData(); Object.keys(formData.value[f]).forEach(k => { if (formData.value[f][k] != null) body.append(k, formData.value[f][k]) }) }
-    else body = JSON.stringify(formData.value[f])
-    
-    const res = await apiFetch(`/${endpoint}`, { method: 'POST', body });
-    if (res.status === 'success') { 
-      toastStore.showToast(res.message); 
-      modals.value[f] = false; 
-      if (f === 'user') fetchUsers(); 
-      else if (f === 'barcode') fetchBarcodes();
-      else {
-        catalogStore.forceRefresh()
-        loadAdminData() 
-        // Pokud jsme zrovna schvalovali/editovali v tabu pending, překreslíme frontu
-        if (activeTab.value === 'pending') catalogStore.fetchPendingApprovals();
-      }
-    } 
-    else toastStore.showToast(res.message || 'Error', 'toast-error')
-  } catch { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
-}
-
-const confirmDelete = (id, typeParam) => { deleteModal.value = { show: true, id, type: { users: 'user', beers: 'beer', breweries: 'brewery', locations: 'location', styles: 'style', barcodes: 'barcode' }[typeParam] } }
-const handleDelete = async () => { 
-  try { 
-    const res = await apiFetch(`/delete_${deleteModal.value.type}.php`, { method: 'POST', body: JSON.stringify({ id: deleteModal.value.id }) }); 
-    if (res.status === 'success') { 
-      toastStore.showToast("Smazáno"); 
-      if (deleteModal.value.type === 'user') fetchUsers(); 
-      else if (deleteModal.value.type === 'barcode') fetchBarcodes();
-      else {
-        catalogStore.forceRefresh()
-        loadAdminData()
-      }
-    } else toastStore.showToast(res.message || 'Error', 'toast-error') 
-  } catch { toastStore.showToast(t('toast.delete_error'), 'toast-error') } 
-  finally { deleteModal.value.show = false } 
-}
-
-const handleApprove = async (item, action) => { 
-  try { 
-    const res = await apiFetch('/approve_entity.php', { method: 'POST', body: JSON.stringify({ entity_type: item.entity_type, entity_id: item.id, action }) }); 
-    if (res.status === 'success') { 
-      toastStore.showToast(res.message); 
-      catalogStore.fetchPendingApprovals(); 
-      catalogStore.forceRefresh();
-      loadAdminData(); 
-    } else {
-      toastStore.showToast(res.message || 'Error', 'toast-error') 
+  } else {
+    // Zavolá openAddModal v AdminCatalogTable
+    if (catalogTableRef.value && catalogTableRef.value.openAddModal) {
+      catalogTableRef.value.openAddModal()
     }
-  } catch { 
-    toastStore.showToast(t('toast.communication_error'), 'toast-error') 
-  } 
+  }
 }
 </script>
 
 <style scoped>
-.mobile-only { display: none; }
-
 .admin-page { flex: 1; display: flex; flex-direction: column; }
-
 .admin-header { margin-bottom: 2rem; overflow-x: auto; }
-
 .admin-layout { position: relative; flex: 1; min-height: 400px; display: flex; flex-direction: column; }
 .admin-section { display: flex; flex-direction: column; flex: 1; }
 .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; gap: 2rem; }
 .header-info { flex: 1; }
 .admin-search { max-width: 380px; }
-.user-cell, .main-item-cell { display: flex; align-items: center; gap: 1rem; }
-.item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.info-top-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.meta-row { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta-sep { color: var(--text-muted); opacity: 0.7; margin-left: 4px; }
-.combined-meta { display: none; align-items: center; gap: 5px; }
-.mobile-flag { width: 16px; height: auto; }
-.banned-badge { background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.6rem; border: 1px solid rgba(239, 68, 68, 0.2); }
-.banned-row td { opacity: 0.7; }
-.line-through { text-decoration: line-through; }
-.admin-section-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid var(--border); margin-top: auto; }
-.footer-info { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-.footer-info strong { color: var(--text-main); }
-.country-cell { display: flex; align-items: center; gap: 0.5rem; }
-.admin-flag-icon { width: 18px; height: auto; border-radius: 2px; }
-.modal-form { display: flex; flex-direction: column; gap: 1.5rem; }
-.merge-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; }
-.merge-desc { margin: 0; color: var(--text-muted); line-height: 1.4; }
-.type-badge { background: var(--bg-app); border: 1px solid var(--border); color: var(--text-muted); }
-.load-more-trigger { height: 20px; width: 100%; }
-.modal-title { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text-main); font-size: 1.5rem; transition: color 0.3s ease; }
-.title-icon { color: var(--blue); }
-
-.barcodes-bg { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 
 @media (max-width: 768px) {
   .section-header { flex-direction: column; align-items: stretch; gap: 1rem; }
   .admin-search { max-width: none; }
   .mobile-full-width { order: -1; padding: 1rem; width: 100%; justify-content: center; }
-  .mobile-only { display: block; }
-  .combined-meta { display: flex !important; }
-  .desktop-only { display: none !important; }
 }
 </style>
