@@ -18,7 +18,7 @@
     :total-pages="totalPages"
     @reset-filters="resetFilters"
     @remove-filter="removeFilter"
-    @add="isAddModalOpen = true"
+    @add="openAddModal"
     @load-more="() => loadNextPage(viewMode === 'list')"
   >
     <template #header-top>
@@ -49,8 +49,8 @@
     </div>
 
     <template #modals>
-      <DetailModal :show="isDetailOpen" :item="selectedItem" type="brewery" @close="isDetailOpen = false" />
-      <AddBreweryModal :show="isAddModalOpen" :isEditing="false" :countries="countries" :form="form" @close="isAddModalOpen = false" @submit="submitBrewery" />
+      <DetailModal :show="isDetailOpen" :item="selectedItem" type="brewery" @close="closeDetail" />
+      <AddBreweryModal :show="isAddModalOpen" :isEditing="false" :countries="countries" :form="form" @close="closeAddModal" @submit="submitBrewery" />
     </template>
   </BaseCatalogLayout>
 </template>
@@ -59,7 +59,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { FactoryIcon, LayoutGridIcon, MapIcon } from 'lucide-vue-next'
+import { FactoryIcon } from 'lucide-vue-next'
 import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -75,6 +75,10 @@ import AddBreweryModal from '../components/modals/AddBreweryModal.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
 import { useCatalogFilters } from '../composables/useCatalogFilters'
 
+// Import nových composables
+import { useViewMode } from '../composables/useViewMode'
+import { useCatalogModals } from '../composables/useCatalogModals'
+
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
@@ -84,15 +88,10 @@ const { user } = storeToRefs(authStore)
 const { breweries, breweriesPagination, countries, isLoading } = storeToRefs(catalogStore)
 
 const isAdmin = computed(() => user.value?.role === 'admin')
-const viewMode = ref('list')
-const isAddModalOpen = ref(false)
-const isDetailOpen = ref(false)
-const selectedItem = ref(null)
 
-const viewModeOptions = computed(() => [
-  { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
-  { value: 'map', label: t('catalog.view_map'), icon: MapIcon }
-])
+// Nahrazení původních ref() a computed() voláním composables
+const { viewMode, viewModeOptions } = useViewMode('list')
+const { isAddModalOpen, isDetailOpen, selectedItem, openDetail, closeDetail, openAddModal, closeAddModal } = useCatalogModals()
 
 const form = ref({ name: '', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', logoFile: null })
 
@@ -132,15 +131,13 @@ const sortOptions = computed(() => [
   { value: 'oldest', label: t('catalog.sort.oldest') }
 ])
 
-const openDetail = (item) => { selectedItem.value = item; isDetailOpen.value = true }
-
 const submitBrewery = async () => {
   try {
     const formData = new FormData()
     Object.keys(form.value).forEach(key => { if (form.value[key] !== null && form.value[key] !== '') formData.append(key, form.value[key]) })
     const result = await apiFetch('/add_brewery.php', { method: 'POST', body: formData })
     if (result.status === 'success') { 
-      isAddModalOpen.value = false
+      closeAddModal()
       const country = catalogStore.countries.find(c => c.id == form.value.country_id)
       catalogStore.addBreweryLocally({
          id: result.id,

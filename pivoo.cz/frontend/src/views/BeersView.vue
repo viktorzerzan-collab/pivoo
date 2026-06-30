@@ -17,7 +17,7 @@
     :total-pages="totalPages"
     @reset-filters="resetFilters"
     @remove-filter="removeFilter"
-    @add="openAddModal"
+    @add="handleOpenAddModal"
     @load-more="() => loadNextPage()"
   >
     <template #filters>
@@ -41,7 +41,7 @@
         :key="beer.id" 
         :item="beer" 
         type="beer"
-        @showDetail="openDetail"
+        @showDetail="handleOpenDetail"
       />
     </CatalogGrid>
 
@@ -50,7 +50,7 @@
         :show="isAddModalOpen" 
         :isEditing="false" 
         :form="beerForm" 
-        @close="isAddModalOpen = false" 
+        @close="closeAddModal" 
         @submit="submitBeer" 
       />
 
@@ -59,7 +59,7 @@
         :item="selectedItem" 
         type="beer" 
         :reviews="beerReviews"
-        @close="isDetailOpen = false" 
+        @close="closeDetail" 
       />
     </template>
   </BaseCatalogLayout>
@@ -85,12 +85,18 @@ import AddBeerModal from '../components/modals/AddBeerModal.vue'
 import DetailModal from '../components/modals/DetailModal.vue'
 import { useCatalogFilters } from '../composables/useCatalogFilters'
 
+// Import nové composable
+import { useCatalogModals } from '../composables/useCatalogModals'
+
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t } = useI18n()
 
 const { beers, beersPagination, styles, isLoading } = storeToRefs(catalogStore)
+
+// Použití composable
+const { isAddModalOpen, isDetailOpen, selectedItem, openDetail, closeDetail, openAddModal, closeAddModal } = useCatalogModals()
 
 const initialFilters = {
   search: '', brewery: '', style: '', country: '',
@@ -164,9 +170,6 @@ const sortOptions = computed(() => [
   { value: 'oldest', label: t('catalog.sort.oldest') }
 ])
 
-const isAddModalOpen = ref(false)
-const isDetailOpen = ref(false)
-const selectedItem = ref(null)
 const beerReviews = ref([])
 const beerForm = ref({ 
   name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', 
@@ -174,29 +177,28 @@ const beerForm = ref({
   is_unfiltered: false, is_unpasteurized: false 
 })
 
-const openAddModal = () => {
+const handleOpenAddModal = () => {
   beerForm.value = { 
     name: '', brewery_id: '', style_id: '', epm: '', abv: '', ibu: '', 
     ebc: '', hops: '', malts: '', fermentation: '', tags: '', 
     is_unfiltered: false, is_unpasteurized: false 
   }
-  isAddModalOpen.value = true
+  openAddModal()
 }
 
 const submitBeer = async () => {
   try {
     const res = await apiFetch('/add_beer.php', { method: 'POST', body: JSON.stringify(beerForm.value) })
     if (res.status === 'success') { 
-      isAddModalOpen.value = false
+      closeAddModal()
       catalogStore.addBeerLocally({ id: res.id, ...beerForm.value })
       toastStore.showToast(t('toast.beer_added'))
     }
   } catch (e) { toastStore.showToast(t('toast.communication_error'), 'toast-error') }
 }
 
-const openDetail = async (beer) => {
-  selectedItem.value = beer
-  isDetailOpen.value = true
+const handleOpenDetail = async (beer) => {
+  openDetail(beer)
   beerReviews.value = [] 
   try {
     const res = await apiFetch(`/beer_reviews.php?beer_id=${beer.id}`)

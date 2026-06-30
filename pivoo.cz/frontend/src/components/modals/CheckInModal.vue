@@ -248,10 +248,13 @@ import BaseTooltip from '../BaseTooltip.vue'
 import MagicScanner from '../MagicScanner.vue'
 import BackgroundWatermark from '../BackgroundWatermark.vue'
 
-import { apiFetch } from '../../api'
 import { useCatalogStore } from '../../stores/catalog'
 import { useAuthStore } from '../../stores/auth'
 import { useToastStore } from '../../stores/toast'
+
+// Import nově vytvořených composables
+import { useImageGallery } from '../../composables/useImageGallery'
+import { useLocationDetection } from '../../composables/useLocationDetection'
 
 const catalogStore = useCatalogStore()
 const authStore = useAuthStore()
@@ -268,25 +271,41 @@ const emit = defineEmits(['close', 'submit', 'open-add-location', 'magicAddBrewe
 
 const volumeMode = ref(props.form.volume || '')
 const customVolume = ref('')
-
-const isLocating = ref(false)
-const locationMessage = ref('')
-const locationMessageType = ref('')
-const tempCoords = ref(null)
-
-const showNearbyModal = ref(false)
-const nearbyLocations = ref([])
-
 const isAiUpdating = ref(false)
-const isCompressing = ref(false)
 
-const existingPhotos = ref([])
-const removedPhotoIds = ref([])
-const newPhotos = ref([])
-const newPhotoPreviews = ref([])
-const photoInput = ref(null)
+const translateLocation = (val) => {
+  if (!val) return val
+  const key = `dynamic.locations.${val}`
+  return te(key) ? t(key) : val
+}
 
-const totalPhotos = computed(() => existingPhotos.value.length + newPhotos.value.length)
+// Inicializace composables pro vyčleněnou logiku
+const {
+  isCompressing,
+  existingPhotos,
+  removedPhotoIds,
+  newPhotos,
+  newPhotoPreviews,
+  photoInput,
+  totalPhotos,
+  triggerPhotoInput,
+  handlePhotoSelect,
+  removeExistingPhoto,
+  removeNewPhoto,
+  resetGallery
+} = useImageGallery(toastStore, t)
+
+const {
+  isLocating,
+  locationMessage,
+  locationMessageType,
+  tempCoords,
+  showNearbyModal,
+  nearbyLocations,
+  autodetectLocation,
+  selectNearbyLocation,
+  resetLocationState
+} = useLocationDetection(catalogStore, props.form, t, translateLocation)
 
 const priceValue = computed({
   get: () => props.isEditing ? props.form.original_price : props.form.price,
@@ -295,12 +314,6 @@ const priceValue = computed({
     else props.form.price = val
   }
 })
-
-const translateLocation = (val) => {
-  if (!val) return val
-  const key = `dynamic.locations.${val}`
-  return te(key) ? t(key) : val
-}
 
 const handleAiResponse = (res) => {
   if (res.status === 'success' && res.data) {
@@ -379,15 +392,8 @@ watch(() => props.form.is_free, (isFree) => {
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    locationMessage.value = ''
-    showNearbyModal.value = false
-    nearbyLocations.value = []
-    
-    existingPhotos.value = props.isEditing && props.form.photos ? [...props.form.photos] : []
-    removedPhotoIds.value = []
-    newPhotos.value = []
-    newPhotoPreviews.value.forEach(url => URL.revokeObjectURL(url))
-    newPhotoPreviews.value = []
+    resetLocationState()
+    resetGallery(props.isEditing && props.form.photos ? props.form.photos : [])
     
     if (props.form.location_id) props.form.location_id = Number(props.form.location_id)
     if (props.form.brewery_id) props.form.brewery_id = Number(props.form.brewery_id)
@@ -428,249 +434,11 @@ watch(() => props.show, (newVal) => {
   }
 })
 
-const triggerPhotoInput = () => {
-  if (photoInput.value) photoInput.value.click()
-}
-
-const compressImage = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = (event) => {
-      const img = new Image()
-      img.src = event.target.result
-      img.onload = () => {
-        let width = img.width
-        let height = img.height
-        const maxDim = 1920
-
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width)
-            width = maxDim
-          } else {
-            width = Math.round((width * maxDim) / height)
-            height = maxDim
-          }
-        }
-
-        const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, width, height)
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
-              type: 'image/webp',
-              lastModified: Date.now()
-            }))
-          } else {
-            reject(new Error("Compression failed"))
-          }
-        }, 'image/webp', 0.85)
-      }
-      img.onerror = (e) => reject(e)
-    }
-    reader.onerror = (e) => reject(e)
-  })
-}
-
-const handlePhotoSelect = async (e) => {
-  const files = Array.from(e.target.files)
-  if (!files.length) return
-  
-  isCompressing.value = true
-  
-  for (const file of files) {
-    if (totalPhotos.value >= 3) {
-      toastStore.showToast(t('modals.checkin.max_photos_reached'), 'warning')
-      break;
-    }
-    try {
-      const compressedFile = await compressImage(file)
-      newPhotos.value.push(compressedFile)
-      newPhotoPreviews.value.push(URL.createObjectURL(compressedFile))
-    } catch(err) {
-      console.error("Chyba při zmenšování obrázku", err)
-      toastStore.showToast(t('modals.checkin.photo_error'), 'error')
-    }
-  }
-  
-  isCompressing.value = false
-  if (photoInput.value) photoInput.value.value = ''
-}
-
-const removeExistingPhoto = (id) => {
-  existingPhotos.value = existingPhotos.value.filter(p => p.id !== id)
-  removedPhotoIds.value.push(id)
-}
-
-const removeNewPhoto = (idx) => {
-  URL.revokeObjectURL(newPhotoPreviews.value[idx])
-  newPhotoPreviews.value.splice(idx, 1)
-  newPhotos.value.splice(idx, 1)
-}
-
 const emitSubmit = () => {
   emit('submit', { 
     newPhotos: newPhotos.value, 
     removedPhotoIds: removedPhotoIds.value 
   })
-}
-
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLon = (lon2 - lon1) * Math.PI / 180
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-  return R * c
-}
-
-const autodetectLocation = () => {
-  if (!navigator.geolocation) {
-    locationMessage.value = t('modals.checkin.geolocation_not_supported')
-    locationMessageType.value = 'error'
-    return
-  }
-  
-  isLocating.value = true
-  locationMessage.value = ''
-  
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const lat = pos.coords.latitude
-      const lng = pos.coords.longitude
-      tempCoords.value = { lat, lng }
-
-      const nearby = []
-
-      // Běžné vyhledávání okolních podniků
-      catalogStore.allLocations.forEach(loc => {
-        if (loc.lat && loc.lng && loc.type !== 'mesto') {
-          const dist = calculateDistance(lat, lng, loc.lat, loc.lng)
-          // Zvýšený limit na 150 metrů (0.150 km)
-          if (dist <= 0.150) {
-            nearby.push({ ...loc, distance: dist })
-          }
-        }
-      })
-
-      // Pokusit se zjistit obec přes Nominatim API a případně ji rovnou založit
-      try {
-        // Přidán Accept-Language pro zaručení lokálních názvů obcí místo anglických defaultů
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`, {
-          headers: {
-            'Accept-Language': 'cs-CZ,cs;q=0.9'
-          }
-        })
-        const data = await res.json()
-        
-        if (data && data.address) {
-          // Rozšířena detekce typů obcí, aby se našly i menší obce (municipality, village, atd.)
-          const cityName = data.address.city || data.address.town || data.address.village || data.address.municipality || data.address.suburb || data.address.hamlet
-          
-          if (cityName) {
-            // Hledáme přesný název u lokací typu město
-            let cityLoc = catalogStore.allLocations.find(l => l.type === 'mesto' && l.name === cityName)
-            
-            // Město ještě v databázi nemáme, automaticky ho založíme!
-            if (!cityLoc) {
-              const zipCode = data.address.postcode || ''
-              let countryId = null
-              
-              if (data.address.country_code && catalogStore.countries && catalogStore.countries.length) {
-                const cCode = data.address.country_code.toLowerCase()
-                const foundCountry = catalogStore.countries.find(c => 
-                  (c.code && c.code.toLowerCase() === cCode) || 
-                  (c.iso && c.iso.toLowerCase() === cCode)
-                )
-                if (foundCountry) {
-                  countryId = foundCountry.id
-                }
-              }
-
-              const createRes = await apiFetch('/add_location.php', {
-                method: 'POST',
-                body: JSON.stringify({
-                  name: cityName,
-                  type: 'mesto',
-                  zip_code: zipCode,
-                  country_id: countryId,
-                  lat: lat,
-                  lng: lng
-                })
-              })
-              
-              if (createRes.status === 'success') {
-                cityLoc = {
-                  id: createRes.data.id,
-                  name: cityName,
-                  type: 'mesto',
-                  zip_code: zipCode,
-                  country_id: countryId,
-                  lat: lat,
-                  lng: lng,
-                  is_favorite: 0,
-                  is_wishlist: 0
-                }
-                // Přidáme ho okamžitě do lokálního stavu, aby bylo k dispozici ve formuláři
-                catalogStore.addLocationLocally(cityLoc)
-              }
-            }
-            
-            if (cityLoc) {
-              // Přidáme ho na seznam s virtuální vzdáleností 0, aby bylo na prvním místě
-              if (!nearby.some(n => n.id === cityLoc.id)) {
-                nearby.push({ ...cityLoc, distance: 0 })
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Nepodařilo se zjistit obec pro Check-in:", e)
-      }
-
-      // Seřazení od nejbližšího
-      nearby.sort((a, b) => a.distance - b.distance)
-
-      isLocating.value = false
-
-      // Vždy zobrazíme modál, i když je k dispozici jen jedna lokace, uživatel má mít možnost volby!
-      if (nearby.length > 0) {
-        nearbyLocations.value = nearby
-        showNearbyModal.value = true
-        
-        if (nearby.length === 1) {
-          locationMessage.value = t('modals.checkin.found_location', { name: translateLocation(nearby[0].name), dist: nearby[0].type === 'mesto' ? 'Město' : (nearby[0].distance * 1000).toFixed(0) })
-        } else {
-          locationMessage.value = t('modals.checkin.multiple_locations')
-        }
-        locationMessageType.value = 'success'
-      } else {
-        props.form.location_id = ''
-        locationMessage.value = t('modals.checkin.no_locations')
-        locationMessageType.value = 'warning'
-      }
-    },
-    (err) => {
-      isLocating.value = false
-      locationMessage.value = t('modals.checkin.location_error')
-      locationMessageType.value = 'error'
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  )
-}
-
-const selectNearbyLocation = (loc) => {
-  props.form.location_id = loc.id
-  locationMessage.value = t('modals.checkin.selected_location', { name: translateLocation(loc.name), dist: loc.type === 'mesto' ? 'Město' : (loc.distance * 1000).toFixed(0) })
-  locationMessageType.value = 'success'
-  showNearbyModal.value = false
 }
 
 const sortedBeers = computed(() => {
@@ -824,7 +592,7 @@ watch(() => props.form.location_id, () => {
 }
 .nearby-name {
   color: var(--text-main);
-  fontWeight: 600;
+  font-weight: 600;
   font-size: 1rem;
 }
 .nearby-dist {

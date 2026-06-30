@@ -18,7 +18,7 @@
     :total-pages="totalPages"
     @reset-filters="resetFilters"
     @remove-filter="removeFilter"
-    @add="openAddModal"
+    @add="handleOpenAddModal"
     @load-more="() => loadNextPage(viewMode === 'list')"
   >
     <template #header-top>
@@ -49,8 +49,8 @@
     </div>
 
     <template #modals>
-      <DetailModal :show="isDetailOpen" :item="selectedItem" type="location" @close="isDetailOpen = false" />
-      <AddLocationModal :show="isAddModalOpen" :countries="countries" :form="form" @close="isAddModalOpen = false" @submit="submitLocation" />
+      <DetailModal :show="isDetailOpen" :item="selectedItem" type="location" @close="closeDetail" />
+      <AddLocationModal :show="isAddModalOpen" :countries="countries" :form="form" @close="closeAddModal" @submit="submitLocation" />
     </template>
   </BaseCatalogLayout>
 </template>
@@ -63,7 +63,7 @@ import { apiFetch } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
 import { useToastStore } from '../stores/toast'
-import { MapIcon, LayoutGridIcon } from 'lucide-vue-next'
+import { MapIcon } from 'lucide-vue-next'
 
 import BaseCatalogLayout from '../components/BaseCatalogLayout.vue'
 import CatalogGrid from '../components/CatalogGrid.vue'
@@ -75,6 +75,10 @@ import AddLocationModal from '../components/modals/AddLocationModal.vue'
 import BaseSwitch from '../components/BaseSwitch.vue'
 import { useCatalogFilters } from '../composables/useCatalogFilters'
 
+// Import nových composables
+import { useViewMode } from '../composables/useViewMode'
+import { useCatalogModals } from '../composables/useCatalogModals'
+
 const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const toastStore = useToastStore()
@@ -84,15 +88,10 @@ const { user } = storeToRefs(authStore)
 const { locations, locationsPagination, countries, isLoading } = storeToRefs(catalogStore)
 
 const isAdmin = computed(() => user.value?.role === 'admin')
-const viewMode = ref('list')
-const isAddModalOpen = ref(false)
-const isDetailOpen = ref(false)
-const selectedItem = ref(null)
 
-const viewModeOptions = computed(() => [
-  { value: 'list', label: t('catalog.view_cards'), icon: LayoutGridIcon },
-  { value: 'map', label: t('catalog.view_map'), icon: MapIcon }
-])
+// Nahrazení původních ref() a computed() voláním composables
+const { viewMode, viewModeOptions } = useViewMode('list')
+const { isAddModalOpen, isDetailOpen, selectedItem, openDetail, closeDetail, openAddModal, closeAddModal } = useCatalogModals()
 
 const form = ref({ name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null })
 
@@ -133,18 +132,16 @@ const sortOptions = computed(() => [
   { value: 'oldest', label: t('catalog.sort.oldest') }
 ])
 
-const openAddModal = () => {
+const handleOpenAddModal = () => {
   form.value = { name: '', type: 'hospoda', city: '', zip_code: '', country_id: 1, address: '', email: '', phone: '', website: '', opening_hours: '', lat: null, lng: null }
-  isAddModalOpen.value = true
+  openAddModal()
 }
-
-const openDetail = (loc) => { selectedItem.value = loc; isDetailOpen.value = true }
 
 const submitLocation = async () => {
   try {
     const result = await apiFetch('/add_location.php', { method: 'POST', body: JSON.stringify(form.value) })
     if (result.status === 'success') { 
-      isAddModalOpen.value = false
+      closeAddModal()
       const country = countries.value.find(c => c.id == form.value.country_id)
       catalogStore.addLocationLocally({
          id: result.id,
