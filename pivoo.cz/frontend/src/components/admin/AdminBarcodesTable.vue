@@ -71,7 +71,10 @@
       </div>
     </div>
 
+    <AddBarcodeModal :show="modals.add" :isEditing="false" :form="formData" @close="modals.add = false" @submit="submitAdd" />
+    
     <AddBarcodeModal :show="modals.edit" :isEditing="true" :form="formData" @close="modals.edit = false" @submit="submitEdit" />
+    
     <DeleteConfirmModal :show="modals.delete" @close="modals.delete = false" @confirm="handleDelete" />
   </div>
 </template>
@@ -114,9 +117,10 @@ const isMobileMode = ref(window.innerWidth <= 768)
 
 const handleResize = () => { isMobileMode.value = window.innerWidth <= 768 }
 
-// Stavy a data specifická pro čárové kódy
-const modals = ref({ edit: false, delete: false })
-const formData = ref({ id: null, ean: '', beer_id: '', packaging: 'láhev', volume: '0.50' })
+// Přidali jsme 'add' do stavu modals
+const modals = ref({ add: false, edit: false, delete: false })
+// Upravili jsme výchozí hodnotu u 'packaging' z 'láhev' na 'bottle', aby to sedělo se select listem v modálním okně
+const formData = ref({ id: null, ean: '', beer_id: '', packaging: 'bottle', volume: '0.50' })
 const deleteId = ref(null)
 
 const translatePackaging = (val) => {
@@ -135,7 +139,7 @@ const filteredItems = computed(() => {
       item.brewery_name?.toLowerCase().includes(q)
     )
   }
-  return items // Čárové kódy se obvykle neřadí podle názvu, bereme je z API
+  return items 
 })
 
 const totalPages = computed(() => Math.ceil(filteredItems.value.length / itemsPerPage))
@@ -157,9 +161,29 @@ onUnmounted(() => {
 
 // --- Akce ---
 
+const openAddModal = () => {
+  formData.value = { id: null, ean: '', beer_id: '', packaging: 'bottle', volume: '0.50' }
+  modals.value.add = true
+}
+
 const openEditModal = (item) => {
   formData.value = { ...item }
   modals.value.edit = true
+}
+
+const submitAdd = async () => {
+  try {
+    const res = await apiFetch('/add_barcode.php', { method: 'POST', body: JSON.stringify(formData.value) })
+    if (res.status === 'success') {
+      toastStore.showToast(res.message || 'Položka úspěšně přidána')
+      modals.value.add = false
+      fetchBarcodes()
+    } else {
+      toastStore.showToast(res.message || 'Error', 'toast-error')
+    }
+  } catch {
+    toastStore.showToast(t('toast.communication_error'), 'toast-error')
+  }
 }
 
 const submitEdit = async () => {
@@ -197,6 +221,11 @@ const handleDelete = async () => {
     modals.value.delete = false
   }
 }
+
+// Zpřístupnění metody openAddModal rodičovské komponentě (AdminView)
+defineExpose({
+  openAddModal
+})
 </script>
 
 <style scoped>
