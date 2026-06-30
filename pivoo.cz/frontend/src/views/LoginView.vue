@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { LogInIcon, BeerIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
@@ -80,6 +80,7 @@ import { useToastStore } from '../stores/toast'
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 import BaseAuthLayout from '../components/BaseAuthLayout.vue'
+import { useTotpInputs } from '../composables/useTotpInputs'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -91,57 +92,21 @@ const password = ref('')
 const require2Fa = ref(false)
 const isLoading = ref(false)
 
-// 2FA state: pole pro 6 číslic a pole referencí na input elementy
-const totpDigits = ref(['', '', '', '', '', ''])
-const totpInputRefs = ref([])
+// Vytažení stavů a metod z našeho nového composable
+const {
+  totpDigits,
+  totpInputRefs,
+  totpCode,
+  handleTotpInput,
+  handleTotpKeydown,
+  handleTotpPaste,
+  resetTotp,
+  clearTotp
+} = useTotpInputs()
 
-// Sestavení výsledného 6-místného kódu z polí
-const totpCode = computed(() => totpDigits.value.join(''))
-
-// Zpracování vkládání čísla do okénka (včetně posunu na další)
-const handleTotpInput = (event, index) => {
-  const val = event.target.value
-  
-  // Povolí pouze číslice
-  if (!/^\d$/.test(val)) {
-    totpDigits.value[index] = ''
-    return
-  }
-  
-  // Automatický posun na další pole, pokud nejsme na posledním
-  if (val && index < 5) {
-    totpInputRefs.value[index + 1]?.focus()
-  }
-}
-
-// Zpracování kláves (pro mazání a krok zpět)
-const handleTotpKeydown = (event, index) => {
-  if (event.key === 'Backspace' && !totpDigits.value[index] && index > 0) {
-    // Pokud je políčko prázdné a stiskneme Backspace, přesune kurzor na předchozí
-    totpInputRefs.value[index - 1]?.focus()
-  }
-}
-
-// Podpora pro vložení kódu ze schránky (Ctrl+V)
-const handleTotpPaste = (event) => {
-  event.preventDefault()
-  const pastedData = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-  
-  if (pastedData) {
-    for (let i = 0; i < pastedData.length; i++) {
-      totpDigits.value[i] = pastedData[i]
-    }
-    
-    // Nastavení focusu za poslední vložené číslo
-    const focusIndex = Math.min(pastedData.length, 5)
-    totpInputRefs.value[focusIndex]?.focus()
-  }
-}
-
-// Zrušení 2FA okna a návrat zpět
 const cancel2Fa = () => {
   require2Fa.value = false
-  totpDigits.value = ['', '', '', '', '', '']
+  clearTotp()
 }
 
 const handleLogin = async () => {
@@ -153,34 +118,23 @@ const handleLogin = async () => {
       body: JSON.stringify({ 
         username: username.value, 
         password: password.value,
-        totp_code: totpCode.value // Používáme computed vlastnost složenou z 6 okének
+        totp_code: totpCode.value // Používáme computed string z composable
       }) 
     })
     
     if (result.status === 'success') {
       if (result.require_2fa) {
-        // Backend potvrdil správné heslo, ale vyžaduje 2FA kód
         require2Fa.value = true
-        totpDigits.value = ['', '', '', '', '', '']
-        
-        // Pomocí nextTick počkáme na vykreslení 6 okének a zaměříme první okénko
-        nextTick(() => {
-          totpInputRefs.value[0]?.focus()
-        })
+        resetTotp() // Automaticky vyčistí a nastaví focus na první okénko
       } else {
-        // Přihlášení kompletně dokončeno
         authStore.login(result.user, result.token)
         router.push('/dashboard')
       }
     } else {
       toastStore.showToast(result.message || t('toast.login_error'), 'toast-error')
       
-      // V případě nesprávného 2FA kódu vymažeme políčka a hodíme focus zpět na první
       if (require2Fa.value) {
-        totpDigits.value = ['', '', '', '', '', '']
-        nextTick(() => {
-          totpInputRefs.value[0]?.focus()
-        })
+        resetTotp() // V případě chyby (např. špatný kód) vyčistí pole a vrátí focus na začátek
       }
     }
   } catch (error) {
@@ -216,7 +170,7 @@ const handleLogin = async () => {
 
 .totp-input {
   width: 100%;
-  aspect-ratio: 1; /* Udržuje políčka perfektně čtvercová */
+  aspect-ratio: 1;
   padding: 0;
   text-align: center;
   font-size: 1.25rem;
@@ -239,7 +193,6 @@ const handleLogin = async () => {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* Ošetření pro odstranění šipek (spin buttonů) u inputů, i když používáme type="text", je to dobrá pojistka pro mobily */
 .totp-input::-webkit-outer-spin-button,
 .totp-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
