@@ -149,7 +149,7 @@ export function useMagicScanner(t, locale, emit) {
       const res = await apiFetch('/analyze_beer.php', {
         method: 'POST',
         body: formData,
-        timeout: 45000 
+        timeout: 120000 
       })
       emit('result', res)
       if (res.status === 'success') clearScanner()
@@ -232,7 +232,7 @@ export function useMagicScanner(t, locale, emit) {
        const res = await apiFetch('/analyze_voice.php', {
          method: 'POST',
          body: JSON.stringify({ text }),
-         timeout: 30000
+         timeout: 90000
        })
        emit('result', res)
        if (res.status === 'success') clearScanner()

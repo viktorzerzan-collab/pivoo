@@ -23,27 +23,44 @@ try {
     $locations_stmt = $api->db->query("SELECT id, name FROM locations");
     $locations_list = $locations_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $promptText = "Jsi pivní asistent. Uživatel ti nadiktoval, jaké pivo právě pije. Přepis jeho hlasu zní takto: '" . addslashes($text) . "'.\n\n" .
-    "Tvé úkoly:\n" .
+    // PŘIDÁNO: Získání pivních stylů pro hlasové vyhledávání/doplnění
+    $styles_stmt = $api->db->query("SELECT id, name FROM beer_styles");
+    $styles_list = $styles_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $promptText = "Jsi pivní asistent a expert. Uživatel ti nadiktoval, jaké pivo právě pije. Přepis jeho hlasu zní takto: '" . addslashes($text) . "'.\n\n" .
+    "TVÉ ÚKOLY:\n" .
     "1. Identifikuj přesný název piva a jméno pivovaru.\n" .
-    "2. Identifikuj objem (např. slova 'velké' nebo 'půllitr' znamenají 0.5; 'malé' nebo 'třetinka' = 0.3; 'šnyt' = 0.4). Vrať jako desetinné číslo.\n" .
-    "3. Identifikuj počet vypitých kusů (pokud není výslovně uvedeno číslo, výchozí hodnota je 1).\n" .
-    "4. Identifikuj cenu za 1 kus. POZOR: Pokud uživatel řekne celkovou útratu za více piv (např. 'dal jsem si 2 piva a platil 100'), musíš cenu vydělit počtem kusů, abys získal cenu za jedno pivo!\n" .
-    "5. Identifikuj typ balení. Povolené hodnoty: 'draft', 'bottle', 'can', 'pet', 'keg', 'mini_keg'. Pokud z kontextu nevyplývá nic jiného (např. je v hospodě), použij 'draft'.\n" .
-    "6. Identifikuj měnu (CZK, EUR, PLN, GBP). Pokud uživatel řekne 'euro' nebo 'éčka', použij EUR.\n" .
-    "7. Identifikuj název podniku (lokace), pokud ho uživatel zmínil.\n" .
-    "8. Porovnej nalezený pivovar se seznamem: " . json_encode($breweries_list) . ". Pokud najdeš shodu, vrať jeho ID.\n" .
-    "9. Porovnej nalezený podnik se seznamem: " . json_encode($locations_list) . ". Pokud najdeš shodu, vrať jeho ID.\n" .
-    "10. Identifikuj hodnocení piva (pokud uživatel zmíní hodnocení hvězdičkami, body apod., např. 'dávám pět hvězdiček', 'pivo má čtyři body'). Vrať jako celé číslo (1-5). Pokud nezmíní, vrať null.\n" .
-    "11. Identifikuj hodnocení podniku/obsluhy (pokud uživatel zmíní hodnocení podniku, např. 'podniku čtyři', 'obsluha za jedna'). Vrať jako celé číslo (1-5). Pokud nezmíní, vrať null.\n\n" .
-    "DŮLEŽITÉ: Pokud pivovar v seznamu NENÍ, nastav 'brewery_id' na null a 'is_new_brewery' na true.\n\n" .
-    "Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu. Zde je požadovaná struktura:\n" .
+    "2. Pokud uživatel jasně jmenuje konkrétní pivo (např. 'Radegast Ratar'), využij své globální znalosti pivního experta a doplň i jeho technické parametry: pivní styl, EPM (Stupňovitost v °), ABV (Alkohol v %), IBU (Hořkost), EBC (Barva), a zda je nefiltrované/nepasterizované, i když je uživatel v nahrávce výslovně nezmínil.\n" .
+    "3. Identifikuj objem (např. slova 'velké' nebo 'půllitr' znamenají 0.5; 'malé' nebo 'třetinka' = 0.3; 'šnyt' = 0.4). Vrať jako desetinné číslo.\n" .
+    "4. Identifikuj počet vypitých kusů (pokud není výslovně uvedeno číslo, výchozí hodnota je 1).\n" .
+    "5. Identifikuj cenu za 1 kus. POZOR: Pokud uživatel řekne celkovou útratu za více piv (např. 'dal jsem si 2 piva a platil 100'), musíš cenu vydělit počtem kusů, abys získal cenu za jedno pivo!\n" .
+    "6. Identifikuj typ balení. Povolené hodnoty: 'draft', 'bottle', 'can', 'pet', 'keg', 'mini_keg'. Pokud z kontextu nevyplývá nic jiného (např. je v hospodě), použij 'draft'.\n" .
+    "7. Identifikuj měnu (CZK, EUR, PLN, GBP). Pokud uživatel řekne 'euro' nebo 'éčka', použij EUR.\n" .
+    "8. Identifikuj název podniku (lokace), pokud ho uživatel zmínil.\n" .
+    "9. Porovnej nalezený pivovar se seznamem pivovarů. Pokud najdeš shodu, vrať jeho ID.\n" .
+    "10. Porovnej nalezený podnik se seznamem lokací. Pokud najdeš shodu, vrať jeho ID.\n" .
+    "11. Porovnej odvozený pivní styl se seznamem stylů. Pokud najdeš shodu, vrať jeho style_id.\n" .
+    "12. Identifikuj hodnocení piva (1-5) a hodnocení podniku/obsluhy (1-5), pokud je uživatel zmínil. Jinak vrať null.\n\n" .
+    "Zde je seznam existujících pivovarů: " . json_encode($breweries_list) . "\n" .
+    "Zde je seznam existujících podniků/lokací: " . json_encode($locations_list) . "\n" .
+    "Zde je seznam existujících pivních stylů: " . json_encode($styles_list) . "\n\n" .
+    "DŮLEŽITÉ VALIDAČNÍ PRAVIDLO:\n" .
+    "Pokud je přepis hlasu příliš obecný (např. 'pivo ve sklenici, má pěnu, je dobré, stálo 30 kč...') a nelze z něj jednoznačně identifikovat konkrétní značku, pivovar nebo specifický název piva, NESNAŽ SE pivo domýšlet ani dosazovat univerzální hodnoty. V takovém případě ignoruj celou strukturu níže a odpověz POUZE JSONem obsahujícím klíč \"error\" s popisem, že zadání je příliš obecné na to, aby bylo možné pivo rozpoznat.\n\n" .
+    "DŮLEŽITÉ: Pokud pivovar v seznamu NENÍ, ale pivo je jasně identifikovatelné, nastav 'brewery_id' na null a 'is_new_brewery' na true.\n\n" .
+    "Požadovaná struktura standardní odpovědi:\n" .
     "{\n" .
     "    \"beer_name\": \"...\",\n" .
     "    \"brewery_name\": \"...\",\n" .
     "    \"brewery_id\": null,\n" .
     "    \"is_new_brewery\": false,\n" .
     "    \"location_id\": null,\n" .
+    "    \"style_id\": null,\n" .
+    "    \"epm\": null,\n" .
+    "    \"abv\": null,\n" .
+    "    \"ibu\": null,\n" .
+    "    \"ebc\": null,\n" .
+    "    \"is_unfiltered\": false,\n" .
+    "    \"is_unpasteurized\": false,\n" .
     "    \"volume\": null,\n" .
     "    \"quantity\": 1,\n" .
     "    \"price\": null,\n" .
@@ -54,7 +71,7 @@ try {
     "}";
 
     $clean_api_key = trim(GEMINI_API_KEY);
-    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $clean_api_key;
+    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" . $clean_api_key;
 
     $postData = [
         "contents" => [
@@ -71,7 +88,7 @@ try {
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 120);
     curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
     
     $response = curl_exec($ch);
@@ -95,6 +112,11 @@ try {
         
         if (json_last_error() === JSON_ERROR_NONE) {
             
+            // KONTROLA VALIDACE: Pokud AI vrátila chybu o příliš obecném popisu, zablokujeme proces
+            if (!empty($ai_json['error'])) {
+                $api->response->sendError($ai_json['error'], 400);
+            }
+
             $api->db->beginTransaction();
             try {
                 $brewery_id = $ai_json['brewery_id'] ?? null;
@@ -118,8 +140,17 @@ try {
                     if ($existing_beer) {
                         $beer_id = $existing_beer['id'];
                     } else {
-                        $stmt_beer = $api->db->prepare("INSERT INTO beers (name, brewery_id, is_approved, created_by) VALUES (?, ?, 0, ?)");
-                        $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $user['user_id']]);
+                        // ROZŠÍŘENO: Ukládáme kompletní bohatá metadata piva vyhledaná z globální paměti AI
+                        $style_id = $ai_json['style_id'] ?? null;
+                        $epm = $ai_json['epm'] ?? null;
+                        $abv = $ai_json['abv'] ?? null;
+                        $ibu = $ai_json['ibu'] ?? null;
+                        $ebc = $ai_json['ebc'] ?? null;
+                        $unfiltered = !empty($ai_json['is_unfiltered']) ? 1 : 0;
+                        $unpasteurized = !empty($ai_json['is_unpasteurized']) ? 1 : 0;
+
+                        $stmt_beer = $api->db->prepare("INSERT INTO beers (name, brewery_id, style_id, epm, abv, ibu, ebc, is_unfiltered, is_unpasteurized, is_approved, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)");
+                        $stmt_beer->execute([$ai_json['beer_name'], $brewery_id, $style_id, $epm, $abv, $ibu, $ebc, $unfiltered, $unpasteurized, $user['user_id']]);
                         $beer_id = $api->db->lastInsertId();
                     }
                     $ai_json['beer_id'] = $beer_id;

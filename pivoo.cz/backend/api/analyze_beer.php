@@ -140,9 +140,9 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     \"volume\": null
 }";
 
-    // 4. Volání Google Gemini API
+    // 4. Volání Google Gemini API (Aktualizováno na model gemini-3.5-flash)
     $clean_api_key = trim(GEMINI_API_KEY);
-    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" . $clean_api_key;
+    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=" . $clean_api_key;
 
     // Sestavení dat pro API (Text prompt následovaný všemi obrázky)
     $geminiParts = [["text" => $promptText]];
@@ -163,7 +163,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 45); // Zvýšený timeout pro případ více fotek
+    curl_setopt($ch, CURLOPT_TIMEOUT, 120); // Zvýšený timeout pro případ více fotek
     curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
     
     $response = curl_exec($ch);
@@ -183,8 +183,7 @@ Odpověz STRIKTNĚ pouze validním JSONem bez jakéhokoliv dalšího textu nebo 
     
     if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
         $ai_response_text = trim($result['candidates'][0]['content']['parts'][0]['text']);
-        $ai_response_text = str_replace(['```json', '
-```'], '', $ai_response_text);
+        $ai_response_text = str_replace(['```json', '```'], '', $ai_response_text);
         
         $ai_json = json_decode($ai_response_text, true);
         
