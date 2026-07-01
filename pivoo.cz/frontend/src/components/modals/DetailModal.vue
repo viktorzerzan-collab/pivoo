@@ -230,11 +230,15 @@ import {
   MapIcon, ExternalLinkIcon, MapPinIcon 
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+
 import BaseModal from '../BaseModal.vue'
 import BackgroundWatermark from '../BackgroundWatermark.vue'
 import OpeningHoursDisplay from '../OpeningHoursDisplay.vue'
 import CountryFlag from '../CountryFlag.vue'
-import BaseLightbox from '../BaseLightbox.vue' // <-- Import nové komponenty lightboxu
+import BaseLightbox from '../BaseLightbox.vue'
+
+// Importujeme naši novou composable pro formátování
+import { useDetailFormatters } from '../../composables/useDetailFormatters'
 
 defineProps({
   show: Boolean,
@@ -247,40 +251,19 @@ defineEmits(['close'])
 
 const { t, te, locale } = useI18n()
 
+// Rozbalíme si potřebné formátovací funkce z naší composable
+const { 
+  translateDynamic, 
+  formatLocationType, 
+  translateStyle, 
+  translateFermentation, 
+  getCountryName 
+} = useDetailFormatters(t, te, locale)
+
 // Reaktivní stav pro lightbox
 const selectedImage = ref(null)
 
-const translateDynamic = (val) => {
-  if (!val) return val
-  const key = `dynamic.locations.${val}`
-  return te(key) ? t(key) : val
-}
-
-const formatLocationType = (type) => {
-  if (!type) return ''
-  const key = `dynamic.location_types.${type}`
-  return te(key) ? t(key) : type
-}
-
-const translateStyle = (val) => {
-  if (!val) return t('cards.no_style')
-  const key = `dynamic.styles.${val}`
-  return te(key) ? t(key) : val
-}
-
-const translateFermentation = (val) => {
-  if (!val) return ''
-  const key = `dynamic.fermentation.${val}`
-  return te(key) ? t(key) : `${val} ${t('cards.fermentation_suffix')}`
-}
-
-const getCountryName = (code, fallback) => {
-  if (!code) return fallback;
-  try { return new Intl.DisplayNames([locale.value], { type: 'region' }).of(code.toUpperCase()); }
-  catch (e) { return fallback; }
-}
-
-// Úprava funkce pro otevření obrázku v lightboxu
+// Funkce pro otevření obrázku v lightboxu
 const openImage = (filename) => {
   selectedImage.value = filename
 }
