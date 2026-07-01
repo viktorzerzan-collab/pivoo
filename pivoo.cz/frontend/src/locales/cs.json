@@ -337,11 +337,11 @@
       "select_beer": "-- Vyber pivo --",
       "unknown_brewery": "Neznámý pivovar",
       "unknown_beer": "Neznámé pivo",
-      "found_location": "📍 Nalezeno: {name} ({dist} m)",
+      "found_location": "📍 Nalezeno: {name} {dist}",
       "multiple_locations": "Nalezeno více lokalit v okolí.",
       "no_locations": "Žádná známá lokalita v okolí 150m.",
       "location_error": "Nepodařilo se zjistit polohu. Zkontrolujte oprávnění.",
-      "selected_location": "📍 Vybráno: {name} ({dist} m)",
+      "selected_location": "📍 Vybráno: {name} {dist}",
       "geolocation_not_supported": "Geolokace není prohlížečem podporována.",
       "nearby_title": "Vyberte lokalitu v okolí",
       "volume": {
@@ -692,6 +692,7 @@
   "dynamic": {
     "locations": {
       "Doma": "Doma",
+      "Na zahradě": "Na zahradě",
       "V parku": "V parku",
       "Na návštěvě": "Na návštěvě",
       "V práci": "V práci",

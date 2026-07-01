@@ -337,11 +337,11 @@
       "select_beer": "-- Select beer --",
       "unknown_brewery": "Unknown brewery",
       "unknown_beer": "Unknown beer",
-      "found_location": "📍 Found: {name} ({dist} m)",
+      "found_location": "📍 Found: {name} {dist}",
       "multiple_locations": "Multiple venues found nearby.",
       "no_locations": "No known venue within 150m.",
       "location_error": "Failed to get location. Check your permissions.",
-      "selected_location": "📍 Selected: {name} ({dist} m)",
+      "selected_location": "📍 Selected: {name} {dist}",
       "geolocation_not_supported": "Geolocation is not supported by your browser.",
       "nearby_title": "Select nearby venue",
       "volume": {
@@ -692,6 +692,7 @@
   "dynamic": {
     "locations": {
       "Doma": "At home",
+      "Na zahradě": "In the garden",
       "V parku": "In the park",
       "Na návštěvě": "Visiting",
       "V práci": "At work",

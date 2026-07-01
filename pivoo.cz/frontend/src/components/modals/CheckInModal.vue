@@ -23,7 +23,7 @@
           <BaseSelect v-model="form.location_id" :label="$t('modals.checkin.location_label')" searchable required style="flex: 1; min-width: 0;">
             <option disabled value="">{{ $t('modals.checkin.select_location') }}</option>
             <option v-for="loc in catalogStore.allLocations" :key="loc.id" :value="loc.id">
-              {{ loc.is_favorite ? '⭐' : (loc.type === 'mesto' ? '🏙️' : '📍') }} {{ translateLocation(loc.name) }}
+              {{ loc.is_favorite ? '⭐' : (loc.type === 'jine' ? '✨' : (loc.type === 'mesto' ? '🏙️' : '📍')) }} {{ translateLocation(loc.name) }}
             </option>
           </BaseSelect>
           
@@ -217,10 +217,12 @@
         >
           <div class="nearby-info">
             <strong class="nearby-name">
-              {{ loc.is_favorite ? '⭐' : (loc.type === 'mesto' ? '🏙️' : '📍') }} 
+              {{ loc.is_favorite ? '⭐' : (loc.type === 'jine' ? '✨' : (loc.type === 'mesto' ? '🏙️' : '📍')) }} 
               {{ translateLocation(loc.name) }}
             </strong>
-            <span class="nearby-dist">{{ loc.type === 'mesto' ? 'Obec' : (loc.distance * 1000).toFixed(0) + ' m' }}</span>
+            <span v-if="loc.type !== 'jine'" class="nearby-dist">
+              {{ loc.type === 'mesto' ? $t('dynamic.location_types.mesto') : (loc.distance * 1000).toFixed(0) + ' m' }}
+            </span>
           </div>
           <div class="nearby-address" v-if="loc.address">{{ loc.address }}</div>
         </button>
@@ -275,8 +277,9 @@ const isAiUpdating = ref(false)
 
 const translateLocation = (val) => {
   if (!val) return val
-  const key = `dynamic.locations.${val}`
-  return te(key) ? t(key) : val
+  const trimmed = val.trim()
+  const key = `dynamic.locations.${trimmed}`
+  return te(key) ? t(key) : trimmed
 }
 
 // Inicializace composables pro vyčleněnou logiku

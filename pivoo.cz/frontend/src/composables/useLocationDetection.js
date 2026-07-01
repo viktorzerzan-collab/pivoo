@@ -21,6 +21,13 @@ export function useLocationDetection(catalogStore, form, t, translateLocation) {
     return R * c
   }
 
+  // Funkce pro hezké naformátování vzdálenosti, aby se prázdné nebo městské lokality zobrazovaly správně
+  const formatDistance = (loc) => {
+    if (loc.type === 'jine') return ''
+    if (loc.type === 'mesto') return '(Město)'
+    return `(${(loc.distance * 1000).toFixed(0)} m)`
+  }
+
   const autodetectLocation = () => {
     if (!navigator.geolocation) {
       locationMessage.value = t('modals.checkin.geolocation_not_supported')
@@ -39,9 +46,11 @@ export function useLocationDetection(catalogStore, form, t, translateLocation) {
 
         const nearby = []
 
-        // Běžné vyhledávání okolních podniků
+        // Běžné vyhledávání okolních podniků a automatické přidání lokalit 'jine'
         catalogStore.allLocations.forEach(loc => {
-          if (loc.lat && loc.lng && loc.type !== 'mesto') {
+          if (loc.type === 'jine') {
+            nearby.push({ ...loc, distance: null })
+          } else if (loc.lat && loc.lng && loc.type !== 'mesto') {
             const dist = calculateDistance(lat, lng, loc.lat, loc.lng)
             // Zvýšený limit na 150 metrů (0.150 km)
             if (dist <= 0.150) {
@@ -94,7 +103,6 @@ export function useLocationDetection(catalogStore, form, t, translateLocation) {
                 
                 if (createRes.status === 'success') {
                   cityLoc = {
-                    // ZDE JE OPRAVA: API vrací ID přímo v response objektu, případně se podíváme do data fallbackem
                     id: createRes.id || createRes.data?.id,
                     name: cityName,
                     type: 'mesto',
@@ -120,7 +128,13 @@ export function useLocationDetection(catalogStore, form, t, translateLocation) {
           console.warn("Nepodařilo se zjistit obec pro Check-in:", e)
         }
 
-        nearby.sort((a, b) => a.distance - b.distance)
+        // Seřadit výsledky: nejdříve ty co mají vzdálenost, pak ty co jsou typu 'jine'
+        nearby.sort((a, b) => {
+          if (a.distance === null && b.distance === null) return a.name.localeCompare(b.name)
+          if (a.distance === null) return 1 // 'jine' na konec seznamu
+          if (b.distance === null) return -1
+          return a.distance - b.distance
+        })
 
         isLocating.value = false
 
@@ -130,8 +144,8 @@ export function useLocationDetection(catalogStore, form, t, translateLocation) {
           
           if (nearby.length === 1) {
             locationMessage.value = t('modals.checkin.found_location', { 
-              name: translateLocation(nearby[0].name), 
-              dist: nearby[0].type === 'mesto' ? 'Město' : (nearby[0].distance * 1000).toFixed(0) 
+              name: translateLocation(nearby[0].name.trim()), 
+              dist: formatDistance(nearby[0]) 
             })
           } else {
             locationMessage.value = t('modals.checkin.multiple_locations')
@@ -155,8 +169,8 @@ export function useLocationDetection(catalogStore, form, t, translateLocation) {
   const selectNearbyLocation = (loc) => {
     form.location_id = loc.id
     locationMessage.value = t('modals.checkin.selected_location', { 
-      name: translateLocation(loc.name), 
-      dist: loc.type === 'mesto' ? 'Město' : (loc.distance * 1000).toFixed(0) 
+      name: translateLocation(loc.name.trim()), 
+      dist: formatDistance(loc)
     })
     locationMessageType.value = 'success'
     showNearbyModal.value = false
