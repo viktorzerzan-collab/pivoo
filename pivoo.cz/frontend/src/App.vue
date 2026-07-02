@@ -20,9 +20,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import AppNavigation from './components/AppNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
@@ -30,74 +29,24 @@ import AppToast from './components/AppToast.vue'
 import BackToTop from './components/BackToTop.vue'
 import LangToggleButton from './components/LangToggleButton.vue'
 import ThemeToggleButton from './components/ThemeToggleButton.vue'
-import { useAuthStore } from './stores/auth'
-import { apiFetch } from './api' 
+
+// Import nového composable pro správu tématu
+import { useTheme } from './composables/useTheme'
 
 const route = useRoute()
-const authStore = useAuthStore()
-const { user, theme } = storeToRefs(authStore)
-
 const { t } = useI18n()
 
 const isAuthPage = computed(() => route.name === 'login' || route.name === 'register')
 
-const isDark = ref(false)
-let autoInterval = null
-
-const updateHtmlClass = (isDarkMode) => {
-  if (isDarkMode) {
-    document.documentElement.classList.add('dark-mode')
-  } else {
-    document.documentElement.classList.remove('dark-mode')
-  }
-}
-
-const checkAutoTheme = () => {
-  if (user.value?.theme_mode === 'auto') {
-    const hour = new Date().getHours()
-    isDark.value = (hour >= 18 || hour < 6)
-  } else {
-    isDark.value = theme.value === 'dark'
-  }
-  updateHtmlClass(isDark.value)
-}
-
-const toggleTheme = async () => {
-  const newTheme = isDark.value ? 'light' : 'dark'
-  isDark.value = !isDark.value 
-  authStore.setTheme(newTheme)
-  updateHtmlClass(isDark.value)
-
-  if (user.value?.theme_mode === 'auto') {
-    authStore.updateUser({ theme_mode: 'manual' })
-  }
-
-  if (user.value) {
-    try {
-      await apiFetch('/update_profile.php', {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'update_theme',
-          theme_mode: 'manual', 
-          theme_preference: newTheme 
-        })
-      })
-    } catch (error) {
-      console.error('Chyba při ukládání tématu do databáze:', error)
-    }
-  }
-}
-
-watch(() => user.value?.theme_mode, checkAutoTheme)
-watch(theme, checkAutoTheme)
+// Inicializace logiky pro téma z composable
+const { isDark, toggleTheme, initTheme, cleanupTheme } = useTheme()
 
 onMounted(() => {
-  checkAutoTheme()
-  autoInterval = setInterval(checkAutoTheme, 60000)
+  initTheme()
 })
 
 onUnmounted(() => {
-  if (autoInterval) clearInterval(autoInterval)
+  cleanupTheme()
 })
 </script>
 
