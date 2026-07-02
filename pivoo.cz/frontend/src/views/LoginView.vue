@@ -70,79 +70,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { LogInIcon, BeerIcon } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
-import { apiFetch } from '../api'
-import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast' 
 import BaseInput from '../components/BaseInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 import BaseAuthLayout from '../components/BaseAuthLayout.vue'
-import { useTotpInputs } from '../composables/useTotpInputs'
+import { useLogin } from '../composables/useLogin'
 
-const router = useRouter()
-const authStore = useAuthStore()
-const toastStore = useToastStore() 
-const { t } = useI18n()
-
-const username = ref('')
-const password = ref('')
-const require2Fa = ref(false)
-const isLoading = ref(false)
-
-// Vytažení stavů a metod z našeho nového composable
+// Vytažení kompletní vyčleněné logiky z nového composable
 const {
+  username,
+  password,
+  require2Fa,
+  isLoading,
   totpDigits,
   totpInputRefs,
-  totpCode,
   handleTotpInput,
   handleTotpKeydown,
   handleTotpPaste,
-  resetTotp,
-  clearTotp
-} = useTotpInputs()
-
-const cancel2Fa = () => {
-  require2Fa.value = false
-  clearTotp()
-}
-
-const handleLogin = async () => {
-  isLoading.value = true
-  
-  try {
-    const result = await apiFetch('/login.php', { 
-      method: 'POST', 
-      body: JSON.stringify({ 
-        username: username.value, 
-        password: password.value,
-        totp_code: totpCode.value // Používáme computed string z composable
-      }) 
-    })
-    
-    if (result.status === 'success') {
-      if (result.require_2fa) {
-        require2Fa.value = true
-        resetTotp() // Automaticky vyčistí a nastaví focus na první okénko
-      } else {
-        authStore.login(result.user, result.token)
-        router.push('/dashboard')
-      }
-    } else {
-      toastStore.showToast(result.message || t('toast.login_error'), 'toast-error')
-      
-      if (require2Fa.value) {
-        resetTotp() // V případě chyby (např. špatný kód) vyčistí pole a vrátí focus na začátek
-      }
-    }
-  } catch (error) {
-    toastStore.showToast(error.message || t('toast.server_error'), 'toast-error')
-  } finally {
-    isLoading.value = false
-  }
-}
+  cancel2Fa,
+  handleLogin
+} = useLogin()
 </script>
 
 <style scoped>
